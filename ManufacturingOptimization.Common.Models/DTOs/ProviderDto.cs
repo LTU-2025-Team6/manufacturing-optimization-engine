@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace ManufacturingOptimization.Common.Models.DTOs;
 
 public class ProviderDto

@@ -5,7 +5,8 @@ using ManufacturingOptimization.Common.Messaging.Messages.OptimizationManagement
 using ManufacturingOptimization.Common.Models.Contracts;
 using ManufacturingOptimization.Common.Models.Enums;
 using ManufacturingOptimization.Engine.Abstractions;
-using ManufacturingOptimization.Engine.Exceptions;
+using ManufacturingOptimization.Common.Models.Exceptions;
+using ManufacturingOptimization.Common.Models.Extensions;
 using ManufacturingOptimization.Engine.Models;
 using ManufacturingOptimization.Engine.Models.OptimizationStep;
 
@@ -17,6 +18,8 @@ namespace ManufacturingOptimization.Engine.Services.Pipeline;
 /// </summary>
 public sealed partial class OptimizationStep : IWorkflowStep
 {
+    private const int SlotGranularityMinutes = 60;
+
     private readonly IMessagePublisher _messagePublisher;
 
     public OptimizationStep(IMessagePublisher messagePublisher)
@@ -60,8 +63,14 @@ public sealed partial class OptimizationStep : IWorkflowStep
             if (result == null)
                 continue;
 
-            // Convert calculation result into a domain strategy and add to plan
-            context.Plan.Strategies.Add(CreateStrategy(priority, context, result));
+            // Convert calculation result into a domain strategy
+            var strategy = CreateStrategy(priority, context, result);
+            
+            // Clamp schedules to actual working timeline (remove empty time before/after work)
+            strategy.ClampSchedulesToWorkingTimeline();
+            
+            // Add to plan
+            context.Plan.Strategies.Add(strategy);
         }
 
         if (context.Plan.Strategies.Count == 0)
@@ -74,63 +83,47 @@ public sealed partial class OptimizationStep : IWorkflowStep
     /// </summary>
     private static void PreprocessTimeSlots(WorkflowContext context)
     {
-        if (context.Request.Constraints.TimeWindow == null)
-        {
-            // If no time window specified, create a default infinite slot for each provider
-            CreateDefaultTimeSlots(context);
-            return;
-        }
-
         var referenceTime = context.Request.Constraints.TimeWindow.StartTime;
         
         foreach (var step in context.ProcessSteps)
         {
             foreach (var provider in step.MatchedProviders)
             {
-                if (provider.Estimate.AvailableTimeSlots == null || 
-                    provider.Estimate.AvailableTimeSlots.Count == 0)
+                var timeSlots = provider.Schedule.Segments.BuildPossibleWorkSlots(provider.Estimate.Duration, SlotGranularityMinutes);
+                
+                if (timeSlots.Count == 0)
                 {
-                    // No slots = provider unavailable in time window
                     provider.IndexedSlots = new List<IndexedTimeSlot>();
                     continue;
                 }
-                
-                provider.IndexedSlots = provider.Estimate.AvailableTimeSlots
-                    .Select((slot, index) => new IndexedTimeSlot
+
+                provider.IndexedSlots = timeSlots
+                    .Select((segments, index) =>
                     {
-                        SlotIndex = index,
-                        Slot = slot,
-                        StartTimeHours = (slot.StartTime - referenceTime).TotalHours,
-                        EndTimeHours = (slot.EndTime - referenceTime).TotalHours
+                        var workingSegments = segments.Where(s => s.SegmentType == SegmentType.WorkingTime).ToList();
+                        
+                        if (workingSegments.Count == 0)
+                            return null;
+                        
+                        var startTime = workingSegments.Min(s => s.StartTime);
+                        var endTime = workingSegments.Max(s => s.EndTime);
+                        
+                        return new IndexedTimeSlot
+                        {
+                            SlotIndex = index,
+                            Slot = new ProviderScheduleModel
+                            {
+                                StartTime = startTime,
+                                EndTime = endTime,
+                                Segments = segments
+                            },
+                            StartTimeHours = (startTime - referenceTime).TotalHours,
+                            EndTimeHours = (endTime - referenceTime).TotalHours
+                        };
                     })
+                    .Where(slot => slot != null)
+                    .Cast<IndexedTimeSlot>()
                     .ToList();
-            }
-        }
-    }
-    
-    /// <summary>
-    /// Creates default "infinite" time slots when no time window is specified.
-    /// </summary>
-    private static void CreateDefaultTimeSlots(WorkflowContext context)
-    {
-        var referenceTime = DateTime.UtcNow;
-        var defaultSlot = new IndexedTimeSlot
-        {
-            SlotIndex = 0,
-            Slot = new TimeWindowModel
-            {
-                StartTime = referenceTime,
-                EndTime = referenceTime.AddYears(1)
-            },
-            StartTimeHours = 0,
-            EndTimeHours = 8760 // 365 days in hours
-        };
-        
-        foreach (var step in context.ProcessSteps)
-        {
-            foreach (var provider in step.MatchedProviders)
-            {
-                provider.IndexedSlots = new List<IndexedTimeSlot> { defaultSlot };
             }
         }
     }
@@ -194,8 +187,6 @@ public sealed partial class OptimizationStep : IWorkflowStep
             var step = context.ProcessSteps[i];
             var totalSlots = step.MatchedProviders.Sum(p => p.IndexedSlots.Count);
             
-            var providerNames = string.Join(", ", step.MatchedProviders.Select(p => $"{p.ProviderName}[{p.ProviderId.ToString().Substring(0, 8)}]"));
-            
             // Count how many OTHER steps share providers with this step
             int sharedProviderSteps = 0;
             for (int j = 0; j < providerIdsByStep.Count; j++)
@@ -206,7 +197,7 @@ public sealed partial class OptimizationStep : IWorkflowStep
         }
 
         // Solve with timeout
-        solver.SetTimeLimit(60000); // 60 seconds
+        //solver.SetTimeLimit(60000); // 60 seconds
 
         var status = solver.Solve();
         
@@ -242,6 +233,7 @@ public sealed partial class OptimizationStep : IWorkflowStep
 
         return new OptimizationStrategyModel
         {
+            Id = Guid.NewGuid(), // Important to assign Id here so that it correlates with one stored at Gateway
             PlanId = context.Plan.Id,
             StrategyName = name,
             Priority = priority,
@@ -257,12 +249,12 @@ public sealed partial class OptimizationStep : IWorkflowStep
                     Process = step.Process,
                     SelectedProviderId = provider.ProviderId,
                     SelectedProviderName = provider.ProviderName,
-                    AllocatedSlot = scheduledProcess?.AllocatedSlot != null 
-                        ? new AllocatedSlotModel 
+                    AllocatedSchedule = scheduledProcess?.AllocatedSchedule != null 
+                        ? new ProviderScheduleModel 
                         { 
-                            StartTime = scheduledProcess.AllocatedSlot.StartTime, 
-                            EndTime = scheduledProcess.AllocatedSlot.EndTime,
-                            Segments = scheduledProcess.AllocatedSlot.Segments
+                            StartTime = scheduledProcess.AllocatedSchedule.StartTime, 
+                            EndTime = scheduledProcess.AllocatedSchedule.EndTime,
+                            Segments = scheduledProcess.AllocatedSchedule.Segments
                         } 
                         : null,
                     Estimate = new ProcessEstimateModel
@@ -270,8 +262,9 @@ public sealed partial class OptimizationStep : IWorkflowStep
                         Cost = provider.Estimate.Cost,
                         QualityScore = provider.Estimate.QualityScore,
                         EmissionsKgCO2 = provider.Estimate.EmissionsKgCO2,
-                        ProposalId = provider.Estimate.ProposalId
-                    }
+                        
+                    },
+                    ProposalId = provider.ProposalId
                 };
             }).ToList(),
             Metrics = result.Metrics,
@@ -288,11 +281,9 @@ public sealed partial class OptimizationStep : IWorkflowStep
     private static MipVariables CreateMipVariables(Solver solver, WorkflowContext context)
     {
         var variables = new MipVariables();
-        
+
         // Calculate window duration
-        var windowDurationHours = context.Request.Constraints.TimeWindow != null
-            ? (context.Request.Constraints.TimeWindow.EndTime - context.Request.Constraints.TimeWindow.StartTime).TotalHours
-            : 8760; // 1 year if not specified
+        var windowDurationHours = (context.Request.Constraints.TimeWindow.EndTime - context.Request.Constraints.TimeWindow.StartTime).TotalHours;
         
         // 1. Create binary assignment variables x[i,j,k]
         for (int i = 0; i < context.ProcessSteps.Count; i++)
@@ -416,11 +407,7 @@ public sealed partial class OptimizationStep : IWorkflowStep
     /// </summary>
     private void AddDeadlineConstraints(Solver solver, WorkflowContext context, MipVariables variables)
     {
-        if (context.Request.Constraints.TimeWindow == null)
-            return;
-            
-        var deadlineHours = (context.Request.Constraints.TimeWindow.EndTime - 
-                             context.Request.Constraints.TimeWindow.StartTime).TotalHours;
+        var deadlineHours = (context.Request.Constraints.TimeWindow.EndTime - context.Request.Constraints.TimeWindow.StartTime).TotalHours;
         
         var lastStepIndex = context.ProcessSteps.Count - 1;
         solver.Add(variables.EndTimes[lastStepIndex] <= deadlineHours);
@@ -493,9 +480,6 @@ public sealed partial class OptimizationStep : IWorkflowStep
         }
 
         // Calculate time normalization range (max possible end time from all providers)
-        if (context.Request.Constraints.TimeWindow == null)
-            throw new OptimizationException("Time window should have been preprocessed already.");
-
         var windowDurationHours = (context.Request.Constraints.TimeWindow.EndTime - context.Request.Constraints.TimeWindow.StartTime).TotalHours;
 
         // Add cost, quality, and emissions to objective
@@ -588,11 +572,16 @@ public sealed partial class OptimizationStep : IWorkflowStep
             
             // Use the single selected slot
             var selectedSlot = selectedSlots[0];
-            var allocatedSlot = new TimeWindowModel
+            var allocatedSchedule = new ProviderScheduleModel
             {
                 StartTime = referenceTime.AddHours(selectedSlot.StartTimeHours),
                 EndTime = referenceTime.AddHours(selectedSlot.EndTimeHours),
-                Segments = selectedSlot.Slot.Segments
+                Segments = selectedSlot.Slot.Segments.Select(s => new ProviderScheduleSegmentModel
+                {
+                    StartTime = s.StartTime,
+                    EndTime = s.EndTime,
+                    SegmentType = s.SegmentType
+                }).ToList()
             };
             
             scheduledProcesses.Add(new ScheduledProcess
@@ -601,7 +590,7 @@ public sealed partial class OptimizationStep : IWorkflowStep
                 Process = step.Process,
                 ProviderId = selectedProvider.ProviderId,
                 ProviderName = selectedProvider.ProviderName,
-                AllocatedSlot = allocatedSlot
+                AllocatedSchedule = allocatedSchedule
             });
             
             totalCost += selectedProvider.Estimate.Cost;
@@ -609,23 +598,10 @@ public sealed partial class OptimizationStep : IWorkflowStep
             totalEmissions += selectedProvider.Estimate.EmissionsKgCO2;
         }
         
-        var firstSlot = scheduledProcesses.First().AllocatedSlot!;
-        var lastSlot = scheduledProcesses.Last().AllocatedSlot!;
+        var firstSlot = scheduledProcesses.First().AllocatedSchedule!;
+        var lastSlot = scheduledProcesses.Last().AllocatedSchedule!;
         var totalDuration = lastSlot.EndTime - firstSlot.StartTime;
-        
-        // Diagnostic: Show selected providers
-        Console.WriteLine($"[OptimizationStep] === MIP Solution ===");
-        Console.WriteLine($"[OptimizationStep] Total Cost: €{totalCost:F2}");
-        Console.WriteLine($"[OptimizationStep] Total Duration: {totalDuration.TotalHours:F1}h");
-        Console.WriteLine($"[OptimizationStep] Avg Quality: {totalQuality / context.ProcessSteps.Count:F2}");
-        Console.WriteLine($"[OptimizationStep] Total Emissions: {totalEmissions:F2} kg");
-        Console.WriteLine($"[OptimizationStep] Selected providers:");
-        for (int i = 0; i < context.ProcessSteps.Count; i++)
-        {
-            var selectedProv = selectedProviders[context.ProcessSteps[i].StepNumber];
-            Console.WriteLine($"[OptimizationStep]   Step {i}: {selectedProv.ProviderName} (Cost: €{selectedProv.Estimate.Cost:F2}, Quality: {selectedProv.Estimate.QualityScore:F2}, Emissions: {selectedProv.Estimate.EmissionsKgCO2:F2})");
-        }
-        
+       
         return new OptimizationResult
         {
             Metrics = new OptimizationMetricsModel

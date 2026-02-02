@@ -14,14 +14,16 @@ public class GatewayDbContext : DbContext, IOptimizationDbContext, IProviderDbCo
     public DbSet<ProviderEntity> Providers => Set<ProviderEntity>();
     public DbSet<ProcessCapabilityEntity> ProcessCapabilities => Set<ProcessCapabilityEntity>();
     public DbSet<TechnicalCapabilitiesEntity> TechnicalCapabilities => Set<TechnicalCapabilitiesEntity>();
+    public DbSet<ProviderWorkingHoursEntity> WorkingHours => Set<ProviderWorkingHoursEntity>();
+    public DbSet<ProviderBreakPeriodEntity> BreakPeriods => Set<ProviderBreakPeriodEntity>();
     public DbSet<OptimizationPlanEntity> OptimizationPlans => Set<OptimizationPlanEntity>();
     public DbSet<OptimizationStrategyEntity> OptimizationStrategies => Set<OptimizationStrategyEntity>();
     public DbSet<ProcessStepEntity> ProcessSteps => Set<ProcessStepEntity>();
     public DbSet<ProcessEstimateEntity> ProcessEstimates => Set<ProcessEstimateEntity>();
     public DbSet<OptimizationMetricsEntity> OptimizationMetrics => Set<OptimizationMetricsEntity>();
     public DbSet<WarrantyTermsEntity> WarrantyTerms => Set<WarrantyTermsEntity>();
-    public DbSet<AllocatedSlotEntity> AllocatedSlots => Set<AllocatedSlotEntity>();
-    public DbSet<TimeSegmentEntity> TimeSegments => Set<TimeSegmentEntity>();
+    public DbSet<ProviderScheduleEntity> ProviderSchedules => Set<ProviderScheduleEntity>();
+    public DbSet<ProviderScheduleSegmentEntity> ProviderScheduleSegments => Set<ProviderScheduleSegmentEntity>();
 
     public GatewayDbContext(DbContextOptions<GatewayDbContext> options) : base(options)
     {
@@ -34,11 +36,12 @@ public class GatewayDbContext : DbContext, IOptimizationDbContext, IProviderDbCo
         modelBuilder.ApplyConfiguration(new ProviderConfiguration());
         modelBuilder.ApplyConfiguration(new ProcessCapabilityConfiguration());
         modelBuilder.ApplyConfiguration(new TechnicalCapabilitiesConfiguration());
+        modelBuilder.ApplyConfiguration(new ProviderWorkingHoursConfiguration());
         modelBuilder.ApplyConfiguration(new OptimizationPlanConfiguration());
         modelBuilder.ApplyConfiguration(new OptimizationStrategyConfiguration());
         modelBuilder.ApplyConfiguration(new ProcessStepConfiguration());
-        modelBuilder.ApplyConfiguration(new AllocatedSlotConfiguration());
-        modelBuilder.ApplyConfiguration(new TimeSegmentConfiguration());
+        modelBuilder.ApplyConfiguration(new ProviderScheduleConfiguration());
+        modelBuilder.ApplyConfiguration(new ProviderScheduleSegmentConfiguration());
         modelBuilder.ApplyConfiguration(new ProcessEstimateConfiguration());
         modelBuilder.ApplyConfiguration(new OptimizationMetricsConfiguration());
         modelBuilder.ApplyConfiguration(new WarrantyTermsConfiguration());

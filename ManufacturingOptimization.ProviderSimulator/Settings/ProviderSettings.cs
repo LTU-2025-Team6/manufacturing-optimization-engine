@@ -16,5 +16,5 @@ public class ProviderSettings
 
     public List<ProcessCapabilityModel> ProcessCapabilities { get; set; } = new();
     public TechnicalCapabilitiesModel TechnicalCapabilities { get; set; } = new();
-    public WorkingHoursModel WorkingHours { get; set; } = new();
+    public ProviderWorkingHoursModel WorkingHours { get; set; } = new();
 }

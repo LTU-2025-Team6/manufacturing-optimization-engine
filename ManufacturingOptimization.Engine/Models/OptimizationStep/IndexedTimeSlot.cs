@@ -16,8 +16,8 @@ public class IndexedTimeSlot
     /// <summary>
     /// The actual time window (original slot with DateTime values).
     /// </summary>
-    public TimeWindowModel Slot { get; set; } = new();
-    
+    public ProviderScheduleModel Slot { get; set; } = null!;
+
     /// <summary>
     /// Start time in hours relative to the reference time (RequestedWindow.StartTime).
     /// </summary>

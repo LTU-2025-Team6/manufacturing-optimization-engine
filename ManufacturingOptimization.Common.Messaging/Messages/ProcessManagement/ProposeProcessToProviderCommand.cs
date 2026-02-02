@@ -10,9 +10,9 @@ namespace ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
 /// </summary>
 public class ProposeProcessToProviderCommand : BaseRequestReplyCommand
 {
-    public Guid RequestId { get; set; }
+    public Guid PlanId { get; set; }
     public Guid ProviderId { get; set; }
     public ProcessType Process { get; set; }
-    public MotorSpecificationsModel MotorSpecs { get; set; } = new();
-    public TimeWindowModel? RequestedTimeWindow { get; set; }
+    public MotorSpecificationsModel MotorSpecs { get; set; } = null!;
+    public TimeWindowModel RequestedTimeWindow { get; set; } = null!;
 }

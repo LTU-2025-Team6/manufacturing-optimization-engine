@@ -57,6 +57,16 @@ public class OptimizationPlanUpdatedHandler : IMessageHandler<OptimizationPlanUp
 
                 existingPlan.SelectedStrategyId = evt.Plan.SelectedStrategy.Id;
                 existingPlan.SelectedAt = evt.Plan.SelectedAt;
+
+                // Remove declined strategies
+                var declinedStranegies = existingPlan.Strategies.Where(s => s.Id != evt.Plan.SelectedStrategy.Id).ToList();
+                foreach (var strategy in declinedStranegies)
+                {
+                    existingPlan.Strategies.Remove(strategy);
+                    await _strategyRepository.DeleteAsync(strategy);
+                    await _strategyRepository.SaveChangesAsync();
+                }
+
                 break;
 
             case OptimizationPlanStatus.Confirmed:

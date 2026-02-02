@@ -20,6 +20,8 @@ public class ProviderRepository : Repository<ProviderEntity>, IProviderRepositor
         var entities = await _dbSet
             .Include(p => p.ProcessCapabilities)
             .Include(p => p.TechnicalCapabilities)
+            .Include(p => p.WorkingHours)
+                .ThenInclude(wh => wh.Breaks)
             .Where(p => p.ProcessCapabilities.Any(cap => cap.Process == process.ToString()))
             .ToListAsync();
 
@@ -39,6 +41,8 @@ public class ProviderRepository : Repository<ProviderEntity>, IProviderRepositor
         return await _dbSet
             .Include(p => p.ProcessCapabilities)
             .Include(p => p.TechnicalCapabilities)
+            .Include(p => p.WorkingHours)
+                .ThenInclude(wh => wh.Breaks)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
@@ -47,6 +51,8 @@ public class ProviderRepository : Repository<ProviderEntity>, IProviderRepositor
         return await _dbSet
             .Include(p => p.ProcessCapabilities)
             .Include(p => p.TechnicalCapabilities)
+            .Include(p => p.WorkingHours)
+                .ThenInclude(wh => wh.Breaks)
             .ToListAsync(cancellationToken);
     }
 }

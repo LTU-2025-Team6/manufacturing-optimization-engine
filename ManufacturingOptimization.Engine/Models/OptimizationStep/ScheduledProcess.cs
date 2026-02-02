@@ -32,5 +32,5 @@ public class ScheduledProcess
     /// <summary>
     /// The allocated time slot for this process (single period accounting for breaks).
     /// </summary>
-    public TimeWindowModel? AllocatedSlot { get; set; }
+    public ProviderScheduleModel? AllocatedSchedule { get; set; }
 }

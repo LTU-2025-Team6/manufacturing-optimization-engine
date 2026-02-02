@@ -4,7 +4,7 @@ using ManufacturingOptimization.Common.Messaging.Messages.OptimizationManagement
 using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
 using ManufacturingOptimization.Common.Models.Enums;
 using ManufacturingOptimization.Engine.Abstractions;
-using ManufacturingOptimization.Engine.Exceptions;
+using ManufacturingOptimization.Common.Models.Exceptions;
 using ManufacturingOptimization.Engine.Models;
 using ManufacturingOptimization.Engine.Models.OptimizationStep;
 
@@ -38,22 +38,31 @@ public class EstimationStep : IWorkflowStep
         
         foreach (var step in context.ProcessSteps)
         {
-            var proposalTasks = step.MatchedProviders.Select(provider => ProposeToProviderAsync(context, step, provider, errors));
+            var proposalTasks = step.MatchedProviders
+                .Select(provider => ProposeToProviderAsync(context, step, provider, errors))
+                .ToArray();
 
-            await Task.WhenAll(proposalTasks);
+            var results = await Task.WhenAll(proposalTasks);
+            
+            // Remove providers that declined or failed
+            for (int i = step.MatchedProviders.Count - 1; i >= 0; i--)
+            {
+                if (!results[i])
+                    step.MatchedProviders.RemoveAt(i);
+            }
         }
         
         if (errors.Any())
             throw new OptimizationException($"Estimation failed: {string.Join("; ", errors)}");
     }
 
-    private async Task ProposeToProviderAsync(WorkflowContext context, WorkflowProcessStep step, MatchedProvider provider, List<string> errors)
+    private async Task<bool> ProposeToProviderAsync(WorkflowContext context, WorkflowProcessStep step, MatchedProvider provider, List<string> errors)
     {
         try
         {
             var proposal = new ProposeProcessToProviderCommand
             {
-                RequestId = context.Request.RequestId,
+                PlanId = context.Plan.Id,
                 ProviderId = provider.ProviderId,
                 Process = step.Process,
                 MotorSpecs = context.Request.MotorSpecs,
@@ -69,26 +78,27 @@ public class EstimationStep : IWorkflowStep
             if (response == null)
                 throw new OptimizationException($"Provider {provider.ProviderName} did not respond to process proposal within timeout");
 
-            switch (response.Proposal.Status)
-            {
-                case ProposalStatus.Accepted:
-                    provider.Estimate = response.Proposal.Estimate
-                        ?? throw new OptimizationException($"Provider {provider.ProviderName} accepted proposal but did not provide an estimate");
-                    break;
-                case ProposalStatus.Declined:
-                    // Nothing to do, move on
-                    break;
-                default:
-                    throw new OptimizationException($"Provider {provider.ProviderName} returned unexpected proposal status: {response.Proposal.Status}");
-            }
+            if (!response.Accepted)
+                return false; // Provider declined
+
+            provider.ProposalId = response.ProposalId
+                ?? throw new OptimizationException($"Provider {provider.ProviderName} accepted proposal but did not provide a proposal id");
+            provider.Estimate = response.Estimate
+                ?? throw new OptimizationException($"Provider {provider.ProviderName} accepted proposal but did not provide an estimate");
+            provider.Schedule = response.Schedule
+                ?? throw new OptimizationException($"Provider {provider.ProviderName} accepted proposal but did not provide a schedule");
+            
+            return true; // Success
         }
         catch (OptimizationException ex)
         {
             errors.Add(ex.Message);
+            return false;
         }
         catch (Exception ex)
         {
             errors.Add($"Provider {provider.ProviderName} estimation failed for {step.Process}: {ex.Message}");
+            return false;
         }
     }
 }

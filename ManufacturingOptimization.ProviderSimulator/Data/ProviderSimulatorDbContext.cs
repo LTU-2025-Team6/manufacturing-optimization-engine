@@ -13,11 +13,11 @@ namespace ManufacturingOptimization.ProviderRegistry.Data;
 /// </summary>
 public class ProviderSimulatorDbContext : DbContext, IProviderSimulatorDbContext
 {
-    public DbSet<PlannedProcessEntity> PlannedProcesses => Set<PlannedProcessEntity>();
-    public DbSet<AllocatedSlotEntity> AllocatedSlots => Set<AllocatedSlotEntity>();
-    public DbSet<TimeSegmentEntity> TimeSegments => Set<TimeSegmentEntity>();
     public DbSet<ProposalEntity> Proposals => Set<ProposalEntity>();
-    public DbSet<ProviderSimulator.Data.Entities.ProcessEstimateEntity> ProcessEstimates => Set<ProviderSimulator.Data.Entities.ProcessEstimateEntity>();
+    public DbSet<EstimateEntity> Estimates => Set<EstimateEntity>();
+    public DbSet<ExecutionEntity> Executions => Set<ExecutionEntity>();
+    public DbSet<ExecutionScheduleSegmentEntity> ExecutionScheduleSegments => Set<ExecutionScheduleSegmentEntity>();
+
 
     public ProviderSimulatorDbContext(DbContextOptions<ProviderSimulatorDbContext> options) : base(options)
     {
@@ -27,11 +27,10 @@ public class ProviderSimulatorDbContext : DbContext, IProviderSimulatorDbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.ApplyConfiguration(new PlannedProcessConfiguration());
-        modelBuilder.ApplyConfiguration(new AllocatedSlotConfiguration());
-        modelBuilder.ApplyConfiguration(new TimeSegmentConfiguration());
         modelBuilder.ApplyConfiguration(new ProposalConfiguration());
-        modelBuilder.ApplyConfiguration(new ProviderSimulator.Data.Configurations.ProcessEstimateConfiguration());
+        modelBuilder.ApplyConfiguration(new EstimateConfiguration());
+        modelBuilder.ApplyConfiguration(new ExecutionConfiguration());
+        modelBuilder.ApplyConfiguration(new ExecutionScheduleSegmentConfiguration());
     }
 }
 

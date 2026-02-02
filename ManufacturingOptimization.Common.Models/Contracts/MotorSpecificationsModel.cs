@@ -4,26 +4,10 @@ namespace ManufacturingOptimization.Common.Models.Contracts
 {
     public class MotorSpecificationsModel
     {
-        /// <summary>
-        /// Power in kW. (Constraint: TP1 handles ~5.5kW)
-        /// </summary>
         public double PowerKW { get; set; }
-
-        /// <summary>
-        /// Axis height in mm. (Constraint: TP1 handles ~75mm)
-        /// </summary>
         public int AxisHeightMM { get; set; }
-
-        /// <summary>
-        /// Current efficiency of the motor (e.g., IE1, IE2).
-        /// </summary>
         public MotorEfficiencyClass CurrentEfficiency { get; set; }
-
-        /// <summary>
-        /// Desired efficiency. IE4 triggers "Upgrade" strategy; IE2 triggers "Refurbish".
-        /// </summary>
         public MotorEfficiencyClass TargetEfficiency { get; set; }
-        
         public string? MalfunctionDescription { get; set; }
     }
 }

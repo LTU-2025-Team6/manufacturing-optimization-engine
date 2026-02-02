@@ -12,6 +12,5 @@ public class ProcessEstimateConfiguration : IEntityTypeConfiguration<ProcessEsti
         entity.Property(e => e.Duration).IsRequired();
         entity.Property(e => e.QualityScore).IsRequired();
         entity.Property(e => e.EmissionsKgCO2).IsRequired();
-        entity.Property(e => e.AvailableTimeSlotsJson).IsRequired(false);
     }
 }

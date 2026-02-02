@@ -12,5 +12,4 @@ public class ProcessProposalReviewedEvent : BaseEvent
     public Guid ProposalId { get; set; }
     public bool IsAccepted { get; set; }
     public string? DeclineReason { get; set; }
-    public AllocatedSlotModel? AllocatedSlot { get; set; }
 }

@@ -1,6 +1,5 @@
 using ManufacturingOptimization.Common.Messaging.Abstractions;
 using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Enums;
 
 namespace ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
 
@@ -9,5 +8,9 @@ namespace ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
 /// </summary>
 public class ProcessProposalEstimatedEvent : BaseEvent
 {
-    public ProposalModel Proposal { get; set; } = null!;
+    public bool Accepted { get; set; }
+    public string? DeclineReason { get; set; }
+    public Guid? ProposalId { get; set; }
+    public ProcessEstimateModel? Estimate { get; set; }
+    public ProviderScheduleModel? Schedule { get; set; }
 }

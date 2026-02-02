@@ -20,7 +20,7 @@ public class OptimizationStrategyRepository : Repository<OptimizationStrategyEnt
             .Include(s => s.Steps)
                 .ThenInclude(st => st.Estimate)
             .Include(s => s.Steps)
-                .ThenInclude(st => st.AllocatedSlot)
+                .ThenInclude(st => st.ProviderSchedule)
                     .ThenInclude(slot => slot!.Segments)
             .Include(s => s.Metrics)
             .Include(s => s.Warranty)

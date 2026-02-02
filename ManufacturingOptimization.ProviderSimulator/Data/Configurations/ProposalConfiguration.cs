@@ -11,7 +11,7 @@ public class ProposalConfiguration : IEntityTypeConfiguration<ProposalEntity>
         builder.ToTable("Proposals");
         
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.RequestId).IsRequired();
+        builder.Property(x => x.PlanId).IsRequired();
         builder.Property(x => x.ProviderId).IsRequired();
         builder.Property(x => x.Process).IsRequired();
         builder.Property(x => x.Status).IsRequired();
@@ -29,12 +29,12 @@ public class ProposalConfiguration : IEntityTypeConfiguration<ProposalEntity>
         
         builder.HasOne(x => x.Estimate)
             .WithOne(x => x.Proposal)
-            .HasForeignKey<ProcessEstimateEntity>(x => x.ProposalId)
+            .HasForeignKey<EstimateEntity>(x => x.ProposalId)
             .OnDelete(DeleteBehavior.Cascade);
         
-        builder.HasOne(x => x.PlannedProcess)
+        builder.HasOne(x => x.Execution)
             .WithOne(x => x.Proposal)
-            .HasForeignKey<PlannedProcessEntity>(x => x.ProposalId)
+            .HasForeignKey<ExecutionEntity>(x => x.ProposalId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

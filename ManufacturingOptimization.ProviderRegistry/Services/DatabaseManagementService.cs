@@ -89,7 +89,19 @@ public class DatabaseManagementService : IHostedService
                     new ProcessCapabilityModel { Process = ProcessType.Reassembly, CostPerHour = 80.0m, SpeedMultiplier = 0.90, QualityScore = 0.92, EnergyConsumptionKwhPerHour = 2.0, CarbonIntensityKgCO2PerKwh = 0.35, UsesRenewableEnergy = false },
                     new ProcessCapabilityModel { Process = ProcessType.Certification, CostPerHour = 100.0m, SpeedMultiplier = 1.0, QualityScore = 0.98, EnergyConsumptionKwhPerHour = 1.0, CarbonIntensityKgCO2PerKwh = 0.35, UsesRenewableEnergy = false }
                 },
-                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 500.0, Power = 1500.0, Tolerance = 0.01 }
+                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 500.0, Power = 1500.0, Tolerance = 0.01 },
+                WorkingHours = new ProviderWorkingHoursModel
+                {
+                    WorkDayStartHour = 7,
+                    WorkDayEndHour = 18,
+                    Is24x7 = false,
+                    WorkingDays = new HashSet<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday },
+                    Breaks = new List<ProviderBreakPeriodModel>
+                    {
+                        new ProviderBreakPeriodModel { StartHour = 9, StartMinute = 51, DurationMinutes = 17, Name = "Lunch Break" },
+                        new ProviderBreakPeriodModel { StartHour = 13, StartMinute = 15, DurationMinutes = 43, Name = "Break 2" }
+                    }
+                }
             },
             new ProviderModel
             {
@@ -105,7 +117,18 @@ public class DatabaseManagementService : IHostedService
                     new ProcessCapabilityModel { Process = ProcessType.Reassembly, CostPerHour = 75.0m, SpeedMultiplier = 0.92, QualityScore = 0.89, EnergyConsumptionKwhPerHour = 2.0, CarbonIntensityKgCO2PerKwh = 0.32, UsesRenewableEnergy = false },
                     new ProcessCapabilityModel { Process = ProcessType.Certification, CostPerHour = 95.0m, SpeedMultiplier = 1.05, QualityScore = 0.95, EnergyConsumptionKwhPerHour = 1.0, CarbonIntensityKgCO2PerKwh = 0.32, UsesRenewableEnergy = false }
                 },
-                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 400.0, Power = 1200.0, Tolerance = 0.015 }
+                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 400.0, Power = 1200.0, Tolerance = 0.015 },
+                WorkingHours = new ProviderWorkingHoursModel
+                {
+                    WorkDayStartHour = 6,
+                    WorkDayEndHour = 16,
+                    Is24x7 = false,
+                    WorkingDays = new HashSet<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday },
+                    Breaks = new List<ProviderBreakPeriodModel>
+                    {
+                        new ProviderBreakPeriodModel { StartHour = 12, StartMinute = 0, DurationMinutes = 45, Name = "Lunch Break" }
+                    }
+                }
             },
             new ProviderModel
             {
@@ -121,7 +144,19 @@ public class DatabaseManagementService : IHostedService
                     new ProcessCapabilityModel { Process = ProcessType.Reassembly, CostPerHour = 65.0m, SpeedMultiplier = 0.85, QualityScore = 0.83, EnergyConsumptionKwhPerHour = 2.0, CarbonIntensityKgCO2PerKwh = 0.40, UsesRenewableEnergy = false },
                     new ProcessCapabilityModel { Process = ProcessType.Certification, CostPerHour = 85.0m, SpeedMultiplier = 0.90, QualityScore = 0.88, EnergyConsumptionKwhPerHour = 1.0, CarbonIntensityKgCO2PerKwh = 0.40, UsesRenewableEnergy = false }
                 },
-                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 350.0, Power = 1000.0, Tolerance = 0.02 }
+                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 350.0, Power = 1000.0, Tolerance = 0.02 },
+                WorkingHours = new ProviderWorkingHoursModel
+                {
+                    WorkDayStartHour = 8,
+                    WorkDayEndHour = 17,
+                    Is24x7 = false,
+                    WorkingDays = new HashSet<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday },
+                    Breaks = new List<ProviderBreakPeriodModel>
+                    {
+                        new ProviderBreakPeriodModel { StartHour = 10, StartMinute = 30, DurationMinutes = 15, Name = "Coffee Break" },
+                        new ProviderBreakPeriodModel { StartHour = 12, StartMinute = 30, DurationMinutes = 30, Name = "Lunch Break" }
+                    }
+                }
             },
             new ProviderModel
             {
@@ -137,7 +172,15 @@ public class DatabaseManagementService : IHostedService
                     new ProcessCapabilityModel { Process = ProcessType.Reassembly, CostPerHour = 95.0m, SpeedMultiplier = 1.0, QualityScore = 0.96, EnergyConsumptionKwhPerHour = 2.0, CarbonIntensityKgCO2PerKwh = 0.30, UsesRenewableEnergy = true },
                     new ProcessCapabilityModel { Process = ProcessType.Certification, CostPerHour = 120.0m, SpeedMultiplier = 1.15, QualityScore = 0.99, EnergyConsumptionKwhPerHour = 1.0, CarbonIntensityKgCO2PerKwh = 0.30, UsesRenewableEnergy = true }
                 },
-                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 600.0, Power = 2000.0, Tolerance = 0.005 }
+                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 600.0, Power = 2000.0, Tolerance = 0.005 },
+                WorkingHours = new ProviderWorkingHoursModel
+                {
+                    WorkDayStartHour = 0,
+                    WorkDayEndHour = 24,
+                    Is24x7 = true,
+                    WorkingDays = new HashSet<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday },
+                    Breaks = new List<ProviderBreakPeriodModel>()
+                }
             },
             new ProviderModel
             {
@@ -149,7 +192,19 @@ public class DatabaseManagementService : IHostedService
                 {
                     new ProcessCapabilityModel { Process = ProcessType.Redesign, CostPerHour = 150.0m, SpeedMultiplier = 1.0, QualityScore = 0.95, EnergyConsumptionKwhPerHour = 0.5, CarbonIntensityKgCO2PerKwh = 0.25, UsesRenewableEnergy = true }
                 },
-                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 0.0, Power = 0.0, Tolerance = 0.001 }
+                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 0.0, Power = 0.0, Tolerance = 0.001 },
+                WorkingHours = new ProviderWorkingHoursModel
+                {
+                    WorkDayStartHour = 8,
+                    WorkDayEndHour = 17,
+                    Is24x7 = false,
+                    WorkingDays = new HashSet<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday },
+                    Breaks = new List<ProviderBreakPeriodModel>
+                    {
+                        new ProviderBreakPeriodModel { StartHour = 11, StartMinute = 42, DurationMinutes = 28, Name = "Lunch Break" },
+                        new ProviderBreakPeriodModel { StartHour = 14, StartMinute = 2, DurationMinutes = 31, Name = "Break 2" }
+                    }
+                }
             },
             new ProviderModel
             {
@@ -161,7 +216,18 @@ public class DatabaseManagementService : IHostedService
                 {
                     new ProcessCapabilityModel { Process = ProcessType.Redesign, CostPerHour = 130.0m, SpeedMultiplier = 0.95, QualityScore = 0.92, EnergyConsumptionKwhPerHour = 0.5, CarbonIntensityKgCO2PerKwh = 0.28, UsesRenewableEnergy = true }
                 },
-                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 0.0, Power = 0.0, Tolerance = 0.0015 }
+                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 0.0, Power = 0.0, Tolerance = 0.0015 },
+                WorkingHours = new ProviderWorkingHoursModel
+                {
+                    WorkDayStartHour = 9,
+                    WorkDayEndHour = 18,
+                    Is24x7 = false,
+                    WorkingDays = new HashSet<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday },
+                    Breaks = new List<ProviderBreakPeriodModel>
+                    {
+                        new ProviderBreakPeriodModel { StartHour = 12, StartMinute = 15, DurationMinutes = 60, Name = "Lunch Break" }
+                    }
+                }
             },
             new ProviderModel
             {
@@ -174,7 +240,19 @@ public class DatabaseManagementService : IHostedService
                     new ProcessCapabilityModel { Process = ProcessType.Turning, CostPerHour = 120.0m, SpeedMultiplier = 1.05, QualityScore = 0.92, EnergyConsumptionKwhPerHour = 15.0, CarbonIntensityKgCO2PerKwh = 0.55, UsesRenewableEnergy = false },
                     new ProcessCapabilityModel { Process = ProcessType.Grinding, CostPerHour = 130.0m, SpeedMultiplier = 1.0, QualityScore = 0.93, EnergyConsumptionKwhPerHour = 20.0, CarbonIntensityKgCO2PerKwh = 0.55, UsesRenewableEnergy = false }
                 },
-                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 300.0, Power = 2000.0, Tolerance = 0.001 }
+                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 300.0, Power = 2000.0, Tolerance = 0.001 },
+                WorkingHours = new ProviderWorkingHoursModel
+                {
+                    WorkDayStartHour = 6,
+                    WorkDayEndHour = 17,
+                    Is24x7 = false,
+                    WorkingDays = new HashSet<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday },
+                    Breaks = new List<ProviderBreakPeriodModel>
+                    {
+                        new ProviderBreakPeriodModel { StartHour = 8, StartMinute = 23, DurationMinutes = 43, Name = "Lunch Break" },
+                        new ProviderBreakPeriodModel { StartHour = 13, StartMinute = 26, DurationMinutes = 56, Name = "Break 2" }
+                    }
+                }
             },
             new ProviderModel
             {
@@ -187,7 +265,18 @@ public class DatabaseManagementService : IHostedService
                     new ProcessCapabilityModel { Process = ProcessType.Turning, CostPerHour = 110.0m, SpeedMultiplier = 1.0, QualityScore = 0.88, EnergyConsumptionKwhPerHour = 15.0, CarbonIntensityKgCO2PerKwh = 0.60, UsesRenewableEnergy = false },
                     new ProcessCapabilityModel { Process = ProcessType.Grinding, CostPerHour = 115.0m, SpeedMultiplier = 0.95, QualityScore = 0.89, EnergyConsumptionKwhPerHour = 20.0, CarbonIntensityKgCO2PerKwh = 0.60, UsesRenewableEnergy = false }
                 },
-                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 280.0, Power = 1800.0, Tolerance = 0.0015 }
+                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 280.0, Power = 1800.0, Tolerance = 0.0015 },
+                WorkingHours = new ProviderWorkingHoursModel
+                {
+                    WorkDayStartHour = 7,
+                    WorkDayEndHour = 16,
+                    Is24x7 = false,
+                    WorkingDays = new HashSet<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday },
+                    Breaks = new List<ProviderBreakPeriodModel>
+                    {
+                        new ProviderBreakPeriodModel { StartHour = 12, StartMinute = 0, DurationMinutes = 30, Name = "Lunch Break" }
+                    }
+                }
             },
             new ProviderModel
             {
@@ -200,7 +289,20 @@ public class DatabaseManagementService : IHostedService
                     new ProcessCapabilityModel { Process = ProcessType.Turning, CostPerHour = 145.0m, SpeedMultiplier = 1.15, QualityScore = 0.96, EnergyConsumptionKwhPerHour = 15.0, CarbonIntensityKgCO2PerKwh = 0.50, UsesRenewableEnergy = false },
                     new ProcessCapabilityModel { Process = ProcessType.Grinding, CostPerHour = 150.0m, SpeedMultiplier = 1.2, QualityScore = 0.97, EnergyConsumptionKwhPerHour = 20.0, CarbonIntensityKgCO2PerKwh = 0.50, UsesRenewableEnergy = false }
                 },
-                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 400.0, Power = 2500.0, Tolerance = 0.0005 }
+                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 400.0, Power = 2500.0, Tolerance = 0.0005 },
+                WorkingHours = new ProviderWorkingHoursModel
+                {
+                    WorkDayStartHour = 6,
+                    WorkDayEndHour = 18,
+                    Is24x7 = false,
+                    WorkingDays = new HashSet<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday },
+                    Breaks = new List<ProviderBreakPeriodModel>
+                    {
+                        new ProviderBreakPeriodModel { StartHour = 10, StartMinute = 0, DurationMinutes = 15, Name = "Morning Break" },
+                        new ProviderBreakPeriodModel { StartHour = 12, StartMinute = 30, DurationMinutes = 45, Name = "Lunch Break" },
+                        new ProviderBreakPeriodModel { StartHour = 15, StartMinute = 0, DurationMinutes = 15, Name = "Afternoon Break" }
+                    }
+                }
             },
             new ProviderModel
             {
@@ -213,7 +315,19 @@ public class DatabaseManagementService : IHostedService
                     new ProcessCapabilityModel { Process = ProcessType.Turning, CostPerHour = 85.0m, SpeedMultiplier = 0.85, QualityScore = 0.80, EnergyConsumptionKwhPerHour = 15.0, CarbonIntensityKgCO2PerKwh = 0.70, UsesRenewableEnergy = false },
                     new ProcessCapabilityModel { Process = ProcessType.Grinding, CostPerHour = 90.0m, SpeedMultiplier = 0.80, QualityScore = 0.78, EnergyConsumptionKwhPerHour = 20.0, CarbonIntensityKgCO2PerKwh = 0.70, UsesRenewableEnergy = false }
                 },
-                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 250.0, Power = 1500.0, Tolerance = 0.003 }
+                TechnicalCapabilities = new TechnicalCapabilitiesModel { AxisHeight = 250.0, Power = 1500.0, Tolerance = 0.003 },
+                WorkingHours = new ProviderWorkingHoursModel
+                {
+                    WorkDayStartHour = 8,
+                    WorkDayEndHour = 17,
+                    Is24x7 = false,
+                    WorkingDays = new HashSet<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday },
+                    Breaks = new List<ProviderBreakPeriodModel>
+                    {
+                        new ProviderBreakPeriodModel { StartHour = 12, StartMinute = 0, DurationMinutes = 30, Name = "Lunch Break" },
+                        new ProviderBreakPeriodModel { StartHour = 15, StartMinute = 30, DurationMinutes = 15, Name = "Coffee Break" }
+                    }
+                }
             },
         };
     }

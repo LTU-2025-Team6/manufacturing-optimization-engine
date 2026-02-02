@@ -5,7 +5,7 @@ using ManufacturingOptimization.Common.Messaging.Messages.OptimizationManagement
 using ManufacturingOptimization.Common.Messaging.Messages.PlanManagement;
 using ManufacturingOptimization.Common.Models.Enums;
 using ManufacturingOptimization.Engine.Abstractions;
-using ManufacturingOptimization.Engine.Exceptions;
+using ManufacturingOptimization.Common.Models.Exceptions;
 using ManufacturingOptimization.Engine.Models;
 
 namespace ManufacturingOptimization.Engine.Services.Pipeline;

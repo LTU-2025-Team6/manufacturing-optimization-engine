@@ -10,12 +10,12 @@ namespace ManufacturingOptimization.ProviderSimulator.Handlers;
 /// </summary>
 public class ProviderRegistrationRequestHandler : IMessageHandler<RequestProvidersRegistrationCommand>
 {
-    private readonly IProviderSimulator _providerLogic;
+    private readonly IProviderSimulationContext _providerLogic;
     private readonly IMessagePublisher _messagePublisher;
     private readonly ILogger<ProviderRegistrationRequestHandler> _logger;
 
     public ProviderRegistrationRequestHandler(
-        IProviderSimulator providerLogic,
+        IProviderSimulationContext providerLogic,
         IMessagePublisher messagePublisher,
         ILogger<ProviderRegistrationRequestHandler> logger)
     {

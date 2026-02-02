@@ -1,6 +1,6 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Models.Contracts;
 using ManufacturingOptimization.ProviderSimulator.Data.Entities;
+using ManufacturingOptimization.ProviderSimulator.Models;
 
 namespace ManufacturingOptimization.ProviderSimulator.Data.Mappings;
 
@@ -8,10 +8,7 @@ public class ProposalMappingProfile : Profile
 {
     public ProposalMappingProfile()
     {
-        CreateMap<ProposalModel, ProposalEntity>()
-            .ForMember(dest => dest.EstimateId, opt => opt.Ignore())
-            .ForMember(dest => dest.PlannedProcessId, opt => opt.Ignore());
-
-        CreateMap<ProposalEntity, ProposalModel>();
+        CreateMap<ProposalEntity, ProposalModel>().ReverseMap();
+        CreateMap<ExecutionEntity, ExecutionModel>().ReverseMap();
     }
 }

@@ -8,17 +8,17 @@ using ManufacturingOptimization.ProviderSimulator.Abstractions;
 using ManufacturingOptimization.ProviderSimulator.Data.Mappings;
 using ManufacturingOptimization.ProviderSimulator.Data.Repositories;
 using ManufacturingOptimization.ProviderSimulator.Handlers;
+using ManufacturingOptimization.ProviderSimulator.Models;
 using ManufacturingOptimization.ProviderSimulator.Services;
 using ManufacturingOptimization.ProviderSimulator.Settings;
-using TechnologyProvider.Simulator.TechnologyProviders;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 // Configure SQLite database
 builder.Services.AddDatabase();
 
-// Register repositories
-builder.Services.AddScoped<IPlannedProcessRepository, PlanedProcessRepository>();
+// Register repositories (Singleton to support Singleton IProviderSimulator)
+builder.Services.AddScoped<IExecutionRepository, ExecutionRepository>();
 builder.Services.AddScoped<IProposalRepository, ProposalRepository>();
 
 // Database lifecycle management
@@ -29,7 +29,8 @@ builder.Services.AddAutoMapper(c =>
 {
     c.AddProfile<MotorSpecificationsMappingProfile>();
     c.AddProfile<ProposalMappingProfile>();
-    c.AddProfile<ProcessEstimateMappingProfile>();
+    c.AddProfile<EstimateMappingProfile>();
+    c.AddProfile<ExecutionScheduleSegmentMappingProfile>();
 });
 
 // Configure RabbitMQ
@@ -37,6 +38,24 @@ builder.Services.Configure<RabbitMqSettings>(builder.Configuration.GetSection(Ra
 
 builder.Services.Configure<ProcessStandardsSettings>(builder.Configuration.GetSection(ProcessStandardsSettings.SectionName));
 builder.Services.Configure<ProviderSettings>(builder.Configuration.GetSection(ProviderSettings.SectionName));
+
+// Post-configure ProviderSettings to parse WorkingDays from comma-separated environment variable
+builder.Services.PostConfigure<ProviderSettings>(options =>
+{
+    var workingDaysEnv = Environment.GetEnvironmentVariable("Provider__WorkingHours__WorkingDays");
+    if (!string.IsNullOrWhiteSpace(workingDaysEnv))
+    {
+        var days = workingDaysEnv.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(d => (DayOfWeek)int.Parse(d.Trim()))
+            .ToHashSet();
+        options.WorkingHours.WorkingDays = days;
+    }
+});
+
+builder.Services.Configure<ProviderTypeSettings>(options =>
+{
+    options.Type = Environment.GetEnvironmentVariable("PROVIDER_TYPE") ?? string.Empty;
+});
 
 builder.Services.AddSingleton<RabbitMqService>();
 builder.Services.AddSingleton<IMessagePublisher>(sp => sp.GetRequiredService<RabbitMqService>());
@@ -49,28 +68,8 @@ builder.Services.AddScoped<IMessageHandler<ProposeProcessToProviderCommand>, Pro
 builder.Services.AddScoped<IMessageHandler<ConfirmProcessProposalCommand>, ProcessConfirmationHandler>();
 builder.Services.AddScoped<IMessageHandler<RequestProvidersRegistrationCommand>, ProviderRegistrationRequestHandler>();
 
-// Determine which technology provider to use based on environment variable
-var providerType = Environment.GetEnvironmentVariable("PROVIDER_TYPE");
-
-// All providers use the same "Provider" configuration section
-switch (providerType)
-{
-    case "MainRemanufacturingCenter":
-        
-        builder.Services.AddSingleton<IProviderSimulator, RemanufacturingCenter>();
-        break;
-    
-    case "EngineeringDesignFirm":
-        builder.Services.AddSingleton<IProviderSimulator, DesignFirm>();
-        break;
-    
-    case "PrecisionMachineShop":
-        builder.Services.AddSingleton<IProviderSimulator, MachineShop>();
-        break;
-    
-    default:
-        throw new InvalidOperationException($"Unknown provider type: {providerType}");
-}
+// Register provider simulator
+builder.Services.AddSingleton<IProviderSimulationContext, ProviderSimulationContext>();
 
 builder.Services.AddHostedService<ProviderSimulatorWorker>();
 

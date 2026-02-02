@@ -2,57 +2,16 @@ using ManufacturingOptimization.Common.Models.Enums;
 
 namespace ManufacturingOptimization.Common.Models.Contracts;
 
-/// <summary>
-/// Manufacturing plan created after customer selects their preferred strategy.
-/// Contains the selected strategy and execution status information.
-/// </summary>
 public class OptimizationPlanModel
 {
-    /// <summary>
-    /// Unique identifier for this plan.
-    /// </summary>
     public Guid Id { get; set; }
-    
-    /// <summary>
-    /// Original customer request ID.
-    /// </summary>
     public Guid RequestId { get; set; }
-    
-    /// <summary>
-    /// Available optimization strategies generated for this plan.
-    /// Multiple strategies with different optimization priorities.
-    /// </summary>
     public List<OptimizationStrategyModel> Strategies { get; set; } = [];
-    
-    /// <summary>
-    /// The strategy selected by the customer.
-    /// Contains all workflow details (steps, costs, warranty, etc.).
-    /// </summary>
     public OptimizationStrategyModel? SelectedStrategy { get; set; }
-    
-    /// <summary>
-    /// Current status of the plan execution.
-    /// </summary>
     public OptimizationPlanStatus Status { get; set; } = OptimizationPlanStatus.Draft;
-    
-    /// <summary>
-    /// Timestamp when the plan was created (strategies generated).
-    /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
-    /// <summary>
-    /// Timestamp when the customer selected a strategy.
-    /// </summary>
     public DateTime? SelectedAt { get; set; }
-    
-    /// <summary>
-    /// Timestamp when the plan was confirmed and sent to providers.
-    /// </summary>
     public DateTime? ConfirmedAt { get; set; }
-    
-    /// <summary>
-    /// Error message if optimization failed.
-    /// </summary>
     public string? ErrorMessage { get; set; }
 }
 

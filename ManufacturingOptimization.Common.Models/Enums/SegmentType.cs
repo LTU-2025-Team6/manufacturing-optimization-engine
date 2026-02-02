@@ -5,6 +5,8 @@ namespace ManufacturingOptimization.Common.Models.Enums;
 /// </summary>
 public enum SegmentType
 {
-    WorkingTime = 0,
-    Break = 1
+    WorkingTime,
+    Break,
+    Occupied,
+    FreeSpace
 }

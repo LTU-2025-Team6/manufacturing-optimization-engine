@@ -22,5 +22,10 @@ public class ProviderConfiguration : IEntityTypeConfiguration<ProviderEntity>
             .WithOne(tc => tc.Provider)
             .HasForeignKey<TechnicalCapabilitiesEntity>(tc => tc.ProviderId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasOne(e => e.WorkingHours)
+            .WithOne(wh => wh.Provider)
+            .HasForeignKey<ProviderWorkingHoursEntity>(wh => wh.ProviderId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -8,7 +8,7 @@ using ManufacturingOptimization.Common.Models.Data.Abstractions;
 using ManufacturingOptimization.Common.Models.Data.Entities;
 using ManufacturingOptimization.Common.Models.Enums;
 using ManufacturingOptimization.Engine.Abstractions;
-using ManufacturingOptimization.Engine.Exceptions;
+using ManufacturingOptimization.Common.Models.Exceptions;
 using ManufacturingOptimization.Engine.Models;
 
 namespace ManufacturingOptimization.Engine.Handlers;

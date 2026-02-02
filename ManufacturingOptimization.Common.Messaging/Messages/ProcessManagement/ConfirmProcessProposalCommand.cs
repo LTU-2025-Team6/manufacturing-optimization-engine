@@ -10,9 +10,5 @@ namespace ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
 public class ConfirmProcessProposalCommand : BaseRequestReplyCommand
 {
     public Guid ProposalId { get; set; }
-    
-    /// <summary>
-    /// The selected time slot for this process.
-    /// </summary>
-    public TimeWindowModel? AllocatedSlot { get; set; }
+    public ProviderScheduleModel SelectedSchedule { get; set; } = null!;
 }

@@ -12,14 +12,14 @@ public class ProviderSimulatorWorker : BackgroundService
     private readonly IMessagingInfrastructure _messagingInfrastructure;
     private readonly IMessageSubscriber _messageSubscriber;
     private readonly IMessageDispatcher _dispatcher;
-    private readonly IProviderSimulator _providerLogic;
+    private readonly IProviderSimulationContext _providerLogic;
 
     public ProviderSimulatorWorker(
         ILogger<ProviderSimulatorWorker> logger,
         IMessagingInfrastructure messagingInfrastructure,
         IMessageSubscriber messageSubscriber,
         IMessageDispatcher dispatcher,
-        IProviderSimulator providerLogic)
+        IProviderSimulationContext providerLogic)
     {
         _logger = logger;
         _messagingInfrastructure = messagingInfrastructure;
@@ -37,9 +37,6 @@ public class ProviderSimulatorWorker : BackgroundService
 
     private void SetupRabbitMq()
     {
-        // Listen to proposals from Engine
-        //_messagingInfrastructure.DeclareExchange(Exchanges.Process);
-        
         // Listen to process proposals for this specific provider
         var proposalQueueName = $"process.proposal.{_providerLogic.Provider.Id}";
         _messagingInfrastructure.DeclareQueue(proposalQueueName);
@@ -60,8 +57,5 @@ public class ProviderSimulatorWorker : BackgroundService
         _messagingInfrastructure.BindQueue(providerCoordinationQueue, Exchanges.Provider, ProviderRoutingKeys.RequestRegistrationAll);
         _messagingInfrastructure.PurgeQueue(providerCoordinationQueue);
         _messageSubscriber.Subscribe<RequestProvidersRegistrationCommand>(providerCoordinationQueue, e => _dispatcher.DispatchAsync(e));
-
-        // Setup for provider registration
-        //_messagingInfrastructure.DeclareExchange(Exchanges.Provider);
     }
 }

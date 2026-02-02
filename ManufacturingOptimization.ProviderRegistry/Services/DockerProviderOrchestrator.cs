@@ -8,6 +8,7 @@ using ManufacturingOptimization.Common.Models.Contracts;
 using ManufacturingOptimization.Common.Models.Data.Abstractions;
 using ManufacturingOptimization.Common.Models.Data.Entities;
 using ManufacturingOptimization.ProviderRegistry.Abstractions;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 
 namespace ManufacturingOptimization.ProviderRegistry.Services;
@@ -165,6 +166,35 @@ public class DockerProviderOrchestrator : ProviderOrchestratorBase, IProviderOrc
         envVars.Add($"Provider__TechnicalCapabilities__AxisHeight={provider.TechnicalCapabilities.AxisHeight}");
         envVars.Add($"Provider__TechnicalCapabilities__Power={provider.TechnicalCapabilities.Power}");
         envVars.Add($"Provider__TechnicalCapabilities__Tolerance={provider.TechnicalCapabilities.Tolerance}");
+
+        // Add working hours
+        if (provider.WorkingHours != null)
+        {
+            envVars.Add($"Provider__WorkingHours__Is24x7={provider.WorkingHours.Is24x7}");
+            envVars.Add($"Provider__WorkingHours__WorkDayStartHour={provider.WorkingHours.WorkDayStartHour}");
+            envVars.Add($"Provider__WorkingHours__WorkDayEndHour={provider.WorkingHours.WorkDayEndHour}");
+            
+            // Deserialize working days from JSON and serialize as comma-separated list
+            if (!string.IsNullOrWhiteSpace(provider.WorkingHours.WorkingDaysJson))
+            {
+                var workingDays = JsonSerializer.Deserialize<HashSet<DayOfWeek>>(provider.WorkingHours.WorkingDaysJson);
+                if (workingDays != null)
+                {
+                    var workingDaysStr = string.Join(",", workingDays.Select(d => (int)d));
+                    envVars.Add($"Provider__WorkingHours__WorkingDays={workingDaysStr}");
+                }
+            }
+            
+            // Add breaks
+            for (int i = 0; i < provider.WorkingHours.Breaks.Count; i++)
+            {
+                var breakPeriod = provider.WorkingHours.Breaks.ElementAt(i);
+                envVars.Add($"Provider__WorkingHours__Breaks__{i}__StartHour={breakPeriod.StartHour}");
+                envVars.Add($"Provider__WorkingHours__Breaks__{i}__StartMinute={breakPeriod.StartMinute}");
+                envVars.Add($"Provider__WorkingHours__Breaks__{i}__DurationMinutes={breakPeriod.DurationMinutes}");
+                envVars.Add($"Provider__WorkingHours__Breaks__{i}__Name={breakPeriod.Name}");
+            }
+        }
 
         var createParams = new CreateContainerParameters
         {

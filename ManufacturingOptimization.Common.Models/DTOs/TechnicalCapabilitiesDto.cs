@@ -1,5 +1,3 @@
-using System;
-
 namespace ManufacturingOptimization.Common.Models.DTOs;
 
 public class TechnicalCapabilitiesDto

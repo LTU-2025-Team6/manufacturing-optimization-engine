@@ -1,6 +1,3 @@
-using ManufacturingOptimization.Common.Models.Enums;
-using System.Text.Json.Serialization;
-
 namespace ManufacturingOptimization.Common.Models.DTOs
 {
     public class MotorSpecificationsDto

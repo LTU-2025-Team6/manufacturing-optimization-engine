@@ -5,7 +5,7 @@ using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
 using ManufacturingOptimization.Common.Models.Contracts;
 using ManufacturingOptimization.Common.Models.Enums;
 using ManufacturingOptimization.Engine.Abstractions;
-using ManufacturingOptimization.Engine.Exceptions;
+using ManufacturingOptimization.Common.Models.Exceptions;
 using ManufacturingOptimization.Engine.Models;
 
 namespace ManufacturingOptimization.Engine.Services.Pipeline;
@@ -51,16 +51,13 @@ public class ConfirmationStep : IWorkflowStep
     {
         try
         {
+            if (step.AllocatedSchedule == null)
+                throw new OptimizationException($"No allocated slot found for step {step.Process} with provider {step.SelectedProviderName}.");
+
             var confirmation = new ConfirmProcessProposalCommand
             {
-                ProposalId = step.Estimate.ProposalId,
-                AllocatedSlot = step.AllocatedSlot != null
-                    ? new TimeWindowModel
-                    {
-                        StartTime = step.AllocatedSlot.StartTime,
-                        EndTime = step.AllocatedSlot.EndTime
-                    }
-                    : null
+                ProposalId = step.ProposalId,
+                SelectedSchedule = step.AllocatedSchedule
             };
 
             var response = await _messagePublisher.RequestReplyAsync<ProcessProposalReviewedEvent>(
@@ -74,10 +71,6 @@ public class ConfirmationStep : IWorkflowStep
 
             if (!response.IsAccepted)
                 throw new OptimizationException($"Provider {step.SelectedProviderName} declined confirmation for {step.Process}. Reason: {response.DeclineReason}");
-
-            // Update step with allocated slot including segments from provider
-            if (response.AllocatedSlot != null)
-                step.AllocatedSlot = response.AllocatedSlot;
         }
         catch (OptimizationException ex)
         {

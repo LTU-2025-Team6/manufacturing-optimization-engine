@@ -13,4 +13,5 @@ public class ProviderEntity
     // Navigation properties
     public ICollection<ProcessCapabilityEntity> ProcessCapabilities { get; set; } = new List<ProcessCapabilityEntity>();
     public TechnicalCapabilitiesEntity? TechnicalCapabilities { get; set; }
+    public ProviderWorkingHoursEntity? WorkingHours { get; set; }
 }

@@ -13,6 +13,8 @@ public class EngineDbContext : DbContext, IProviderDbContext
     public DbSet<ProviderEntity> Providers => Set<ProviderEntity>();
     public DbSet<ProcessCapabilityEntity> ProcessCapabilities => Set<ProcessCapabilityEntity>();
     public DbSet<TechnicalCapabilitiesEntity> TechnicalCapabilities => Set<TechnicalCapabilitiesEntity>();
+    public DbSet<ProviderWorkingHoursEntity> WorkingHours => Set<ProviderWorkingHoursEntity>();
+    public DbSet<ProviderBreakPeriodEntity> BreakPeriods => Set<ProviderBreakPeriodEntity>();
 
     public EngineDbContext(DbContextOptions<EngineDbContext> options) : base(options)
     {
@@ -25,5 +27,6 @@ public class EngineDbContext : DbContext, IProviderDbContext
         modelBuilder.ApplyConfiguration(new ProviderConfiguration());
         modelBuilder.ApplyConfiguration(new ProcessCapabilityConfiguration());
         modelBuilder.ApplyConfiguration(new TechnicalCapabilitiesConfiguration());
+        modelBuilder.ApplyConfiguration(new ProviderWorkingHoursConfiguration());
     }
 }

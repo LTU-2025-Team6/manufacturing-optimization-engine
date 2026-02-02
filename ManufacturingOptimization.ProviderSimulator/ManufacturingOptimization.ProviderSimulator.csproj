@@ -19,8 +19,4 @@
     <ProjectReference Include="..\ManufacturingOptimization.Common.Models\ManufacturingOptimization.Common.Models.csproj" />
     <ProjectReference Include="..\ManufacturingOptimization.Common.Messaging\ManufacturingOptimization.Common.Messaging.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Models\" />
-  </ItemGroup>
 </Project>

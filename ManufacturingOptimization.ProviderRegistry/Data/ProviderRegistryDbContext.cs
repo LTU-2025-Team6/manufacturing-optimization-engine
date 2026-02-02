@@ -14,6 +14,8 @@ public class ProviderRegistryDbContext : DbContext, IProviderDbContext
     public DbSet<ProviderEntity> Providers => Set<ProviderEntity>();
     public DbSet<ProcessCapabilityEntity> ProcessCapabilities => Set<ProcessCapabilityEntity>();
     public DbSet<TechnicalCapabilitiesEntity> TechnicalCapabilities => Set<TechnicalCapabilitiesEntity>();
+    public DbSet<ProviderWorkingHoursEntity> WorkingHours => Set<ProviderWorkingHoursEntity>();
+    public DbSet<ProviderBreakPeriodEntity> BreakPeriods => Set<ProviderBreakPeriodEntity>();
     
     public ProviderRegistryDbContext(DbContextOptions<ProviderRegistryDbContext> options) : base(options)
     {
@@ -26,5 +28,6 @@ public class ProviderRegistryDbContext : DbContext, IProviderDbContext
         modelBuilder.ApplyConfiguration(new ProviderConfiguration());
         modelBuilder.ApplyConfiguration(new ProcessCapabilityConfiguration());
         modelBuilder.ApplyConfiguration(new TechnicalCapabilitiesConfiguration());
+        modelBuilder.ApplyConfiguration(new ProviderWorkingHoursConfiguration());
     }
 }

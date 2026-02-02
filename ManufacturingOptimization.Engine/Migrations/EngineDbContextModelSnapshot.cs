@@ -57,6 +57,35 @@ namespace ManufacturingOptimization.Engine.Migrations
                     b.ToTable("ProcessCapabilities");
                 });
 
+            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderBreakPeriodEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProviderId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("StartHour")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("StartMinute")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderId");
+
+                    b.ToTable("BreakPeriods");
+                });
+
             modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -79,6 +108,30 @@ namespace ManufacturingOptimization.Engine.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Providers");
+                });
+
+            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderWorkingHoursEntity", b =>
+                {
+                    b.Property<Guid>("ProviderId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Is24x7")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WorkDayEndHour")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WorkDayStartHour")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("WorkingDaysJson")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ProviderId");
+
+                    b.ToTable("WorkingHours");
                 });
 
             modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.TechnicalCapabilitiesEntity", b =>
@@ -118,6 +171,28 @@ namespace ManufacturingOptimization.Engine.Migrations
                     b.Navigation("Provider");
                 });
 
+            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderBreakPeriodEntity", b =>
+                {
+                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.ProviderWorkingHoursEntity", "WorkingHours")
+                        .WithMany("Breaks")
+                        .HasForeignKey("ProviderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("WorkingHours");
+                });
+
+            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderWorkingHoursEntity", b =>
+                {
+                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.ProviderEntity", "Provider")
+                        .WithOne("WorkingHours")
+                        .HasForeignKey("ManufacturingOptimization.Common.Models.Data.Entities.ProviderWorkingHoursEntity", "ProviderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Provider");
+                });
+
             modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.TechnicalCapabilitiesEntity", b =>
                 {
                     b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.ProviderEntity", "Provider")
@@ -134,6 +209,13 @@ namespace ManufacturingOptimization.Engine.Migrations
                     b.Navigation("ProcessCapabilities");
 
                     b.Navigation("TechnicalCapabilities");
+
+                    b.Navigation("WorkingHours");
+                });
+
+            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderWorkingHoursEntity", b =>
+                {
+                    b.Navigation("Breaks");
                 });
 #pragma warning restore 612, 618
         }

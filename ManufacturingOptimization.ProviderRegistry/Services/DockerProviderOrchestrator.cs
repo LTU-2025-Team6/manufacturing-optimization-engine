@@ -143,6 +143,8 @@ public class DockerProviderOrchestrator : ProviderOrchestratorBase, IProviderOrc
             $"PROVIDER_TYPE={provider.Type}",
             $"Provider__ProviderId={provider.Id}",
             $"Provider__ProviderName={provider.Name}",
+            $"Provider__AutoStart={provider.AutoStart}",
+            $"Provider__IsRunning={provider.IsRunning}",
             $"RabbitMQ__Host={_rabbitMqSettings.Host}",
             $"RabbitMQ__Port={_rabbitMqSettings.Port}",
             $"RabbitMQ__Username={_rabbitMqSettings.Username}",

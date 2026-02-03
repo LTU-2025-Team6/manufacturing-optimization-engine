@@ -15,7 +15,7 @@ public class ProviderRepository : Repository<ProviderEntity>, IProviderRepositor
     {
     }
 
-    public async Task<List<(ProviderEntity ProviderEntity, ProcessCapabilityEntity Capability)>> FindByProcess(ProcessType process)
+    public async Task<List<(ProviderEntity ProviderEntity, ProcessCapabilityEntity Capability)>> FindByProcess(ProcessType process, CancellationToken cancellationToken = default)
     {
         var entities = await _dbSet
             .Include(p => p.ProcessCapabilities)
@@ -23,7 +23,7 @@ public class ProviderRepository : Repository<ProviderEntity>, IProviderRepositor
             .Include(p => p.WorkingHours)
                 .ThenInclude(wh => wh.Breaks)
             .Where(p => p.ProcessCapabilities.Any(cap => cap.Process == process.ToString()))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var result = new List<(ProviderEntity ProviderEntity, ProcessCapabilityEntity Capability)>();
         foreach (var entity in entities)
@@ -55,4 +55,31 @@ public class ProviderRepository : Repository<ProviderEntity>, IProviderRepositor
                 .ThenInclude(wh => wh.Breaks)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task UpdateRunningState(Guid providerId, bool isRunning, CancellationToken cancellationToken = default)
+    {
+        var provider = await _dbSet.FirstOrDefaultAsync(p => p.Id == providerId, cancellationToken);
+
+        if (provider == null)
+            throw new InvalidDataException($"Provider with ID {providerId} not found.");
+
+        provider.IsRunning = isRunning;
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateAllRunningState(bool isRunning, CancellationToken cancellationToken = default)
+    {
+        var providers = await _dbSet.ToListAsync(cancellationToken);
+        foreach (var provider in providers)
+        {
+            provider.IsRunning = isRunning;
+        }
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> AreAllRunning(CancellationToken cancellationToken = default)
+        => await _dbSet.Where(p => p.AutoStart).AllAsync(p => p.IsRunning, cancellationToken);
+
+    public Task DeleteAllAsync(CancellationToken cancellationToken = default)
+        => _dbSet.ExecuteDeleteAsync(cancellationToken);
 }

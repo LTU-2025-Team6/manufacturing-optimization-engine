@@ -18,7 +18,6 @@ public class StartupCoordinator : SystemReadinessService
     private readonly List<string> REQUIRED_SERVICES = new() 
     { 
         "Gateway", 
-        "ProviderRegistry", 
         "Engine"
     };
     private readonly IMessagePublisher _messagePublisher;
@@ -42,8 +41,6 @@ public class StartupCoordinator : SystemReadinessService
         // Call base to setup SystemReadyEvent listener
         base.SetupRabbitMq();
         
-        // Additionally, listen for service ready events to coordinate startup
-        //_messagingInfrastructure.DeclareExchange(Exchanges.System);
         _messagingInfrastructure.DeclareQueue("coordinator.service.ready");
         _messagingInfrastructure.BindQueue("coordinator.service.ready", Exchanges.System, SystemRoutingKeys.ServiceReady);
         _messagingInfrastructure.PurgeQueue("coordinator.service.ready");

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ManufacturingOptimization.Gateway.Migrations
 {
     [DbContext(typeof(GatewayDbContext))]
-    [Migration("20260202184355_Initial")]
+    [Migration("20260203144055_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -277,7 +277,14 @@ namespace ManufacturingOptimization.Gateway.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("Enabled")
+                    b.Property<bool>("AutoStart")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("EnvironmentSource")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsRunning")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")

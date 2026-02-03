@@ -1,5 +1,4 @@
 using ManufacturingOptimization.Common.Models.DTOs;
-using ManufacturingOptimization.Common.Models.Contracts;
 
 namespace ManufacturingOptimization.Gateway.Abstractions
 {

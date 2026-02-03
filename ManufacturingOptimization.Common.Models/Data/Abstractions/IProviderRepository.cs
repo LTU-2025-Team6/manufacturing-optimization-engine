@@ -5,9 +5,9 @@ namespace ManufacturingOptimization.Common.Models.Data.Abstractions;
 
 public interface IProviderRepository : IRepository<ProviderEntity>
 {
-    /// <summary>
-    /// Find all providers that can perform the specified process.
-    /// Returns providers with their ProcessCapability for that process.
-    /// </summary>
-    Task<List<(ProviderEntity ProviderEntity, ProcessCapabilityEntity Capability)>> FindByProcess(ProcessType process);
+    Task<List<(ProviderEntity ProviderEntity, ProcessCapabilityEntity Capability)>> FindByProcess(ProcessType process, CancellationToken cancellationToken = default);
+    Task UpdateRunningState(Guid providerId, bool isRunning, CancellationToken cancellationToken = default);
+    Task UpdateAllRunningState(bool isRunning, CancellationToken cancellationToken = default);
+    Task<bool> AreAllRunning(CancellationToken cancellationToken = default);
+    Task DeleteAllAsync(CancellationToken cancellationToken = default);
 }

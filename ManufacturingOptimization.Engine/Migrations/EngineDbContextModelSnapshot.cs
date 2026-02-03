@@ -92,7 +92,14 @@ namespace ManufacturingOptimization.Engine.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("Enabled")
+                    b.Property<bool>("AutoStart")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("EnvironmentSource")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsRunning")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")

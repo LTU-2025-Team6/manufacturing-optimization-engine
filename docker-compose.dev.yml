@@ -4,7 +4,7 @@
 
 services:
   # Development Mode: switch to ComposeManagedOrchestrator
-  provider-registry:
+  gateway:
     environment:
       - Orchestration__Mode=Development
   
@@ -17,7 +17,9 @@ services:
     environment:
       - PROVIDER_TYPE=MainRemanufacturingCenter
       - Provider__ProviderId=f93a2956-e430-4b50-b688-991b5c33f5f4
-      - Provider__ProviderName=Main Remanufacturing Center
+      - Provider__ProviderName=Main Remanufacturing Center (Development)
+      - Provider__AutoStart=true
+      - Provider__EnvironmentSource=Development
       - Provider__ProcessCapabilities__0__Process=Cleaning
       - Provider__ProcessCapabilities__0__CostPerHour=50
       - Provider__ProcessCapabilities__0__SpeedMultiplier=1.0
@@ -89,7 +91,9 @@ services:
     environment:
       - PROVIDER_TYPE=EngineeringDesignFirm
       - Provider__ProviderId=f8127a26-e818-4d27-8812-10d422c45a6c
-      - Provider__ProviderName=Engineering Design Firm
+      - Provider__ProviderName=Engineering Design (Development)
+      - Provider__AutoStart=true
+      - Provider__EnvironmentSource=Development
       - Provider__ProcessCapabilities__0__Process=Redesign
       - Provider__ProcessCapabilities__0__CostPerHour=150
       - Provider__ProcessCapabilities__0__SpeedMultiplier=1.0
@@ -133,7 +137,9 @@ services:
     environment:
       - PROVIDER_TYPE=PrecisionMachineShop
       - Provider__ProviderId=70564b7f-d634-4a90-b3f9-33224915dbc4
-      - Provider__ProviderName=Precision Machine Shop
+      - Provider__ProviderName=Precision Machine (Development)
+      - Provider__AutoStart=true
+      - Provider__EnvironmentSource=Development
       - Provider__ProcessCapabilities__0__Process=Turning
       - Provider__ProcessCapabilities__0__CostPerHour=120
       - Provider__ProcessCapabilities__0__SpeedMultiplier=1.0

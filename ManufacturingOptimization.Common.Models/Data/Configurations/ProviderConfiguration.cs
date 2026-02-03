@@ -11,7 +11,9 @@ public class ProviderConfiguration : IEntityTypeConfiguration<ProviderEntity>
         entity.HasKey(e => e.Id);
         entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
         entity.Property(e => e.Type).IsRequired().HasMaxLength(100);
-        entity.Property(e => e.Enabled).IsRequired();
+        entity.Property(e => e.AutoStart).IsRequired();
+        entity.Property(e => e.IsRunning).IsRequired();
+        entity.Property(e => e.EnvironmentSource).IsRequired();
 
         entity.HasMany(e => e.ProcessCapabilities)
             .WithOne(pc => pc.Provider)

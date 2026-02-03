@@ -49,6 +49,7 @@ builder.Services.AddHostedService(sp => (StartupCoordinator)sp.GetRequiredServic
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
 builder.Services.AddScoped<IMessageHandler<ProviderRegisteredEvent>, ProviderRegisteredHandler>();
 builder.Services.AddScoped<IMessageHandler<RequestOptimizationPlanCommand>, OptimizationRequestHandler>();
+builder.Services.AddScoped<ExecutionStep>();
 
 // Pipeline factory
 builder.Services.AddSingleton<IWorkflowPipelineFactory, PipelineFactory>();

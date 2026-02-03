@@ -42,10 +42,11 @@ public class PipelineFactory : IWorkflowPipelineFactory
             new EstimationStep(_messagePublisher),
             new OptimizationStep(_messagePublisher),
             new StrategySelectionStep(_messagePublisher, _messagingInfrastructure, _messageSubscriber, _mapper),
-            new ConfirmationStep(_messagePublisher)
+            new ConfirmationStep(_messagePublisher),
+            
+            new ExecutionStep(_messagePublisher, _loggerFactory.CreateLogger<ExecutionStep>())
         };
 
         return new WorkflowPipeline(steps, _loggerFactory.CreateLogger<WorkflowPipeline>());
     }
 }
-

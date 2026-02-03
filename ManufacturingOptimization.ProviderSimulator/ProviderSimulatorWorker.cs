@@ -51,6 +51,13 @@ public class ProviderSimulatorWorker : BackgroundService
         _messagingInfrastructure.PurgeQueue(confirmationQueueName);
         _messageSubscriber.Subscribe<ConfirmProcessProposalCommand>(confirmationQueueName, e => _dispatcher.DispatchAsync(e));
 
+        // Listen to process execution requests
+        var executionQueueName = $"process.execute.{_providerLogic.Provider.Id}";
+        _messagingInfrastructure.DeclareQueue(executionQueueName);
+        _messagingInfrastructure.BindQueue(executionQueueName, Exchanges.Process, executionQueueName);
+        _messagingInfrastructure.PurgeQueue(executionQueueName);
+        _messageSubscriber.Subscribe<ExecuteProcessCommand>(executionQueueName, e => _dispatcher.DispatchAsync(e));
+
         // Listen to provider coordination commands
         var providerCoordinationQueue = $"provider.coordination.{_providerLogic.Provider.Id}";
         _messagingInfrastructure.DeclareQueue(providerCoordinationQueue);

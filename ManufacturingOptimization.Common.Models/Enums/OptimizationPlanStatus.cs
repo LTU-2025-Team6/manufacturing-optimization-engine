@@ -13,6 +13,8 @@ public enum OptimizationPlanStatus
     AwaitingStrategySelection,
     StrategySelected,
     Confirmed,
-    Failed
+    Failed,
+    InProgress,
+    Completed
 }
 

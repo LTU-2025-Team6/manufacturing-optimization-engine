@@ -18,7 +18,9 @@ namespace ManufacturingOptimization.Engine.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     Type = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Enabled = table.Column<bool>(type: "INTEGER", nullable: false)
+                    AutoStart = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsRunning = table.Column<bool>(type: "INTEGER", nullable: false),
+                    EnvironmentSource = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {

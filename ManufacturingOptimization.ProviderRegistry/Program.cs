@@ -68,4 +68,4 @@ builder.Services.AddHostedService<ProviderRegistryWorker>();
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
 
 var host = builder.Build();
-host.Run();
+//host.Run();

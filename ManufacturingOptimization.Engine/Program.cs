@@ -53,7 +53,6 @@ builder.Services.AddScoped<IMessageHandler<RequestOptimizationPlanCommand>, Opti
 // Pipeline factory
 builder.Services.AddSingleton<IWorkflowPipelineFactory, PipelineFactory>();
 
-builder.Services.AddHostedService<ProviderCapabilityValidationService>();
 builder.Services.AddHostedService<EngineWorker>();
 
 var host = builder.Build();

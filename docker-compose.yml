@@ -21,32 +21,32 @@ services:
       retries: 5
 
   # Provider Registry - manages technology provider registry and orchestration
-  provider-registry:
-    build:
-      context: .
-      dockerfile: ManufacturingOptimization.ProviderRegistry/Dockerfile
-    container_name: provider-registry
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - Orchestration__Mode=Production
-      - Docker__ProviderImage=provider-simulator:latest
-      - Docker__Network=auto
-      - RabbitMQ__Host=rabbitmq
-      - RabbitMQ__Port=5672
-      - RabbitMQ__Username=admin
-      - RabbitMQ__Password=admin123
-    volumes:
-      # Mount Docker socket for container management
-      - /var/run/docker.sock:/var/run/docker.sock
-      # Persistent database storage
-      - provider_registry_data:/app/Data
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    networks:
-      - manufacturing-network
-    restart: unless-stopped
-    privileged: true  # Required for managing Docker containers
+  # provider-registry:
+  #   build:
+  #     context: .
+  #     dockerfile: ManufacturingOptimization.ProviderRegistry/Dockerfile
+  #   container_name: provider-registry
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #     - Orchestration__Mode=Production
+  #     - Docker__ProviderImage=provider-simulator:latest
+  #     - Docker__Network=auto
+  #     - RabbitMQ__Host=rabbitmq
+  #     - RabbitMQ__Port=5672
+  #     - RabbitMQ__Username=admin
+  #     - RabbitMQ__Password=admin123
+  #   volumes:
+  #     # Mount Docker socket for container management
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     # Persistent database storage
+  #     - provider_registry_data:/app/Data
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
+  #   networks:
+  #     - manufacturing-network
+  #   restart: unless-stopped
+  #   privileged: true  # Required for managing Docker containers
 
   # Manufacturing Optimization Engine - core optimization service
   engine:
@@ -69,8 +69,8 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      provider-registry:
-        condition: service_started
+      # provider-registry:
+      #   condition: service_started
     networks:
       - manufacturing-network
     restart: unless-stopped
@@ -86,33 +86,36 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
+      - Orchestration__Mode=Production
+      - Docker__ProviderImage=provider-simulator:latest
+      - Docker__Network=auto
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
       - RabbitMQ__Username=admin
       - RabbitMQ__Password=admin123
-      - ProviderRegistry__Url=http://provider-registry:8080
+      # - ProviderRegistry__Url=http://provider-registry:8080
     volumes:
       # Persistent database storage
       - gateway_data:/app/Data
+      # Mount Docker socket for container management
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       rabbitmq:
         condition: service_healthy
       engine:
         condition: service_started
-      provider-registry:
-        condition: service_started
+      # provider-registry:
+      #   condition: service_started
     networks:
       - manufacturing-network
     restart: unless-stopped
-
-  # Providers are started automatically through provider-registry
-  # ProviderRegistry creates Docker containers via Docker API
+    privileged: true  # Required for managing Docker containers
 
 volumes:
   rabbitmq_data:
     driver: local
-  provider_registry_data:
-    driver: local
+  # provider_registry_data:
+  #   driver: local
   engine_data:
     driver: local
   gateway_data:

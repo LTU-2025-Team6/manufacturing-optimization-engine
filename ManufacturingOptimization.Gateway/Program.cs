@@ -11,6 +11,9 @@ using ManufacturingOptimization.Gateway.Extensions;
 using ManufacturingOptimization.Gateway.Handlers;
 using ManufacturingOptimization.Gateway.Middleware;
 using ManufacturingOptimization.Gateway.Services;
+using ManufacturingOptimization.Gateway.Services.ContainerOrchestration;
+using ManufacturingOptimization.Gateway.Settings;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,8 +46,23 @@ builder.Services.AddAutoMapper(c =>
     c.AddProfile<GatewayMappingProfile>();
 });
 
-// Configure RabbitMQ Settings from appsettings.json
+// Configure settings from environment
 builder.Services.Configure<RabbitMqSettings>(builder.Configuration.GetSection(RabbitMqSettings.SectionName));
+builder.Services.Configure<OrchestrationSettings>(builder.Configuration.GetSection(OrchestrationSettings.SectionName));
+builder.Services.Configure<DockerSettings>(builder.Configuration.GetSection(DockerSettings.SectionName));
+
+// Register orchestrators for DI
+builder.Services.AddSingleton<DockerProviderOrchestrator>();
+builder.Services.AddSingleton<ComposeManagedOrchestrator>();
+
+// Register appropriate orchestrator based on mode
+builder.Services.AddSingleton<IProviderOrchestrator>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<OrchestrationSettings>>().Value;
+    return settings.IsProductionMode
+        ? sp.GetRequiredService<DockerProviderOrchestrator>()
+        : sp.GetRequiredService<ComposeManagedOrchestrator>();
+});
 
 // Register RabbitMQ Service
 builder.Services.AddSingleton<RabbitMqService>();

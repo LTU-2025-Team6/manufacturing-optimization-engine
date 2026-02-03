@@ -25,7 +25,6 @@ public class ProviderSimulationContext : IProviderSimulationContext
             Id = Guid.Parse(providerSettings.Value.ProviderId),
             Type = providerTypeSettings.Value.Type,
             Name = providerSettings.Value.ProviderName,
-            Enabled = true,
             ProcessCapabilities = providerSettings.Value.ProcessCapabilities,
             TechnicalCapabilities = providerSettings.Value.TechnicalCapabilities,
             WorkingHours = providerSettings.Value.WorkingHours

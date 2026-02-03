@@ -24,27 +24,29 @@ public class ProviderValidationService : IProviderValidationService
 
     public async Task<(bool IsApproved, string? DeclinedReason)> ValidateAsync(ProviderModel provider, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        var validationRequest = new ValidateProviderCapabilityCommand
-        {
-            Provider = provider
-        };
-
-        var response = await _messagePublisher.RequestReplyAsync<ProviderCapabilityValidatedEvent>(
-            Exchanges.Provider,
-            ProviderRoutingKeys.ValidationRequested,
-            validationRequest,
-            timeout ?? TimeSpan.FromSeconds(30));
-
-        if (response == null)
-        {
-            return (false, "Validation timeout");
-        }
-
-        if (!response.IsApproved)
-        {
-            return (false, response.Reason);
-        }
-
         return (true, null);
+
+        //var validationRequest = new ValidateProviderCapabilityCommand
+        //{
+        //    Provider = provider
+        //};
+
+        //var response = await _messagePublisher.RequestReplyAsync<ProviderCapabilityValidatedEvent>(
+        //    Exchanges.Provider,
+        //    ProviderRoutingKeys.ValidationRequested,
+        //    validationRequest,
+        //    timeout ?? TimeSpan.FromSeconds(30));
+
+        //if (response == null)
+        //{
+        //    return (false, "Validation timeout");
+        //}
+
+        //if (!response.IsApproved)
+        //{
+        //    return (false, response.Reason);
+        //}
+
+        //return (true, null);
     }
 }

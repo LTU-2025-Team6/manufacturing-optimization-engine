@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ManufacturingOptimization.Gateway.Migrations
 {
     [DbContext(typeof(GatewayDbContext))]
-    [Migration("20260203144055_Initial")]
+    [Migration("20260203193753_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -143,9 +143,9 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.Property<double>("CarbonIntensityKgCO2PerKwh")
                         .HasColumnType("REAL");
 
-                    b.Property<decimal>("CostPerHour")
+                    b.Property<double>("CostPerHour")
                         .HasPrecision(18, 2)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("REAL");
 
                     b.Property<double>("EnergyConsumptionKwhPerHour")
                         .HasColumnType("REAL");

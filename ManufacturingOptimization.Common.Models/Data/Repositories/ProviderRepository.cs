@@ -82,4 +82,7 @@ public class ProviderRepository : Repository<ProviderEntity>, IProviderRepositor
 
     public Task DeleteAllAsync(CancellationToken cancellationToken = default)
         => _dbSet.ExecuteDeleteAsync(cancellationToken);
+
+    public Task<List<ProviderEntity>> GetRunningProvidersAsync()
+        => _dbSet.Where(p => p.IsRunning).ToListAsync();
 }

@@ -5,6 +5,6 @@ namespace ManufacturingOptimization.ProviderSimulator.Abstractions;
 
 public interface IProviderSimulationContext
 {
-    public ProviderModel Provider { get; }
+    public ProviderModel Provider { get; set; }
     public Dictionary<ProcessType, double> StandardDurations { get; }
 }

@@ -1,7 +1,8 @@
 using ManufacturingOptimization.Common.Messaging;
 using ManufacturingOptimization.Common.Messaging.Abstractions;
+using ManufacturingOptimization.Common.Messaging.Messages;
 using ManufacturingOptimization.Common.Messaging.Messages.OptimizationManagement;
-using ManufacturingOptimization.Common.Messaging.Messages.ProviderManagement;
+using ManufacturingOptimization.Common.Messaging.Messages.SystemManagement;
 using ManufacturingOptimization.Common.Models.Data.Abstractions;
 using ManufacturingOptimization.Common.Models.Data.Mappings;
 using ManufacturingOptimization.Common.Models.Data.Repositories;
@@ -11,7 +12,6 @@ using ManufacturingOptimization.Gateway.Extensions;
 using ManufacturingOptimization.Gateway.Handlers;
 using ManufacturingOptimization.Gateway.Middleware;
 using ManufacturingOptimization.Gateway.Services;
-using ManufacturingOptimization.Gateway.Services.ContainerOrchestration;
 using ManufacturingOptimization.Gateway.Settings;
 using Microsoft.Extensions.Options;
 
@@ -51,21 +51,14 @@ builder.Services.Configure<RabbitMqSettings>(builder.Configuration.GetSection(Ra
 builder.Services.Configure<OrchestrationSettings>(builder.Configuration.GetSection(OrchestrationSettings.SectionName));
 builder.Services.Configure<DockerSettings>(builder.Configuration.GetSection(DockerSettings.SectionName));
 
-// Register orchestrators for DI
-builder.Services.AddSingleton<DockerProviderOrchestrator>();
-builder.Services.AddSingleton<ComposeManagedOrchestrator>();
-
 // Register appropriate orchestrator based on mode
-builder.Services.AddSingleton<IProviderOrchestrator>(sp =>
-{
-    var settings = sp.GetRequiredService<IOptions<OrchestrationSettings>>().Value;
-    return settings.IsProductionMode
-        ? sp.GetRequiredService<DockerProviderOrchestrator>()
-        : sp.GetRequiredService<ComposeManagedOrchestrator>();
-});
+builder.Services.AddSingleton<IProviderOrchestrator, DockerProviderOrchestrator>();
 
 // Register RabbitMQ Service
 builder.Services.AddSingleton<RabbitMqService>();
+
+// Register Async Awaiter
+builder.Services.AddSingleton<IAsyncAwaiter, AsyncAwaiter>();
 
 // Map Messaging Interfaces
 builder.Services.AddSingleton<IMessagingInfrastructure>(sp => sp.GetRequiredService<RabbitMqService>());
@@ -74,7 +67,15 @@ builder.Services.AddSingleton<IMessageSubscriber>(sp => sp.GetRequiredService<Ra
 
 // Message dispatching
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
-builder.Services.AddScoped<IMessageHandler<ProviderRegisteredEvent>, ProviderRegisteredHandler>();
+builder.Services.AddScoped<IMessageHandler<SystemReadyEvent>, SystemReadyHandler>();
+builder.Services.AddScoped<IMessageHandler<StartAllProvidersCommand>, StartAllProvidersHandler>();
+builder.Services.AddScoped<IMessageHandler<AllProvidersStartedEvent>, AllProvidersStartedHandler>();
+builder.Services.AddScoped<IMessageHandler<StopAllProvidersCommand>, StopAllProvidersHandler>();
+builder.Services.AddScoped<IMessageHandler<AllProvidersStoppedEvent>, AllProvidersStoppedHandler>();
+builder.Services.AddScoped<IMessageHandler<StartProviderCommand>, StartProviderHandler>();
+builder.Services.AddScoped<IMessageHandler<ProviderStartedEvent>, ProviderStartedHandler>();
+builder.Services.AddScoped<IMessageHandler<StopProviderCommand>, StopProviderHandler>();
+builder.Services.AddScoped<IMessageHandler<ProviderStoppedEvent>, ProviderStoppedHandler>();
 builder.Services.AddScoped<IMessageHandler<OptimizationPlanUpdatedEvent>, OptimizationPlanUpdatedHandler>();
 
 // System readiness coordination

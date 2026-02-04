@@ -16,6 +16,7 @@ public class RabbitMqService : IMessagePublisher, IMessageSubscriber, IMessaging
     private readonly RabbitMqSettings _settings;
 
     private readonly Dictionary<string, EventingBasicConsumer> _consumers = new();
+    private readonly Dictionary<string, string> _consumerTags = new(); // queueName -> consumerTag
     private readonly Dictionary<string, List<MessageHandler>> _handlers = new(); // Multiple handlers per queue
     private readonly ConcurrentDictionary<string, TaskCompletionSource<IMessage>> _pendingRequests = new();
 
@@ -317,10 +318,11 @@ public class RabbitMqService : IMessagePublisher, IMessageSubscriber, IMessaging
             }
         };
 
-        _channel.BasicConsume(
+        var consumerTag = _channel.BasicConsume(
             queue: queueName,
             autoAck: false,
             consumer: consumer);
+        _consumerTags[queueName] = consumerTag;
     }
 
     public void DeclareExchange(string exchangeName, string type)
@@ -373,5 +375,24 @@ public class RabbitMqService : IMessagePublisher, IMessageSubscriber, IMessaging
         {
             // Ignore exceptions during connection close
         }
+    }
+
+    public void Unsubscribe(string queueName)
+    {
+        if (_consumers.TryGetValue(queueName, out var consumer))
+        {
+            if (_consumerTags.TryGetValue(queueName, out var consumerTag))
+            {
+                _channel.BasicCancel(consumerTag);
+                _consumerTags.Remove(queueName);
+            }
+            _consumers.Remove(queueName);
+            _handlers.Remove(queueName);
+        }
+    }
+
+    public void DeleteQueue(string queueName)
+    {
+        _channel.QueueDelete(queueName);
     }
 }

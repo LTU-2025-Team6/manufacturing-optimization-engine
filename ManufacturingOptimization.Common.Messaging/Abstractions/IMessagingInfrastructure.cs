@@ -6,4 +6,5 @@ public interface IMessagingInfrastructure
     void DeclareQueue(string queueName);
     void BindQueue(string queueName, string exchangeName, string routingKey);
     void PurgeQueue(string queueName);
+    void DeleteQueue(string queueName);
 }

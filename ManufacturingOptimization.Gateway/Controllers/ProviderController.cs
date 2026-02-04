@@ -1,5 +1,6 @@
 ﻿using ManufacturingOptimization.Common.Models.DTOs;
 using ManufacturingOptimization.Gateway.Abstractions;
+using ManufacturingOptimization.Gateway.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ManufacturingOptimization.Gateway.Controllers;
@@ -25,5 +26,42 @@ public class ProviderController : ControllerBase
     {
         var response = await _providerService.GetProvidersAsync();
         return Ok(response);
+    }
+
+    /// <summary>
+    /// Get a single provider by Id
+    /// </summary>
+    [HttpGet("{id}")]
+    [ProducesResponseType(typeof(ProviderDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetProvider(Guid id)
+    {
+        var provider = await _providerService.GetProviderByIdAsync(id);
+        return Ok(provider);
+    }
+
+    /// <summary>
+    /// Update a provider
+    /// </summary>
+    [HttpPut("{id}")]
+    [ProducesResponseType(typeof(ProviderDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateProvider(Guid id, [FromBody] UpdateProviderRequest request)
+    {
+        var updatedProvider = await _providerService.UpdateProviderAsync(id, request);
+        return Ok(updatedProvider);
+    }
+
+    /// <summary>
+    /// Toggle provider running status
+    /// </summary>
+    [HttpPatch("{id}")]
+    [ProducesResponseType(typeof(ProviderPreviewDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ToggleProvider(Guid id, [FromBody] ToggleProviderRequest request)
+    {
+        var updatedProvider = await _providerService.ToggleProviderAsync(id, request.IsRunning);
+        return Ok(updatedProvider);
     }
 }

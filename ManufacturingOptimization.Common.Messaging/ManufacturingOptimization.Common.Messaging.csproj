@@ -17,4 +17,8 @@
     <ProjectReference Include="..\ManufacturingOptimization.Common.Models\ManufacturingOptimization.Common.Models.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Messages\ProviderManagement\" />
+  </ItemGroup>
+
 </Project>

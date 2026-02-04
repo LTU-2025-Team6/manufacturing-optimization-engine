@@ -7,4 +7,5 @@ public class ProcessEstimateDto
     public double QualityScore { get; set; }
     public double EmissionsKgCO2 { get; set; }
     public double Duration { get; set; }
+    public List<TimeWindowDto> AvailableTimeSlots { get; set; } = new();
 }

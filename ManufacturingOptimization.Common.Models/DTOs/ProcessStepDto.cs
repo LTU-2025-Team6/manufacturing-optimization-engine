@@ -9,4 +9,5 @@ public class ProcessStepDto
     public string SelectedProviderName { get; set; } = string.Empty;
     public ProcessEstimateDto Estimate { get; set; } = new();
     public ProviderScheduleDto? AllocatedSchedule { get; set; }
+    public ProviderScheduleDto? AllocatedSlot { get; set; }
 }

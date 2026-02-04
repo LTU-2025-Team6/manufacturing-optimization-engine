@@ -1,26 +1,24 @@
 using AutoMapper;
+using Docker.DotNet;
 using Docker.DotNet.Models;
 using ManufacturingOptimization.Common.Messaging;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.ProviderManagement;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
 using ManufacturingOptimization.Common.Models.Data.Entities;
 using ManufacturingOptimization.Gateway.Abstractions;
 using ManufacturingOptimization.Gateway.Settings;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
-namespace ManufacturingOptimization.Gateway.Services.ContainerOrchestration;
+namespace ManufacturingOptimization.Gateway.Services;
 
 /// <summary>
 /// Production mode orchestrator - creates and manages provider containers via Docker API.
 /// </summary>
-public class DockerProviderOrchestrator : ProviderOrchestratorBase, IProviderOrchestrator
+public class DockerProviderOrchestrator : IProviderOrchestrator
 {
+    private readonly ILogger<DockerProviderOrchestrator> _logger;
+    private readonly DockerClient _dockerClient;
     private readonly DockerSettings _dockerSettings;
     private readonly RabbitMqSettings _rabbitMqSettings;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly Dictionary<Guid, string> _runningProviders = []; // providerId -> containerId
     private string? _networkName;
 
@@ -28,44 +26,23 @@ public class DockerProviderOrchestrator : ProviderOrchestratorBase, IProviderOrc
         ILogger<DockerProviderOrchestrator> logger,
         IMapper mapper,
         IOptions<DockerSettings> dockerSettings,
-        IOptions<RabbitMqSettings> rabbitMqSettings,
-        IServiceScopeFactory serviceScopeFactory) : base(logger)
+        IOptions<RabbitMqSettings> rabbitMqSettings)
     {
+        _logger = logger;
         _dockerSettings = dockerSettings.Value;
         _rabbitMqSettings = rabbitMqSettings.Value;
-        _serviceScopeFactory = serviceScopeFactory;
-    }
 
-    public async Task StartAllAsync(CancellationToken cancellationToken = default)
-    {
-        using (var scope = _serviceScopeFactory.CreateScope())
-        {
-            var providerRepository = scope.ServiceProvider.GetRequiredService<IProviderRepository>();
-            var providers = await providerRepository.GetAllAsync(cancellationToken);
-        
-            foreach (var provider in providers)
-            {
-                await StartAsync(provider, cancellationToken);
-            }
-        }
-    }
+        var dockerUri = Environment.OSVersion.Platform == PlatformID.Unix
+            ? "unix:///var/run/docker.sock"
+            : "npipe://./pipe/docker_engine";
 
-    public async Task StopAllAsync(CancellationToken cancellationToken = default)
-    {
-        var providerIds = _runningProviders.Keys.ToList();
-        foreach (var providerId in providerIds)
-        {
-            await StopAsync(providerId, cancellationToken);
-        }
+        _dockerClient = new DockerClientConfiguration(new Uri(dockerUri)).CreateClient();
     }
 
     public async Task StartAsync(ProviderEntity provider, CancellationToken cancellationToken = default)
     {
         if (_runningProviders.TryGetValue(provider.Id, out var containerId))
             throw new InvalidDataException($"Provider with ID {provider.Id} is already running in container {containerId}.");
-
-        if (!provider.AutoStart)
-            return;
 
         var containerName = $"provider-{provider.Id}";
         var network = await GetNetworkAsync(cancellationToken);
@@ -107,11 +84,6 @@ public class DockerProviderOrchestrator : ProviderOrchestratorBase, IProviderOrc
     {
         if (!_runningProviders.TryGetValue(providerId, out var containerId))
             throw new InvalidDataException($"Provider with ID {providerId} is not registered for orchestration.");
-
-        using var scope = _serviceScopeFactory.CreateScope();
-        var providerRepository = scope.ServiceProvider.GetRequiredService<IProviderRepository>();
-
-        await providerRepository.UpdateRunningState(providerId, false, cancellationToken);
 
         try
         {
@@ -218,5 +190,35 @@ public class DockerProviderOrchestrator : ProviderOrchestratorBase, IProviderOrc
         }
 
         return envVars;
+    }
+
+    public async Task CleanupOrphanedContainersAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var allContainers = await _dockerClient.Containers.ListContainersAsync(
+                new ContainersListParameters { All = true },
+                cancellationToken);
+
+            var orphanedContainers = allContainers
+                .Where(c =>
+                {
+                    var labels = c.Labels ?? new Dictionary<string, string>();
+                    return labels.TryGetValue("orchestration-mode", out var mode) && mode == "production";
+                })
+                .ToList();
+
+            foreach (var container in orphanedContainers)
+            {
+                await _dockerClient.Containers.RemoveContainerAsync(
+                    container.ID,
+                    new ContainerRemoveParameters { Force = true },
+                    cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to cleanup orphaned containers");
+        }
     }
 }

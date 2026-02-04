@@ -10,7 +10,7 @@ public class ProviderSimulationContext : IProviderSimulationContext
 {
     protected readonly Random _random = new();
 
-    public ProviderModel Provider { get; }
+    public ProviderModel Provider { get; set; }
     public Dictionary<ProcessType, double> StandardDurations { get; }
 
     public ProviderSimulationContext(
@@ -25,6 +25,7 @@ public class ProviderSimulationContext : IProviderSimulationContext
             Id = Guid.Parse(providerSettings.Value.ProviderId),
             Type = providerTypeSettings.Value.Type,
             Name = providerSettings.Value.ProviderName,
+            EnvironmentSource = providerSettings.Value.EnvironmentSource,
             ProcessCapabilities = providerSettings.Value.ProcessCapabilities,
             TechnicalCapabilities = providerSettings.Value.TechnicalCapabilities,
             WorkingHours = providerSettings.Value.WorkingHours

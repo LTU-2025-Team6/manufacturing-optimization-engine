@@ -1,7 +1,7 @@
 using ManufacturingOptimization.Common.Messaging;
 using ManufacturingOptimization.Common.Messaging.Abstractions;
+using ManufacturingOptimization.Common.Messaging.Messages;
 using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
-using ManufacturingOptimization.Common.Messaging.Messages.ProviderManagement;
 using ManufacturingOptimization.ProviderRegistry.Data;
 using ManufacturingOptimization.ProviderSimulator;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
@@ -66,7 +66,7 @@ builder.Services.AddSingleton<IMessagingInfrastructure>(sp => sp.GetRequiredServ
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
 builder.Services.AddScoped<IMessageHandler<ProposeProcessToProviderCommand>, ProcessProposalHandler>();
 builder.Services.AddScoped<IMessageHandler<ConfirmProcessProposalCommand>, ProcessConfirmationHandler>();
-builder.Services.AddScoped<IMessageHandler<RequestProvidersRegistrationCommand>, ProviderRegistrationRequestHandler>();
+builder.Services.AddScoped<IMessageHandler<UpdateProviderCommand>, UpdateProviderHandler>();    
 
 // Register provider simulator
 builder.Services.AddSingleton<IProviderSimulationContext, ProviderSimulationContext>();

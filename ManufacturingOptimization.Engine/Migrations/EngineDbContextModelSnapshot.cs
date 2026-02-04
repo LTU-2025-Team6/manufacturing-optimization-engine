@@ -26,9 +26,9 @@ namespace ManufacturingOptimization.Engine.Migrations
                     b.Property<double>("CarbonIntensityKgCO2PerKwh")
                         .HasColumnType("REAL");
 
-                    b.Property<decimal>("CostPerHour")
+                    b.Property<double>("CostPerHour")
                         .HasPrecision(18, 2)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("REAL");
 
                     b.Property<double>("EnergyConsumptionKwhPerHour")
                         .HasColumnType("REAL");

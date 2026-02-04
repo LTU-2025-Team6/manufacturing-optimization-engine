@@ -47,7 +47,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     ProviderId = table.Column<Guid>(type: "TEXT", nullable: false),
                     Process = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    CostPerHour = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    CostPerHour = table.Column<double>(type: "REAL", precision: 18, scale: 2, nullable: false),
                     SpeedMultiplier = table.Column<double>(type: "REAL", nullable: false),
                     QualityScore = table.Column<double>(type: "REAL", nullable: false),
                     EnergyConsumptionKwhPerHour = table.Column<double>(type: "REAL", nullable: false),

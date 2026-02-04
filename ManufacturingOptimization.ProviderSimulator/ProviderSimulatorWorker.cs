@@ -1,8 +1,8 @@
 using ManufacturingOptimization.Common.Messaging.Abstractions;
 using ManufacturingOptimization.Common.Messaging.Messages;
 using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
-using ManufacturingOptimization.Common.Messaging.Messages.ProviderManagement;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
+using System.Threading.Tasks;
 
 namespace ManufacturingOptimization.ProviderSimulator;
 
@@ -11,51 +11,62 @@ public class ProviderSimulatorWorker : BackgroundService
     private readonly ILogger<ProviderSimulatorWorker> _logger;
     private readonly IMessagingInfrastructure _messagingInfrastructure;
     private readonly IMessageSubscriber _messageSubscriber;
+    private readonly IMessagePublisher _messagePublisher;
     private readonly IMessageDispatcher _dispatcher;
-    private readonly IProviderSimulationContext _providerLogic;
+    private readonly IProviderSimulationContext _provider;
 
     public ProviderSimulatorWorker(
         ILogger<ProviderSimulatorWorker> logger,
         IMessagingInfrastructure messagingInfrastructure,
         IMessageSubscriber messageSubscriber,
+        IMessagePublisher messagePublisher,
         IMessageDispatcher dispatcher,
         IProviderSimulationContext providerLogic)
     {
         _logger = logger;
         _messagingInfrastructure = messagingInfrastructure;
         _messageSubscriber = messageSubscriber;
+        _messagePublisher = messagePublisher;
         _dispatcher = dispatcher;
-        _providerLogic = providerLogic;
+        _provider = providerLogic;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        SetupRabbitMq();
-
-        await Task.Delay(Timeout.Infinite, stoppingToken);
+        await SetupRabbitMq(cancellationToken);
+        await PublishStartupEvent(cancellationToken);
+        await Task.Delay(Timeout.Infinite, cancellationToken);
     }
 
-    private void SetupRabbitMq()
+    private async Task PublishStartupEvent(CancellationToken cancellationToken)
     {
-        // Listen to process proposals for this specific provider
-        var proposalQueueName = $"process.proposal.{_providerLogic.Provider.Id}";
+        await Task.Delay(3000, cancellationToken); // Ensure everyone is ready to receive the message
+        _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.ProviderStarted, new ProviderStartedEvent
+        {
+            Provider = _provider.Provider
+        });
+    }
+
+    private async Task SetupRabbitMq(CancellationToken cancellationToken)
+    {
+        var proposalQueueName = $"simulator.process.proposal.{_provider.Provider.Id}";
         _messagingInfrastructure.DeclareQueue(proposalQueueName);
         _messagingInfrastructure.BindQueue(proposalQueueName, Exchanges.Process, proposalQueueName);
         _messagingInfrastructure.PurgeQueue(proposalQueueName);
         _messageSubscriber.Subscribe<ProposeProcessToProviderCommand>(proposalQueueName, e => _dispatcher.DispatchAsync(e));
 
-        // Listen to confirmations for this specific provider
-        var confirmationQueueName = $"process.confirm.{_providerLogic.Provider.Id}";
+        var confirmationQueueName = $"simulator.process.confirm.{_provider.Provider.Id}";
         _messagingInfrastructure.DeclareQueue(confirmationQueueName);
         _messagingInfrastructure.BindQueue(confirmationQueueName, Exchanges.Process, confirmationQueueName);
         _messagingInfrastructure.PurgeQueue(confirmationQueueName);
         _messageSubscriber.Subscribe<ConfirmProcessProposalCommand>(confirmationQueueName, e => _dispatcher.DispatchAsync(e));
 
-        // Listen to provider coordination commands
-        var providerCoordinationQueue = $"provider.coordination.{_providerLogic.Provider.Id}";
-        _messagingInfrastructure.DeclareQueue(providerCoordinationQueue);
-        _messagingInfrastructure.BindQueue(providerCoordinationQueue, Exchanges.Provider, ProviderRoutingKeys.RequestRegistrationAll);
-        _messagingInfrastructure.PurgeQueue(providerCoordinationQueue);
-        _messageSubscriber.Subscribe<RequestProvidersRegistrationCommand>(providerCoordinationQueue, e => _dispatcher.DispatchAsync(e));
+        var updateProviderQueueName = $"simulator.provider.update-provider.{_provider.Provider.Id}";
+        _messagingInfrastructure.DeclareQueue(updateProviderQueueName);
+        _messagingInfrastructure.BindQueue(updateProviderQueueName, Exchanges.Provider, ProviderRoutingKeys.UpdateProvider);
+        _messagingInfrastructure.PurgeQueue(updateProviderQueueName);
+        _messageSubscriber.Subscribe<UpdateProviderCommand>(updateProviderQueueName, e => _dispatcher.DispatchAsync(e));
+
+        await Task.Delay(1000, cancellationToken);
     }
 }

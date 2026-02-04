@@ -8,7 +8,7 @@ public class ProcessCapabilityEntity
     public Guid Id { get; set; }
     public Guid ProviderId { get; set; }
     public string Process { get; set; } = string.Empty;
-    public decimal CostPerHour { get; set; }
+    public double CostPerHour { get; set; }
     public double SpeedMultiplier { get; set; }
     public double QualityScore { get; set; }
     public double EnergyConsumptionKwhPerHour { get; set; }

@@ -10,4 +10,5 @@ public interface IProviderRepository : IRepository<ProviderEntity>
     Task UpdateAllRunningState(bool isRunning, CancellationToken cancellationToken = default);
     Task<bool> AreAllRunning(CancellationToken cancellationToken = default);
     Task DeleteAllAsync(CancellationToken cancellationToken = default);
+    Task<List<ProviderEntity>> GetRunningProvidersAsync();
 }

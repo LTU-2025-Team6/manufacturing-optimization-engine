@@ -1,7 +1,4 @@
 using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.ProviderManagement;
-using ManufacturingOptimization.Common.Messaging.Messages.SystemManagement;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -23,8 +20,6 @@ public class SystemReadinessService : BackgroundService, ISystemReadinessService
     protected readonly IMessagingInfrastructure _messagingInfrastructure;
     protected readonly IMessageSubscriber _messageSubscriber;
     private readonly string _serviceName;
-    private readonly string _queueName;
-
     public SystemReadinessService(
         ILogger<SystemReadinessService> logger,
         IMessagingInfrastructure messagingInfrastructure,
@@ -35,9 +30,6 @@ public class SystemReadinessService : BackgroundService, ISystemReadinessService
         _messagingInfrastructure = messagingInfrastructure;
         _messageSubscriber = messageSubscriber;
         _serviceName = settings.Value.ServiceName;
-        _queueName = $"{_serviceName.ToLower()}.system.ready";
-
-        SetupRabbitMq();
     }
 
     public bool IsSystemReady => _systemReadyTcs.Task.IsCompleted;
@@ -68,7 +60,6 @@ public class SystemReadinessService : BackgroundService, ISystemReadinessService
         try
         {
             await _providersReadyTcs.Task.WaitAsync(cancellationToken);
-            _logger.LogInformation("All providers are ready!");
         }
         catch (OperationCanceledException)
         {
@@ -95,31 +86,5 @@ public class SystemReadinessService : BackgroundService, ISystemReadinessService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await Task.Delay(Timeout.Infinite, stoppingToken);
-    }
-
-    protected virtual void SetupRabbitMq()
-    {
-        // Listen for SystemReadyEvent to mark local service ready
-        _messagingInfrastructure.DeclareQueue(_queueName);
-        _messagingInfrastructure.BindQueue(_queueName, Exchanges.System, SystemRoutingKeys.SystemReady);
-        _messagingInfrastructure.PurgeQueue(_queueName);
-        _messageSubscriber.Subscribe<SystemReadyEvent>(_queueName, HandleSystemReady);
-
-        // Listen for AllProvidersRegisteredEvent to mark providers ready
-        var providersQueueName = $"{_serviceName.ToLower()}.providers.ready";
-        _messagingInfrastructure.DeclareQueue(providersQueueName);
-        _messagingInfrastructure.BindQueue(providersQueueName, Exchanges.Provider, ProviderRoutingKeys.AllRegistered);
-        _messagingInfrastructure.PurgeQueue(providersQueueName);
-        _messageSubscriber.Subscribe<AllProvidersRegisteredEvent>(providersQueueName, HandleAllProvidersRegistered);
-    }
-
-    protected virtual void HandleSystemReady(SystemReadyEvent evt)
-    {
-        MarkSystemReady();
-    }
-
-    protected virtual void HandleAllProvidersRegistered(AllProvidersRegisteredEvent evt)
-    {
-        MarkProvidersReady();
     }
 }

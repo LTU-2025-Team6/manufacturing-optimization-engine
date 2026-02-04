@@ -1,7 +1,8 @@
 using ManufacturingOptimization.Common.Messaging;
 using ManufacturingOptimization.Common.Messaging.Abstractions;
+using ManufacturingOptimization.Common.Messaging.Messages;
 using ManufacturingOptimization.Common.Messaging.Messages.PlanManagement;
-using ManufacturingOptimization.Common.Messaging.Messages.ProviderManagement;
+using ManufacturingOptimization.Common.Messaging.Messages.SystemManagement;
 using ManufacturingOptimization.Common.Models.Data.Abstractions;
 using ManufacturingOptimization.Common.Models.Data.Mappings;
 using ManufacturingOptimization.Common.Models.Data.Repositories;
@@ -42,12 +43,16 @@ builder.Services.AddSingleton<IMessagingInfrastructure>(sp => sp.GetRequiredServ
 
 // System readiness coordination
 builder.Services.Configure<SystemReadinessSettings>(o => o.ServiceName = "Engine");
-builder.Services.AddSingleton<ISystemReadinessService, StartupCoordinator>();
-builder.Services.AddHostedService(sp => (StartupCoordinator)sp.GetRequiredService<ISystemReadinessService>());
+builder.Services.AddSingleton<ISystemReadinessService, SystemReadinessService>();
 
 // Message dispatching
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
-builder.Services.AddScoped<IMessageHandler<ProviderRegisteredEvent>, ProviderRegisteredHandler>();
+builder.Services.AddScoped<IMessageHandler<ServiceReadyEvent>, ServiceReadyHandler>();
+builder.Services.AddScoped<IMessageHandler<SystemReadyEvent>, SystemReadyHandler>();
+builder.Services.AddScoped<IMessageHandler<AllProvidersStartedEvent>, AllProvidersStartedHandler>();
+builder.Services.AddScoped<IMessageHandler<ProviderStartedEvent>, ProviderStartedHandler>();
+builder.Services.AddScoped<IMessageHandler<ProviderStoppedEvent>, ProviderStoppedHandler>();
+builder.Services.AddScoped<IMessageHandler<ProviderUpdatedEvent>, ProviderUpdatedHandler>();
 builder.Services.AddScoped<IMessageHandler<RequestOptimizationPlanCommand>, OptimizationRequestHandler>();
 
 // Pipeline factory

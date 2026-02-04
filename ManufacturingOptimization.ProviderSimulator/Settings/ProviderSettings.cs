@@ -13,6 +13,7 @@ public class ProviderSettings
     
     public string ProviderId { get; set; } = string.Empty;
     public string ProviderName { get; set; } = string.Empty;
+    public string EnvironmentSource { get; set; } = string.Empty;
 
     public List<ProcessCapabilityModel> ProcessCapabilities { get; set; } = new();
     public TechnicalCapabilitiesModel TechnicalCapabilities { get; set; } = new();

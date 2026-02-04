@@ -1,9 +1,14 @@
 using ManufacturingOptimization.Common.Models.DTOs;
+using ManufacturingOptimization.Gateway.Controllers;
+using ManufacturingOptimization.Gateway.DTOs;
 
 namespace ManufacturingOptimization.Gateway.Abstractions
 {
     public interface IProviderService
     {
-        Task<List<ProviderDto>> GetProvidersAsync();
+        Task<List<ProviderPreviewDto>> GetProvidersAsync();
+        Task<ProviderDto> GetProviderByIdAsync(Guid id);
+        Task<ProviderDto> UpdateProviderAsync(Guid id, UpdateProviderRequest request);
+        Task<ProviderPreviewDto> ToggleProviderAsync(Guid id, bool isRunning);
     }
 }

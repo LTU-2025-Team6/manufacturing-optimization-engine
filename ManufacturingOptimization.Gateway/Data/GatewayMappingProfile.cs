@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using ManufacturingOptimization.Common.Models.Contracts;
 using ManufacturingOptimization.Common.Models.Data.Entities;
-using ManufacturingOptimization.Common.Models.DTOs;
 using ManufacturingOptimization.Common.Models.Enums;
 using ManufacturingOptimization.Gateway.DTOs;
 using System.Text.Json;
@@ -56,6 +55,7 @@ namespace ManufacturingOptimization.Gateway.Data
         {
             // Provider Schedule
             CreateMap<ProviderScheduleModel, ProviderScheduleDto>().ReverseMap();
+            CreateMap<ProviderDayScheduleModel, ProviderDayScheduleDto>().ReverseMap();
             CreateMap<ProviderScheduleSegmentModel, ProviderScheduleSegmentDto>()
                 .ForMember(dest => dest.SegmentType, opt => opt.MapFrom(src => src.SegmentType.ToString()));
             CreateMap<ProviderScheduleSegmentDto, ProviderScheduleSegmentModel>()

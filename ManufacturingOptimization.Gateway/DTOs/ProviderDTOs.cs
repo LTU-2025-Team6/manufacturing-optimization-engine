@@ -1,6 +1,4 @@
-﻿using ManufacturingOptimization.Common.Models.DTOs;
-
-namespace ManufacturingOptimization.Gateway.DTOs;
+﻿namespace ManufacturingOptimization.Gateway.DTOs;
 
 public class ProviderPreviewDto
 {

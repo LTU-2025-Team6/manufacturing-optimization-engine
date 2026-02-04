@@ -62,7 +62,7 @@ public class ConfirmationStep : IWorkflowStep
 
             var response = await _messagePublisher.RequestReplyAsync<ProcessProposalReviewedEvent>(
                 Exchanges.Process,
-                $"process.confirm.{step.SelectedProviderId}",
+                $"simulator.process.confirm.{step.SelectedProviderId}",
                 confirmation,
                 TimeSpan.FromSeconds(10));
 

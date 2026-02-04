@@ -71,7 +71,7 @@ public class EstimationStep : IWorkflowStep
 
             var response = await _messagePublisher.RequestReplyAsync<ProcessProposalEstimatedEvent>(
                 Exchanges.Process,
-                $"process.proposal.{provider.ProviderId}",
+                $"simulator.process.proposal.{provider.ProviderId}",
                 proposal,
                 TimeSpan.FromMinutes(10));
 

@@ -1,5 +1,3 @@
-using ManufacturingOptimization.Common.Models.DTOs;
-using ManufacturingOptimization.Gateway.Controllers;
 using ManufacturingOptimization.Gateway.DTOs;
 
 namespace ManufacturingOptimization.Gateway.Abstractions
@@ -10,5 +8,6 @@ namespace ManufacturingOptimization.Gateway.Abstractions
         Task<ProviderDto> GetProviderByIdAsync(Guid id);
         Task<ProviderDto> UpdateProviderAsync(Guid id, UpdateProviderRequest request);
         Task<ProviderPreviewDto> ToggleProviderAsync(Guid id, bool isRunning);
+        Task<List<ProviderDayScheduleDto>> GetProviderScheduleAsync(Guid providerId, ProviderScheduleRequest request);
     }
 }

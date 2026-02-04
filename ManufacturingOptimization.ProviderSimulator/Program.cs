@@ -66,7 +66,8 @@ builder.Services.AddSingleton<IMessagingInfrastructure>(sp => sp.GetRequiredServ
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
 builder.Services.AddScoped<IMessageHandler<ProposeProcessToProviderCommand>, ProcessProposalHandler>();
 builder.Services.AddScoped<IMessageHandler<ConfirmProcessProposalCommand>, ProcessConfirmationHandler>();
-builder.Services.AddScoped<IMessageHandler<UpdateProviderCommand>, UpdateProviderHandler>();    
+builder.Services.AddScoped<IMessageHandler<UpdateProviderCommand>, UpdateProviderHandler>();
+builder.Services.AddScoped<IMessageHandler<RequestProviderScheduleCommand>, RequestProviderScheduleHandler>();
 
 // Register provider simulator
 builder.Services.AddSingleton<IProviderSimulationContext, ProviderSimulationContext>();

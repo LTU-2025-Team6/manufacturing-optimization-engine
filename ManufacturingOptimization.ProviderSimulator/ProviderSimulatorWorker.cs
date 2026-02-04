@@ -67,6 +67,12 @@ public class ProviderSimulatorWorker : BackgroundService
         _messagingInfrastructure.PurgeQueue(updateProviderQueueName);
         _messageSubscriber.Subscribe<UpdateProviderCommand>(updateProviderQueueName, e => _dispatcher.DispatchAsync(e));
 
+        var requestScheduleQueueName = $"simulator.provider.request-schedule.{_provider.Provider.Id}";
+        _messagingInfrastructure.DeclareQueue(requestScheduleQueueName);
+        _messagingInfrastructure.BindQueue(requestScheduleQueueName, Exchanges.Provider, ProviderRoutingKeys.RequestProviderSchedule);
+        _messagingInfrastructure.PurgeQueue(requestScheduleQueueName);
+        _messageSubscriber.Subscribe<RequestProviderScheduleCommand>(requestScheduleQueueName, e => _dispatcher.DispatchAsync(e));
+
         await Task.Delay(1000, cancellationToken);
     }
 }

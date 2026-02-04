@@ -1,5 +1,4 @@
-﻿using ManufacturingOptimization.Common.Models.DTOs;
-using ManufacturingOptimization.Gateway.Abstractions;
+﻿using ManufacturingOptimization.Gateway.Abstractions;
 using ManufacturingOptimization.Gateway.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
@@ -34,6 +33,7 @@ public class ProviderController : ControllerBase
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(ProviderDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetProvider(Guid id)
     {
         var provider = await _providerService.GetProviderByIdAsync(id);
@@ -47,6 +47,7 @@ public class ProviderController : ControllerBase
     [ProducesResponseType(typeof(ProviderDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> UpdateProvider(Guid id, [FromBody] UpdateProviderRequest request)
     {
         var updatedProvider = await _providerService.UpdateProviderAsync(id, request);
@@ -59,9 +60,23 @@ public class ProviderController : ControllerBase
     [HttpPatch("{id}")]
     [ProducesResponseType(typeof(ProviderPreviewDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> ToggleProvider(Guid id, [FromBody] ToggleProviderRequest request)
     {
         var updatedProvider = await _providerService.ToggleProviderAsync(id, request.IsRunning);
         return Ok(updatedProvider);
+    }
+
+    /// <summary>
+    /// Get provider schedule for a given period
+    /// </summary>
+    [HttpGet("{id}/schedule")]
+    [ProducesResponseType(typeof(List<ProviderScheduleDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GetProviderSchedule(Guid id, [FromQuery] ProviderScheduleRequest request)
+    {
+        var schedule = await _providerService.GetProviderScheduleAsync(id, request);
+        return Ok(schedule);
     }
 }

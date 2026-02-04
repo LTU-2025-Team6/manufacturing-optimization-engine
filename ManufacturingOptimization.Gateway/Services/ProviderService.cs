@@ -66,7 +66,7 @@ namespace ManufacturingOptimization.Gateway.Services
             UpdateWorkingHours(provider, request.WorkingHours);
 
             // Send update to provider simulator and await confirmation
-            await UpdateProvider(provider);
+            await TriggerAndAwaitProviderUpdateAsync(provider);
 
             // Save changes to repository
             await _providerRepository.UpdateAsync(provider);
@@ -189,15 +189,31 @@ namespace ManufacturingOptimization.Gateway.Services
                 throw new NotFoundException($"Provider with Id {id} not found.");                
 
             if (!isRunning)
-                await StopProviderAsync(id);
+                await TriggerAndAwaitProviderStopAsync(id);
             else
-                await StartProviderAsync(id);
+                await TriggerAndAwaitProviderStartAsync(id);
 
             provider.IsRunning = isRunning;
             return _mapper.Map<ProviderPreviewDto>(provider);
         }
 
-        private async Task StopProviderAsync(Guid id)
+        public async Task<List<ProviderDayScheduleDto>> GetProviderScheduleAsync(Guid providerId, ProviderScheduleRequest request)
+        {
+            var provider = _providerRepository.GetByIdAsync(providerId);
+
+            if (provider == null)
+                throw new NotFoundException($"Provider with Id {providerId} not found.");
+
+            var schedules = await TriggerAndAwaitProviderScheduleAsync(providerId, request);
+
+            return _mapper.Map<List<ProviderDayScheduleDto>>(schedules);
+        }
+
+        ///
+        /// Methods to trigger commands and await events
+        ///
+
+        private async Task TriggerAndAwaitProviderStopAsync(Guid id)
         {
             await _asyncAwaiter.AwaitAsync(new AwaitScenario<ProviderStoppedEvent>
             {
@@ -213,8 +229,7 @@ namespace ManufacturingOptimization.Gateway.Services
             });
         }
 
-
-        private async Task StartProviderAsync(Guid id)
+        private async Task TriggerAndAwaitProviderStartAsync(Guid id)
         {
             await _asyncAwaiter.AwaitAsync(new AwaitScenario<ProviderStartedEvent>
             {
@@ -230,7 +245,7 @@ namespace ManufacturingOptimization.Gateway.Services
             });
         }
 
-        private async Task<ProviderModel> UpdateProvider(ProviderEntity provider)
+        private async Task<ProviderModel> TriggerAndAwaitProviderUpdateAsync(ProviderEntity provider)
         {
             var updateResult = await _asyncAwaiter.AwaitAsync(new AwaitScenario<ProviderUpdatedEvent>
             {
@@ -246,6 +261,26 @@ namespace ManufacturingOptimization.Gateway.Services
             });
 
             return updateResult.Provider;
+        }
+
+        private async Task<List<ProviderDayScheduleModel>> TriggerAndAwaitProviderScheduleAsync(Guid providerId, ProviderScheduleRequest request)
+        {
+            var scheduleCreatedEvent = await _asyncAwaiter.AwaitAsync(new AwaitScenario<ProviderScheduleCreatedEvent>
+            {
+                Exchange = Exchanges.Provider,
+                RoutingKey = ProviderRoutingKeys.ProviderScheduleCreated,
+                Timeout = TimeSpan.FromSeconds(10),
+                Match = evt => evt.ProviderId == providerId,
+                BeforeAwait = () =>
+                    _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.RequestProviderSchedule, new RequestProviderScheduleCommand
+                    {
+                        ProviderId = providerId,
+                        Start = request.Start,
+                        End = request.End
+                    })
+            });
+
+            return scheduleCreatedEvent.Schedules;
         }
     }
 }

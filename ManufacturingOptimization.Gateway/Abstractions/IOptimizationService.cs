@@ -1,4 +1,4 @@
-using ManufacturingOptimization.Common.Models.DTOs;
+using ManufacturingOptimization.Gateway.DTOs;
 
 namespace ManufacturingOptimization.Gateway.Abstractions
 {

@@ -1,5 +1,5 @@
-using ManufacturingOptimization.Common.Models.DTOs;
 using ManufacturingOptimization.Gateway.Abstractions;
+using ManufacturingOptimization.Gateway.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ManufacturingOptimization.Gateway.Controllers

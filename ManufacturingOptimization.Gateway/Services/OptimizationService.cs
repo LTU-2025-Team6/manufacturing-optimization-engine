@@ -5,8 +5,8 @@ using ManufacturingOptimization.Common.Messaging.Messages.PlanManagement;
 using ManufacturingOptimization.Common.Models.Contracts;
 using ManufacturingOptimization.Common.Models.Data.Abstractions;
 using ManufacturingOptimization.Common.Models.Data.Entities;
-using ManufacturingOptimization.Common.Models.DTOs;
 using ManufacturingOptimization.Gateway.Abstractions;
+using ManufacturingOptimization.Gateway.DTOs;
 using ManufacturingOptimization.Gateway.Exceptions;
 
 namespace ManufacturingOptimization.Gateway.Services

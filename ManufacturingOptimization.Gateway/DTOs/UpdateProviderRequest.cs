@@ -1,7 +1,5 @@
 namespace ManufacturingOptimization.Gateway.DTOs;
 
-public record ToggleProviderRequest(bool IsRunning);
-
 public record UpdateProviderRequest(
     string Name,
     bool AutoStart,

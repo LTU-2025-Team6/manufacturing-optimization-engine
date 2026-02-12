@@ -73,6 +73,14 @@ public class ProviderSimulatorWorker : BackgroundService
         _messagingInfrastructure.PurgeQueue(requestScheduleQueueName);
         _messageSubscriber.Subscribe<RequestProviderScheduleCommand>(requestScheduleQueueName, e => _dispatcher.DispatchAsync(e));
 
+        // NEW: Subscribe to Execution Commands
+        // We bind a unique queue for this simulator to the routing key the Engine uses
+        var executionQueueName = $"simulator.process.execute.{_provider.Provider.Id}";
+        _messagingInfrastructure.DeclareQueue(executionQueueName);
+        _messagingInfrastructure.BindQueue(executionQueueName, Exchanges.Process, $"process.execute.{_provider.Provider.Id}");
+        _messagingInfrastructure.PurgeQueue(executionQueueName);
+        _messageSubscriber.Subscribe<ExecuteProcessCommand>(executionQueueName, e => _dispatcher.DispatchAsync(e));
+
         await Task.Delay(1000, cancellationToken);
     }
 }

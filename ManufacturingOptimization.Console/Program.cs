@@ -3,6 +3,11 @@ using ManufacturingOptimization.Common.Models.Enums;
 using Spectre.Console;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using ManufacturingOptimization.Common.Messaging.Messages;
+using ManufacturingOptimization.Common.Messaging.Messages.ExecutionManagement;
 
 // Configuration
 var apiUrl = Environment.GetEnvironmentVariable("GATEWAY_API_URL") ?? "http://localhost:5000";
@@ -18,7 +23,7 @@ AnsiConsole.WriteLine();
 var role = AnsiConsole.Prompt(
     new SelectionPrompt<string>()
         .Title("[yellow]Who are you?[/]")
-        .AddChoices("Customer", "Provider"));
+        .AddChoices("Customer", "Provider", "System Monitor (Debug)"));
 
 AnsiConsole.Clear();
 
@@ -26,9 +31,13 @@ if (role == "Customer")
 {
     await RunCustomerMode();
 }
-else
+else if (role == "Provider")
 {
     await RunProviderMode();
+}
+else
+{
+    await RunMonitorMode();
 }
 
 async Task RunCustomerMode()
@@ -623,12 +632,13 @@ void DisplayTimeline(List<ProcessStepDto> steps)
     
     foreach (var step in orderedSteps)
     {
+        // FIX: Used StartTime/EndTime instead of Start/End
         var slotStr = step.AllocatedSlot != null
-            ? $"{step.AllocatedSlot.Start:yyyy-MM-dd HH:mm} - {step.AllocatedSlot.End:HH:mm}"
+            ? $"{step.AllocatedSlot.StartTime:yyyy-MM-dd HH:mm} - {step.AllocatedSlot.EndTime:HH:mm}"
             : "[dim]Not scheduled[/]";
             
         var duration = step.AllocatedSlot != null
-            ? $"{(step.AllocatedSlot.End - step.AllocatedSlot.Start).TotalHours:N1}h"
+            ? $"{(step.AllocatedSlot.EndTime - step.AllocatedSlot.StartTime).TotalHours:N1}h"
             : "-";
         
         timelineTable.AddRow(
@@ -644,7 +654,6 @@ void DisplayTimeline(List<ProcessStepDto> steps)
         .Header("[cyan]Process Schedule[/]")
         .BorderColor(Color.Aqua));
 
-    
     AnsiConsole.WriteLine();
     
     // Gantt-style visualization
@@ -660,6 +669,8 @@ void DisplayTimeline(List<ProcessStepDto> steps)
 void DisplayGanttChart(List<ProcessStepDto> steps)
 {
     var allSlots = steps.Where(s => s.AllocatedSlot != null).Select(s => s.AllocatedSlot!).ToList();
+    
+    // FIX: Used StartTime/EndTime
     var minStart = allSlots.Min(s => s.StartTime);
     var maxEnd = allSlots.Max(s => s.EndTime);
     var totalDuration = maxEnd - minStart;
@@ -682,19 +693,19 @@ void DisplayGanttChart(List<ProcessStepDto> steps)
         var slot = step.AllocatedSlot;
         var label = $"{step.Process} ({step.StepNumber})";
         
-        // Build bar with segments (work = green, break = red)
+        // Build bar with segments
         var bar = "";
         if (slot.Segments != null && slot.Segments.Any())
         {
             foreach (var segment in slot.Segments.OrderBy(s => s.SegmentOrder))
             {
+                // FIX: Used StartTime/EndTime
                 var segmentStartOffset = (segment.StartTime - minStart).TotalHours / totalDuration.TotalHours;
                 var segmentDuration = (segment.EndTime - segment.StartTime).TotalHours / totalDuration.TotalHours;
                 
                 var segmentStartPos = (int)(segmentStartOffset * chartWidth);
                 var segmentLength = Math.Max(1, (int)(segmentDuration * chartWidth));
                 
-                // Pad to start position (only if not first segment of this step)
                 if (bar.Length < segmentStartPos)
                 {
                     bar += new string(' ', segmentStartPos - bar.Length);
@@ -709,6 +720,7 @@ void DisplayGanttChart(List<ProcessStepDto> steps)
         else
         {
             // Fallback: no segments, show entire slot as one bar
+            // FIX: Used StartTime/EndTime
             var startOffset = (slot.StartTime - minStart).TotalHours / totalDuration.TotalHours;
             var duration = (slot.EndTime - slot.StartTime).TotalHours / totalDuration.TotalHours;
             
@@ -734,19 +746,14 @@ void DisplayGanttChart(List<ProcessStepDto> steps)
 
 void DisplayAvailableTimeSlots(List<ProcessStepDto> steps)
 {
-    // Check if any steps have available time slots
-    if (!steps.Any(s => s.Estimate.AvailableTimeSlots?.Any() == true))
-    {
-        return;
-    }
+    if (!steps.Any(s => s.Estimate.AvailableTimeSlots?.Any() == true)) return;
     
     AnsiConsole.Write(new Rule("[yellow]Available Time Slots[/]").RuleStyle("yellow"));
     AnsiConsole.WriteLine();
     
     foreach (var step in steps.OrderBy(s => s.StepNumber))
     {
-        if (step.Estimate.AvailableTimeSlots?.Any() != true)
-            continue;
+        if (step.Estimate.AvailableTimeSlots?.Any() != true) continue;
         
         var slotsTable = new Table()
             .Border(TableBorder.Rounded)
@@ -760,9 +767,10 @@ void DisplayAvailableTimeSlots(List<ProcessStepDto> steps)
         int slotNum = 1;
         foreach (var slot in step.Estimate.AvailableTimeSlots)
         {
+            // FIX: Used StartTime/EndTime for comparison
             var isSelected = step.AllocatedSlot != null &&
-                           slot.StartTime >= step.AllocatedSlot.Start &&
-                           slot.EndTime <= step.AllocatedSlot.End;
+                           slot.StartTime >= step.AllocatedSlot.StartTime &&
+                           slot.EndTime <= step.AllocatedSlot.EndTime;
             
             var duration = slot.EndTime - slot.StartTime;
             
@@ -781,5 +789,104 @@ void DisplayAvailableTimeSlots(List<ProcessStepDto> steps)
             .BorderColor(Color.Yellow));
         
         AnsiConsole.WriteLine();
+    }
+}
+
+// ---------------------------------------------------------
+// NEW: SYSTEM MONITOR MODE
+// ---------------------------------------------------------
+async Task RunMonitorMode()
+{
+    AnsiConsole.Write(new Rule("[purple]System Execution Monitor[/]").RuleStyle("purple"));
+    AnsiConsole.WriteLine();
+    AnsiConsole.MarkupLine("[dim]Connecting to RabbitMQ to stream live execution events...[/]");
+
+    // Docker credentials
+    var factory = new ConnectionFactory { 
+        HostName = "localhost", 
+        UserName = "admin", 
+        Password = "admin123" 
+    };
+
+    try 
+    {
+        using var connection = await factory.CreateConnectionAsync();
+        using var channel = await connection.CreateChannelAsync();
+
+        // 1. Declare Exchange (Idempotent)
+        await channel.ExchangeDeclareAsync(Exchanges.Execution, ExchangeType.Topic, durable: true);
+
+        // 2. Create Temp Queue
+        var queueName = (await channel.QueueDeclareAsync()).QueueName;
+
+        // 3. Bind to all execution events
+        await channel.QueueBindAsync(queueName, Exchanges.Execution, "execution.#");
+
+        AnsiConsole.MarkupLine("[green]✓ Connected! Listening for manufacturing events...[/]");
+        AnsiConsole.MarkupLine("[grey]Press any key to stop monitoring.[/]");
+        AnsiConsole.WriteLine();
+
+        var consumer = new AsyncEventingBasicConsumer(channel);
+        consumer.ReceivedAsync += async (model, ea) =>
+        {
+            var body = ea.Body.ToArray();
+            var json = Encoding.UTF8.GetString(body);
+            var routingKey = ea.RoutingKey;
+
+            // Render event on UI thread equivalent
+            DisplayEvent(routingKey, json);
+            await Task.Yield();
+        };
+
+        await channel.BasicConsumeAsync(queueName, true, consumer);
+
+        Console.ReadKey(true);
+    }
+    catch (Exception ex)
+    {
+        AnsiConsole.MarkupLine($"[red]Failed to connect to RabbitMQ: {ex.Message}[/]");
+        AnsiConsole.MarkupLine("[yellow]Ensure Docker containers are running.[/]");
+    }
+}
+
+void DisplayEvent(string routingKey, string json)
+{
+    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+    var timestamp = DateTime.Now.ToString("HH:mm:ss");
+
+    switch (routingKey)
+    {
+        case ExecutionRoutingKeys.ExecutionStarted:
+            var start = JsonSerializer.Deserialize<ExecutionStartedEvent>(json, options);
+            AnsiConsole.Write(new Rule($"[blue]🚀 Execution Started ({timestamp})[/]").LeftJustified());
+            AnsiConsole.MarkupLine($"Plan ID: [cyan]{start?.PlanId}[/] | Steps: [bold]{start?.TotalSteps}[/]");
+            break;
+
+        case ExecutionRoutingKeys.StepStarted:
+            var stepStart = JsonSerializer.Deserialize<ExecutionStepStartedEvent>(json, options);
+            AnsiConsole.MarkupLine($"[yellow]▶️  Step {stepStart?.StepNumber}:[/] {stepStart?.ProcessName}");
+            AnsiConsole.MarkupLine($"   [dim]Provider: {stepStart?.ProviderName}[/]");
+            break;
+
+        case ExecutionRoutingKeys.StepCompleted:
+            var stepEnd = JsonSerializer.Deserialize<ExecutionStepCompletedEvent>(json, options);
+            var color = stepEnd?.Success == true ? "green" : "red";
+            var icon = stepEnd?.Success == true ? "✓" : "✗";
+            AnsiConsole.MarkupLine($"[{color}]{icon}  Step {stepEnd?.StepNumber} Completed[/]");
+            break;
+
+        case ExecutionRoutingKeys.ExecutionCompleted:
+            var done = JsonSerializer.Deserialize<ExecutionCompletedEvent>(json, options);
+            AnsiConsole.WriteLine();
+            AnsiConsole.Write(new Panel($"[green bold]🏁 WORKFLOW FINISHED[/]\nDuration: {done?.TotalDuration.TotalSeconds:F2}s")
+                .BorderColor(Color.Green).Expand());
+            AnsiConsole.WriteLine();
+            break;
+
+        case ExecutionRoutingKeys.ExecutionFailed:
+            var fail = JsonSerializer.Deserialize<ExecutionFailedEvent>(json, options);
+            AnsiConsole.Write(new Panel($"[red bold]💥 WORKFLOW FAILED[/]\nReason: {fail?.Reason}")
+                .BorderColor(Color.Red).Expand());
+            break;
     }
 }

@@ -10,33 +10,45 @@ namespace ManufacturingOptimization.Engine.Services;
 public class PlanExecutionCoordinator : BackgroundService
 {
     private readonly IMessageSubscriber _subscriber;
+    private readonly IMessagingInfrastructure _messagingInfrastructure;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<PlanExecutionCoordinator> _logger;
 
     public PlanExecutionCoordinator(
         IMessageSubscriber subscriber,
+        IMessagingInfrastructure messagingInfrastructure,
         IServiceProvider serviceProvider,
         ILogger<PlanExecutionCoordinator> logger)
     {
         _subscriber = subscriber;
+        _messagingInfrastructure = messagingInfrastructure;
         _serviceProvider = serviceProvider;
         _logger = logger;
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Subscribe to plan updates
+        var queueName = "engine.execution.coordinator";
+
+        // 1. Setup Infrastructure manually (Declare & Bind)
+        _messagingInfrastructure.DeclareQueue(queueName);
+        
+        _messagingInfrastructure.BindQueue(
+            queueName, 
+            Exchanges.Optimization, 
+            OptimizationRoutingKeys.PlanUpdated);
+
+        // 2. Subscribe using the simple signature
         _subscriber.Subscribe<OptimizationPlanUpdatedEvent>(
-            Exchanges.Optimization,
-            OptimizationRoutingKeys.PlanUpdated,
-            HandlePlanUpdatedAsync,
-            "engine.execution.coordinator" // Unique queue for this service
+            queueName,
+            HandlePlanUpdatedAsync
         );
 
         return Task.CompletedTask;
     }
 
-    private async Task HandlePlanUpdatedAsync(OptimizationPlanUpdatedEvent message)
+    // Changed to 'async void' to satisfy Action<T> delegate signature
+    private async void HandlePlanUpdatedAsync(OptimizationPlanUpdatedEvent message)
     {
         // We only care if the plan was just CONFIRMED
         if (message.Plan.Status == OptimizationPlanStatus.Confirmed)
@@ -45,22 +57,19 @@ public class PlanExecutionCoordinator : BackgroundService
 
             try
             {
-                // Create a new scope because we are in a BackgroundService
                 using var scope = _serviceProvider.CreateScope();
                 
-                // 1. Get the Factory
                 var pipelineFactory = scope.ServiceProvider.GetRequiredService<IWorkflowPipelineFactory>();
-                
-                // 2. Create the Execution Pipeline
                 var executionPipeline = pipelineFactory.CreateExecutionPipeline();
 
-                // 3. Create Context (Execution only needs the Plan)
                 var context = new WorkflowContext
                 {
-                    Plan = message.Plan
+                    Plan = message.Plan,
+                    // Execution pipeline focuses on the Plan. 
+                    // We set Request to null! to satisfy the required contract without fetching legacy data.
+                    Request = null! 
                 };
 
-                // 4. Run the Pipeline
                 await executionPipeline.ExecuteAsync(context);
             }
             catch (Exception ex)

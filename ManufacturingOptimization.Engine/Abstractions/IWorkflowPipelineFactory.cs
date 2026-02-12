@@ -8,5 +8,11 @@ public interface IWorkflowPipelineFactory
     /// <summary>
     /// Creates a new workflow pipeline instance.
     /// </summary>
-    IWorkflowPipeline CreateWorkflowPipeline();
+    //IWorkflowPipeline CreateWorkflowPipeline();
+
+    // Renamed from CreateWorkflowPipeline
+    IWorkflowPipeline CreateOptimizationPipeline();
+    
+    // NEW: Creates the execution pipeline
+    IWorkflowPipeline CreateExecutionPipeline();
 }

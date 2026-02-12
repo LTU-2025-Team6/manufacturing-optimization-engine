@@ -39,7 +39,7 @@ public class OptimizationRequestHandler : IMessageHandler<RequestOptimizationPla
         _logger = logger;
     }
 
-    public async Task HandleAsync(RequestOptimizationPlanCommand command)
+public async Task HandleAsync(RequestOptimizationPlanCommand command)
     {        
         // Wait for system to be ready before processing
         await _readinessService.WaitForSystemReadyAsync();
@@ -53,7 +53,8 @@ public class OptimizationRequestHandler : IMessageHandler<RequestOptimizationPla
 
         try
         {
-            var pipeline = _pipelineFactory.CreateWorkflowPipeline();
+            // CHANGED: Use the specific Optimization Pipeline
+            var pipeline = _pipelineFactory.CreateOptimizationPipeline();
             await pipeline.ExecuteAsync(context);
         }
         catch (Exception ex)

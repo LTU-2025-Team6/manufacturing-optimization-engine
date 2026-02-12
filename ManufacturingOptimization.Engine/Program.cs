@@ -61,6 +61,5 @@ builder.Services.AddSingleton<IWorkflowPipelineFactory, PipelineFactory>();
 builder.Services.AddHostedService<EngineWorker>();
 builder.Services.AddHostedService<PlanExecutionCoordinator>();
 
-
 var host = builder.Build();
 host.Run();

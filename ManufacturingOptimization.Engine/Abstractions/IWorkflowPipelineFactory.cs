@@ -6,13 +6,8 @@ namespace ManufacturingOptimization.Engine.Abstractions;
 public interface IWorkflowPipelineFactory
 {
     /// <summary>
-    /// Creates a new workflow pipeline instance.
+    /// Creates two new workflow pipelines instances.
     /// </summary>
-    //IWorkflowPipeline CreateWorkflowPipeline();
-
-    // Renamed from CreateWorkflowPipeline
-    IWorkflowPipeline CreateOptimizationPipeline();
-    
-    // NEW: Creates the execution pipeline
+    IWorkflowPipeline CreateOptimizationPipeline(); 
     IWorkflowPipeline CreateExecutionPipeline();
 }

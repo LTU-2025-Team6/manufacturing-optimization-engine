@@ -5,6 +5,9 @@ using ManufacturingOptimization.Engine.Abstractions;
 
 namespace ManufacturingOptimization.Engine.Services.Pipeline;
 
+/// <summary>
+/// Factory for creating workflow processing pipelines with all required dependencies.
+/// </summary>
 public class PipelineFactory : IWorkflowPipelineFactory
 {
     private readonly ILoggerFactory _loggerFactory;
@@ -40,7 +43,6 @@ public class PipelineFactory : IWorkflowPipelineFactory
             new OptimizationStep(_messagePublisher),
             new StrategySelectionStep(_messagePublisher, _messagingInfrastructure, _messageSubscriber, _mapper),
             new ConfirmationStep(_messagePublisher)
-            // NOTE: ExecutionStep is REMOVED from here
         };
 
         return new WorkflowPipeline(steps, _loggerFactory.CreateLogger<WorkflowPipeline>());

@@ -28,20 +28,44 @@ namespace ManufacturingOptimization.Gateway.Data
                 .ForMember(dest => dest.MotorSpecs, opt => opt.MapFrom(src => src.MotorSpecs))
                 .ForMember(dest => dest.Constraints, opt => opt.MapFrom(src => src.Constraints));
 
+            // Optimization Request Entity mappings
+            CreateMap<OptimizationRequestDto, OptimizationRequestEntity>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()));
+            CreateMap<OptimizationRequestModel, OptimizationRequestEntity>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.RequestId));
+            CreateMap<OptimizationRequestEntity, OptimizationRequestModel>()
+                .ForMember(dest => dest.RequestId, opt => opt.MapFrom(src => src.Id));
+
             CreateMap<OptimizationRequestConstraintsModel, OptimizationRequestConstraintsDto>().ReverseMap();
+            CreateMap<OptimizationRequestConstraintsModel, OptimizationRequestConstraintsEntity>().ReverseMap();
+            CreateMap<OptimizationRequestConstraintsDto, OptimizationRequestConstraintsEntity>().ReverseMap();
+
             CreateMap<MotorSpecificationsModel, MotorSpecificationsDto>()
                 .ForMember(dest => dest.CurrentEfficiency, opt => opt.MapFrom(src => src.CurrentEfficiency.ToString()))
                 .ForMember(dest => dest.TargetEfficiency, opt => opt.MapFrom(src => src.TargetEfficiency.ToString()));
             CreateMap<MotorSpecificationsDto, MotorSpecificationsModel>()
                 .ForMember(dest => dest.CurrentEfficiency, opt => opt.MapFrom(src => Enum.Parse<MotorEfficiencyClass>(src.CurrentEfficiency)))
                 .ForMember(dest => dest.TargetEfficiency, opt => opt.MapFrom(src => Enum.Parse<MotorEfficiencyClass>(src.TargetEfficiency)));
+            CreateMap<MotorSpecificationsModel, MotorSpecificationsEntity>()
+                .ForMember(dest => dest.CurrentEfficiency, opt => opt.MapFrom(src => src.CurrentEfficiency.ToString()))
+                .ForMember(dest => dest.TargetEfficiency, opt => opt.MapFrom(src => src.TargetEfficiency.ToString()));
+            CreateMap<MotorSpecificationsEntity, MotorSpecificationsModel>()
+                .ForMember(dest => dest.CurrentEfficiency, opt => opt.MapFrom(src => Enum.Parse<MotorEfficiencyClass>(src.CurrentEfficiency)))
+                .ForMember(dest => dest.TargetEfficiency, opt => opt.MapFrom(src => Enum.Parse<MotorEfficiencyClass>(src.TargetEfficiency)));
+            CreateMap<MotorSpecificationsDto, MotorSpecificationsEntity>().ReverseMap();
+
             CreateMap<TimeWindowModel, TimeWindowDto>().ReverseMap();
+            CreateMap<TimeWindowModel, TimeWindowEntity>().ReverseMap();
+            CreateMap<TimeWindowDto, TimeWindowEntity>().ReverseMap();
 
             // Optimization Plan & Strategy
             CreateMap<OptimizationPlanModel, OptimizationPlanDto>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
             CreateMap<OptimizationPlanDto, OptimizationPlanModel>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => Enum.Parse<OptimizationPlanStatus>(src.Status)));
+
+            CreateMap<OptimizationPlanEntity, OptimizationPlanPreviewDto>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
             CreateMap<OptimizationStrategyModel, OptimizationStrategyDto>()
                 .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority.ToString()));
@@ -54,7 +78,10 @@ namespace ManufacturingOptimization.Gateway.Data
         private void ConfigureProviderMappings()
         {
             // Provider Schedule
-            CreateMap<ProviderScheduleModel, ProviderScheduleDto>().ReverseMap();
+            CreateMap<ProviderScheduleModel, ProviderScheduleDto>();
+            CreateMap<ProviderScheduleDto, ProviderScheduleModel>()
+                .ForMember(dest => dest.StartWorkingTime, opt => opt.Ignore())
+                .ForMember(dest => dest.EndWorkingTime, opt => opt.Ignore());
             CreateMap<ProviderDayScheduleModel, ProviderDayScheduleDto>().ReverseMap();
             CreateMap<ProviderScheduleSegmentModel, ProviderScheduleSegmentDto>()
                 .ForMember(dest => dest.SegmentType, opt => opt.MapFrom(src => src.SegmentType.ToString()));
@@ -94,6 +121,34 @@ namespace ManufacturingOptimization.Gateway.Data
 
             // Technical Capabilities Entity
             CreateMap<TechnicalCapabilitiesEntity, TechnicalCapabilitiesDto>().ReverseMap();
+
+            // OptimizationStrategy
+            CreateMap<OptimizationStrategyEntity, OptimizationStrategyDto>()
+                .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority.ToString()))
+                .ReverseMap();
+
+            // OptimizationPlan
+            CreateMap<OptimizationPlanEntity, OptimizationPlanDto>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
+
+            // ProcessStep
+            CreateMap<ProcessStepEntity, ProcessStepDto>()
+                .ForMember(dest => dest.Process, opt => opt.MapFrom(src => src.Process))
+                .ForMember(dest => dest.AllocatedSchedule, opt => opt.MapFrom(src => src.ProviderSchedule));
+
+            // ProcessEstimate
+            CreateMap<ProcessEstimateEntity, ProcessEstimateDto>();
+
+            // OptimizationMetrics
+            CreateMap<OptimizationMetricsEntity, OptimizationMetricsDto>()
+                .ForMember(dest => dest.TotalDuration, opt => opt.MapFrom(src => TimeSpan.FromTicks(src.TotalTime)));
+
+            // WarrantyTerms
+            CreateMap<WarrantyTermsEntity, WarrantyTermsDto>();
+
+            // ProviderSchedule
+            CreateMap<ProviderScheduleEntity, ProviderScheduleDto>();
+            CreateMap<ProviderScheduleSegmentEntity, ProviderScheduleSegmentDto>();
 
             // Working Hours Entity with custom WorkingDays conversion
             CreateMap<ProviderWorkingHoursEntity, ProviderWorkingHoursDto>()

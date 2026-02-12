@@ -85,4 +85,9 @@ public class ProviderRepository : Repository<ProviderEntity>, IProviderRepositor
 
     public Task<List<ProviderEntity>> GetRunningProvidersAsync()
         => _dbSet.Where(p => p.IsRunning).ToListAsync();
+
+    public Task<List<ProviderEntity>> GetProvidersWithCapabilityAsync(ProcessType process, Guid? excludedProviderId)
+        => _dbSet
+            .Where(p => p.ProcessCapabilities.Any(cap => cap.Process == process.ToString()) && p.Id != excludedProviderId)
+            .ToListAsync();
 }

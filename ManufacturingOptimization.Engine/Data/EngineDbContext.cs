@@ -28,5 +28,21 @@ public class EngineDbContext : DbContext, IProviderDbContext
         modelBuilder.ApplyConfiguration(new ProcessCapabilityConfiguration());
         modelBuilder.ApplyConfiguration(new TechnicalCapabilitiesConfiguration());
         modelBuilder.ApplyConfiguration(new ProviderWorkingHoursConfiguration());
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                {
+                    property.SetValueConverter(
+                        new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
+                            v => v.ToUniversalTime(),
+                            v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
+                        )
+                    );
+                }
+            }
+        }
     }
 }

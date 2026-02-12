@@ -60,6 +60,8 @@ namespace ManufacturingOptimization.Common.Models.Data.Mappings
                 .ForMember(dest => dest.TotalEmissionsKgCO2, opt => opt.MapFrom(src => src.TotalEmissionsKgCO2));
 
             CreateMap<ProviderScheduleModel, ProviderScheduleEntity>()
+                .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.StartWorkingTime))
+                .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.EndWorkingTime))
                 .ForMember(dest => dest.Segments, opt => opt.MapFrom(src => src.Segments));
 
             CreateMap<ProviderScheduleEntity, ProviderScheduleModel>()

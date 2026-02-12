@@ -8,6 +8,7 @@ using ManufacturingOptimization.ProviderSimulator.Data.Entities;
 using ManufacturingOptimization.Common.Models.Extensions;
 using ManufacturingOptimization.ProviderSimulator.Models;
 using static ManufacturingOptimization.Common.Models.Extensions.ProviderScheduleSegmentExtensions;
+using ManufacturingOptimization.Common.Messaging.Messages;
 
 namespace ManufacturingOptimization.ProviderSimulator.Handlers;
 
@@ -45,7 +46,11 @@ public sealed class ProcessProposalHandler : IMessageHandler<ProposeProcessToPro
             return;
 
         var proposal = CreateBaseProposal(command);
-        var response = new ProcessProposalEstimatedEvent();
+        var response = new ProcessProposalEstimatedEvent
+        {
+            ProviderId = _context.Provider.Id,
+            ProviderName = _context.Provider.Name
+        };
 
         try
         {
@@ -71,7 +76,7 @@ public sealed class ProcessProposalHandler : IMessageHandler<ProposeProcessToPro
         {
             await SaveProposalAsync(proposal);
             response.ProposalId = proposal.Id;
-            _publisher.PublishReply(command, response);
+            _publisher.Publish(Exchanges.Process, $"{ProcessRoutingKeys.Estimated}.{_context.Provider.Id}", response);
         }
     }
 
@@ -93,8 +98,6 @@ public sealed class ProcessProposalHandler : IMessageHandler<ProposeProcessToPro
         return new ProviderScheduleModel
         {
             Id = Guid.NewGuid(),
-            StartTime = command.RequestedTimeWindow.StartTime,
-            EndTime = command.RequestedTimeWindow.EndTime,
             Segments = baseTimeline
                 .Overlay(breaks)
                 .Overlay(occupied, OverlayMode.ForceOverlay)

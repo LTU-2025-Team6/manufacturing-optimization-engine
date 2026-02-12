@@ -11,5 +11,5 @@ public interface IOptimizationDbContext : IDbContext
     DbSet<ProcessEstimateEntity> ProcessEstimates { get; }
     DbSet<OptimizationMetricsEntity> OptimizationMetrics { get; }
     DbSet<WarrantyTermsEntity> WarrantyTerms { get; }
-        
+    DbSet<ProviderScheduleEntity> ProviderSchedules { get; }
 }

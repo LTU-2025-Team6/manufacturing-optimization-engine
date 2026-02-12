@@ -20,6 +20,15 @@ public class ProviderDto
     public ProviderWorkingHoursDto WorkingHours { get; set; } = new();
 }
 
+public class AlternativeProviderDto
+{
+    public Guid ProviderId { get; set; }
+    public string ProviderName { get; set; } = string.Empty;
+    public ProcessEstimateDto Estimate { get; set; } = null!;
+    public ProviderScheduleDto Schedule { get; set; } = null!;
+
+}
+
 public class TechnicalCapabilitiesDto
 {
     public double AxisHeight { get; set; }

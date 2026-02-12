@@ -340,11 +340,6 @@ namespace ManufacturingOptimization.Gateway.Services
                     StrategyId = strategy.Id
                 };
             }
-            else
-            {
-                // Метрики обновляются на месте, старые значения перезаписываются
-                // Удаление не требуется, так как это та же сущность
-            }
 
             strategy.Metrics.TotalCost = totalCost;
             strategy.Metrics.TotalTime = totalDuration.Ticks;

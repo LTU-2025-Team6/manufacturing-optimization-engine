@@ -28,6 +28,6 @@ public class ProviderStoppedHandler : IMessageHandler<ProviderStoppedEvent>
 
     public async Task HandleAsync(ProviderStoppedEvent evt)
     {
-        await _providerRepository.UpdateRunningState(evt.ProviderId, false);
+        await _providerRepository.UpdateRunningStateAsync(evt.ProviderId, false);
     }
 }

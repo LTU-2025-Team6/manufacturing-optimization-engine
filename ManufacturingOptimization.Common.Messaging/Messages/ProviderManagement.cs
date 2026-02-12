@@ -9,7 +9,9 @@ public static class ProviderRoutingKeys
     public const string AllProvidersStarted = "provider.all-started";
     public const string StopAllProviders = "provider.stop-all";
     public const string AllProvidersStopped = "provider.all-stopped";
+    public const string RequestAllProviderStarted = "provider.request-all-started";
     public const string StartProvider = "provider.start";
+    public const string ProviderContainerStarted = "provider.container-started";
     public const string ProviderStarted = "provider.started";
     public const string StopProvider = "provider.stop";
     public const string ProviderStopped = "provider.stopped";
@@ -35,10 +37,18 @@ public class StartAllProvidersCommand : BaseCommand
 
 public class AllProvidersStartedEvent : BaseEvent
 {
-    public IReadOnlyList<ProviderModel> RunningProviders { get; set; } = null!;
 }
 
 public class StartProviderCommand : BaseCommand
+{
+    public Guid ProviderId { get; set; }
+}
+
+public class RequestAllProviderStartedCommand : BaseCommand
+{
+}
+
+public class ProviderContainerStartedEvent : BaseEvent
 {
     public Guid ProviderId { get; set; }
 }

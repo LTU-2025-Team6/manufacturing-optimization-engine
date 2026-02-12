@@ -4,29 +4,25 @@ using ManufacturingOptimization.ProviderSimulator.Abstractions;
 
 namespace ManufacturingOptimization.ProviderSimulator.Handlers;
 
-public sealed class UpdateProviderHandler : IMessageHandler<UpdateProviderCommand>
+public sealed class RequestAllProviderStartedHandler : IMessageHandler<RequestAllProviderStartedCommand>
 {
     private readonly IProviderSimulationContext _providerContext;
     private readonly IMessagePublisher _messagePublisher;
-    private readonly ILogger<UpdateProviderHandler> _logger;
+    private readonly ILogger<RequestAllProviderStartedHandler> _logger;
 
-    public UpdateProviderHandler(
+    public RequestAllProviderStartedHandler(
         IProviderSimulationContext providerContext,
         IMessagePublisher messagePublisher,
-        ILogger<UpdateProviderHandler> logger)
+        ILogger<RequestAllProviderStartedHandler> logger)
     {
         _providerContext = providerContext;
         _messagePublisher = messagePublisher;
         _logger = logger;
     }
 
-    public Task HandleAsync(UpdateProviderCommand command)
+    public Task HandleAsync(RequestAllProviderStartedCommand command)
     {
-        if (command.Provider.Id != _providerContext.Provider.Id)
-            return Task.CompletedTask;
-
-        _providerContext.Provider = command.Provider;
-        _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.ProviderUpdated, new ProviderUpdatedEvent
+        _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.ProviderStarted, new ProviderStartedEvent
         {
             Provider = _providerContext.Provider
         });

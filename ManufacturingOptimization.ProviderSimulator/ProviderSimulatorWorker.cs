@@ -13,7 +13,7 @@ public class ProviderSimulatorWorker : BackgroundService
     private readonly IMessageSubscriber _messageSubscriber;
     private readonly IMessagePublisher _messagePublisher;
     private readonly IMessageDispatcher _dispatcher;
-    private readonly IProviderSimulationContext _provider;
+    private readonly IProviderSimulationContext _providerContext;
 
     public ProviderSimulatorWorker(
         ILogger<ProviderSimulatorWorker> logger,
@@ -28,47 +28,47 @@ public class ProviderSimulatorWorker : BackgroundService
         _messageSubscriber = messageSubscriber;
         _messagePublisher = messagePublisher;
         _dispatcher = dispatcher;
-        _provider = providerLogic;
+        _providerContext = providerLogic;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         await SetupRabbitMq(cancellationToken);
-        await PublishStartupEvent(cancellationToken);
         await Task.Delay(Timeout.Infinite, cancellationToken);
-    }
-
-    private async Task PublishStartupEvent(CancellationToken cancellationToken)
-    {
-        await Task.Delay(3000, cancellationToken); // Ensure everyone is ready to receive the message
-        _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.ProviderStarted, new ProviderStartedEvent
-        {
-            Provider = _provider.Provider
-        });
     }
 
     private async Task SetupRabbitMq(CancellationToken cancellationToken)
     {
-        _messagingInfrastructure.DeclareQueue($"simulator.process.proposal.{_provider.Provider.Id}");
-        _messagingInfrastructure.BindQueue($"simulator.process.proposal.{_provider.Provider.Id}", Exchanges.Process, $"{ProcessRoutingKeys.Propose}.{_provider.Provider.Id}");
-        _messagingInfrastructure.PurgeQueue($"simulator.process.proposal.{_provider.Provider.Id}");
-        _messageSubscriber.Subscribe<ProposeProcessToProviderCommand>($"simulator.process.proposal.{_provider.Provider.Id}", e => _dispatcher.DispatchAsync(e));
+        var requestAllProviderStartedQueue = $"simulator.provider.request-start.{_providerContext.Provider.Id}";
+        _messagingInfrastructure.DeclareQueue(requestAllProviderStartedQueue);
+        _messagingInfrastructure.BindQueue(requestAllProviderStartedQueue, Exchanges.Provider, ProviderRoutingKeys.RequestAllProviderStarted);
+        _messagingInfrastructure.PurgeQueue(requestAllProviderStartedQueue);
+        _messageSubscriber.Subscribe<RequestAllProviderStartedCommand>(requestAllProviderStartedQueue, e => _dispatcher.DispatchAsync(e));
 
-        _messagingInfrastructure.DeclareQueue($"simulator.process.confirm.{_provider.Provider.Id}");
-        _messagingInfrastructure.BindQueue($"simulator.process.confirm.{_provider.Provider.Id}", Exchanges.Process, $"{ProcessRoutingKeys.Confirm}.{_provider.Provider.Id}");
-        _messagingInfrastructure.PurgeQueue($"simulator.process.confirm.{_provider.Provider.Id}");
-        _messageSubscriber.Subscribe<ConfirmProcessProposalCommand>($"simulator.process.confirm.{_provider.Provider.Id}", e => _dispatcher.DispatchAsync(e));
+        var proposeQueue = $"simulator.process.proposal.{_providerContext.Provider.Id}";
+        _messagingInfrastructure.DeclareQueue(proposeQueue);
+        _messagingInfrastructure.BindQueue(proposeQueue, Exchanges.Process, $"{ProcessRoutingKeys.Propose}.{_providerContext.Provider.Id}");
+        _messagingInfrastructure.PurgeQueue(proposeQueue);
+        _messageSubscriber.Subscribe<ProposeProcessToProviderCommand>(proposeQueue, e => _dispatcher.DispatchAsync(e));
 
-        _messagingInfrastructure.DeclareQueue("simulator.provider.update-provider");
-        _messagingInfrastructure.BindQueue("simulator.provider.update-provider", Exchanges.Provider, ProviderRoutingKeys.UpdateProvider);
-        _messagingInfrastructure.PurgeQueue("simulator.provider.update-provider");
-        _messageSubscriber.Subscribe<UpdateProviderCommand>("simulator.provider.update-provider", e => _dispatcher.DispatchAsync(e));
+        var confirmQueue = $"simulator.process.confirm.{_providerContext.Provider.Id}";
+        _messagingInfrastructure.DeclareQueue(confirmQueue);
+        _messagingInfrastructure.BindQueue(confirmQueue, Exchanges.Process, $"{ProcessRoutingKeys.Confirm}.{_providerContext.Provider.Id}");
+        _messagingInfrastructure.PurgeQueue(confirmQueue);
+        _messageSubscriber.Subscribe<ConfirmProcessProposalCommand>(confirmQueue, e => _dispatcher.DispatchAsync(e));
 
-        _messagingInfrastructure.DeclareQueue("simulator.provider.request-schedule");
-        _messagingInfrastructure.BindQueue("simulator.provider.request-schedule", Exchanges.Provider, ProviderRoutingKeys.RequestProviderSchedule);
-        _messagingInfrastructure.PurgeQueue("simulator.provider.request-schedule");
-        _messageSubscriber.Subscribe<RequestProviderScheduleCommand>("simulator.provider.request-schedule", e => _dispatcher.DispatchAsync(e));
+        var updateProviderQueue = $"simulator.provider.update-provider.{_providerContext.Provider.Id}";
+        _messagingInfrastructure.DeclareQueue(updateProviderQueue);
+        _messagingInfrastructure.BindQueue(updateProviderQueue, Exchanges.Provider, ProviderRoutingKeys.UpdateProvider);
+        _messagingInfrastructure.PurgeQueue(updateProviderQueue);
+        _messageSubscriber.Subscribe<UpdateProviderCommand>(updateProviderQueue, e => _dispatcher.DispatchAsync(e));
 
-        await Task.Delay(1000, cancellationToken);
+        var requestScheduleQueue = $"simulator.provider.request-schedule.{_providerContext.Provider.Id}";
+        _messagingInfrastructure.DeclareQueue(requestScheduleQueue);
+        _messagingInfrastructure.BindQueue(requestScheduleQueue, Exchanges.Provider, ProviderRoutingKeys.RequestProviderSchedule);
+        _messagingInfrastructure.PurgeQueue(requestScheduleQueue);
+        _messageSubscriber.Subscribe<RequestProviderScheduleCommand>(requestScheduleQueue, e => _dispatcher.DispatchAsync(e));
+
+        await Task.Delay(300, cancellationToken);
     }
 }

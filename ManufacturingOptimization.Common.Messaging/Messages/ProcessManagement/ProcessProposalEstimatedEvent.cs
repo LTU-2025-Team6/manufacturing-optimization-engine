@@ -8,6 +8,8 @@ namespace ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
 /// </summary>
 public class ProcessProposalEstimatedEvent : BaseEvent
 {
+    public Guid ProviderId { get; set; }
+    public string ProviderName { get; set; } = string.Empty;
     public bool Accepted { get; set; }
     public string? DeclineReason { get; set; }
     public Guid? ProposalId { get; set; }

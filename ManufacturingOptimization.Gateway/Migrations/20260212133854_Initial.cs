@@ -12,6 +12,27 @@ namespace ManufacturingOptimization.Gateway.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "OptimizationRequests",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    CustomerId = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    MotorSpecs_PowerKW = table.Column<double>(type: "REAL", nullable: false),
+                    MotorSpecs_AxisHeightMM = table.Column<int>(type: "INTEGER", nullable: false),
+                    MotorSpecs_CurrentEfficiency = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    MotorSpecs_TargetEfficiency = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    MotorSpecs_MalfunctionDescription = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    Constraints_MaxBudget = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: true),
+                    Constraints_TimeWindow_StartTime = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Constraints_TimeWindow_EndTime = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OptimizationRequests", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Providers",
                 columns: table => new
                 {
@@ -218,6 +239,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     StrategyId = table.Column<Guid>(type: "TEXT", nullable: false),
                     StepNumber = table.Column<int>(type: "INTEGER", nullable: false),
                     Process = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    ProposalId = table.Column<Guid>(type: "TEXT", nullable: false),
                     SelectedProviderId = table.Column<Guid>(type: "TEXT", nullable: false),
                     SelectedProviderName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     ProviderScheduleId = table.Column<Guid>(type: "TEXT", nullable: true)
@@ -373,6 +395,9 @@ namespace ManufacturingOptimization.Gateway.Migrations
 
             migrationBuilder.DropTable(
                 name: "OptimizationMetrics");
+
+            migrationBuilder.DropTable(
+                name: "OptimizationRequests");
 
             migrationBuilder.DropTable(
                 name: "ProcessCapabilities");

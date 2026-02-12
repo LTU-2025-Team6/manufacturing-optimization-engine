@@ -12,6 +12,7 @@ public class PipelineFactory : IWorkflowPipelineFactory
 {
     private readonly ILoggerFactory _loggerFactory;
     private readonly IProviderRepository _providerRepository;
+    private readonly IAsyncAwaiter _asyncAwaiter;
     private readonly IMessagePublisher _messagePublisher;
     private readonly IMessageSubscriber _messageSubscriber;
     private readonly IMessagingInfrastructure _messagingInfrastructure;
@@ -19,6 +20,7 @@ public class PipelineFactory : IWorkflowPipelineFactory
 
     public PipelineFactory(
         ILoggerFactory loggerFactory,
+        IAsyncAwaiter asyncAwaiter,
         IProviderRepository providerRepository,
         IMessagePublisher messagePublisher,
         IMessageSubscriber messageSubscriber,
@@ -27,6 +29,7 @@ public class PipelineFactory : IWorkflowPipelineFactory
     {
         _loggerFactory = loggerFactory;
         _providerRepository = providerRepository;
+        _asyncAwaiter = asyncAwaiter;
         _messagePublisher = messagePublisher;
         _messageSubscriber = messageSubscriber;
         _messagingInfrastructure = messagingInfrastructure;
@@ -39,10 +42,10 @@ public class PipelineFactory : IWorkflowPipelineFactory
         {
             new WorkflowMatchingStep(_messagePublisher),
             new ProviderMatchingStep(_providerRepository, _messagePublisher),
-            new EstimationStep(_messagePublisher),
+            new EstimationStep(_messagePublisher, _asyncAwaiter),
             new OptimizationStep(_messagePublisher),
             new StrategySelectionStep(_messagePublisher, _messagingInfrastructure, _messageSubscriber, _mapper),
-            new ConfirmationStep(_messagePublisher)
+            new FinalizationStep(_messagePublisher)
         };
 
         return new WorkflowPipeline(steps, _loggerFactory.CreateLogger<WorkflowPipeline>());

@@ -15,7 +15,7 @@ public class OptimizationStrategyEntity
 
     // Navigation properties
     public OptimizationPlanEntity? Plan { get; set; }
-    public ICollection<ProcessStepEntity> Steps { get; set; } = new List<ProcessStepEntity>();
+    public ICollection<ProcessStepEntity> Steps { get; set; } = [];
     public OptimizationMetricsEntity? Metrics { get; set; }
     public WarrantyTermsEntity? Warranty { get; set; }
 }

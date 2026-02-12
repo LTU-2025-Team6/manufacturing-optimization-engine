@@ -16,6 +16,7 @@ public class GatewayDbContext : DbContext, IOptimizationDbContext, IProviderDbCo
     public DbSet<TechnicalCapabilitiesEntity> TechnicalCapabilities => Set<TechnicalCapabilitiesEntity>();
     public DbSet<ProviderWorkingHoursEntity> WorkingHours => Set<ProviderWorkingHoursEntity>();
     public DbSet<ProviderBreakPeriodEntity> BreakPeriods => Set<ProviderBreakPeriodEntity>();
+    public DbSet<OptimizationRequestEntity> OptimizationRequests => Set<OptimizationRequestEntity>();
     public DbSet<OptimizationPlanEntity> OptimizationPlans => Set<OptimizationPlanEntity>();
     public DbSet<OptimizationStrategyEntity> OptimizationStrategies => Set<OptimizationStrategyEntity>();
     public DbSet<ProcessStepEntity> ProcessSteps => Set<ProcessStepEntity>();
@@ -37,6 +38,7 @@ public class GatewayDbContext : DbContext, IOptimizationDbContext, IProviderDbCo
         modelBuilder.ApplyConfiguration(new ProcessCapabilityConfiguration());
         modelBuilder.ApplyConfiguration(new TechnicalCapabilitiesConfiguration());
         modelBuilder.ApplyConfiguration(new ProviderWorkingHoursConfiguration());
+        modelBuilder.ApplyConfiguration(new OptimizationRequestConfiguration());
         modelBuilder.ApplyConfiguration(new OptimizationPlanConfiguration());
         modelBuilder.ApplyConfiguration(new OptimizationStrategyConfiguration());
         modelBuilder.ApplyConfiguration(new ProcessStepConfiguration());
@@ -45,5 +47,21 @@ public class GatewayDbContext : DbContext, IOptimizationDbContext, IProviderDbCo
         modelBuilder.ApplyConfiguration(new ProcessEstimateConfiguration());
         modelBuilder.ApplyConfiguration(new OptimizationMetricsConfiguration());
         modelBuilder.ApplyConfiguration(new WarrantyTermsConfiguration());
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                {
+                    property.SetValueConverter(
+                        new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
+                            v => v.ToUniversalTime(),
+                            v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
+                        )
+                    );
+                }
+            }
+        }
     }
 }

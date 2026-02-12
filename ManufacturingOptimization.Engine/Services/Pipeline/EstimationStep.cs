@@ -2,11 +2,14 @@ using ManufacturingOptimization.Common.Messaging.Abstractions;
 using ManufacturingOptimization.Common.Messaging.Messages;
 using ManufacturingOptimization.Common.Messaging.Messages.OptimizationManagement;
 using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
+using ManufacturingOptimization.Common.Models.Contracts;
 using ManufacturingOptimization.Common.Models.Enums;
-using ManufacturingOptimization.Engine.Abstractions;
 using ManufacturingOptimization.Common.Models.Exceptions;
+using ManufacturingOptimization.Engine.Abstractions;
 using ManufacturingOptimization.Engine.Models;
 using ManufacturingOptimization.Engine.Models.OptimizationStep;
+using System.Diagnostics;
+using System.Numerics;
 
 namespace ManufacturingOptimization.Engine.Services.Pipeline;
 
@@ -18,10 +21,14 @@ namespace ManufacturingOptimization.Engine.Services.Pipeline;
 public class EstimationStep : IWorkflowStep
 {
     private readonly IMessagePublisher _messagePublisher;
+    private readonly IAsyncAwaiter _asyncAwaiter;
 
-    public EstimationStep(IMessagePublisher messagePublisher)
+    public EstimationStep(
+        IMessagePublisher messagePublisher,
+        IAsyncAwaiter asyncAwaiter)
     {
         _messagePublisher = messagePublisher;
+        _asyncAwaiter = asyncAwaiter;
     }
 
     public string Name => "Proposal & Estimation";
@@ -60,23 +67,22 @@ public class EstimationStep : IWorkflowStep
     {
         try
         {
-            var proposal = new ProposeProcessToProviderCommand
+            var response = await _asyncAwaiter.AwaitAsync(new AwaitScenario<ProcessProposalEstimatedEvent>
             {
-                PlanId = context.Plan.Id,
-                ProviderId = provider.ProviderId,
-                Process = step.Process,
-                MotorSpecs = context.Request.MotorSpecs,
-                RequestedTimeWindow = context.Request.Constraints.TimeWindow
-            };
-
-            var response = await _messagePublisher.RequestReplyAsync<ProcessProposalEstimatedEvent>(
-                Exchanges.Process,
-                $"simulator.process.proposal.{provider.ProviderId}",
-                proposal,
-                TimeSpan.FromMinutes(10));
-
-            if (response == null)
-                throw new OptimizationException($"Provider {provider.ProviderName} did not respond to process proposal within timeout");
+                Exchange = Exchanges.Process,
+                RoutingKey = $"{ProcessRoutingKeys.Estimated}.{provider.ProviderId}",
+                Timeout = TimeSpan.FromSeconds(10),
+                Match = evt => true,
+                BeforeAwait = () =>
+                    _messagePublisher.Publish(Exchanges.Process, $"{ProcessRoutingKeys.Propose}.{provider.ProviderId}", new ProposeProcessToProviderCommand
+                    {
+                        PlanId = context.Plan.Id,
+                        ProviderId = provider.ProviderId,
+                        Process = step.Process,
+                        MotorSpecs = context.Request.MotorSpecs,
+                        RequestedTimeWindow = context.Request.Constraints.TimeWindow
+                    })
+            });
 
             if (!response.Accepted)
                 return false; // Provider declined

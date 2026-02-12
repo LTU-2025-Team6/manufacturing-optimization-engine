@@ -41,6 +41,9 @@ builder.Services.AddSingleton<IMessagePublisher>(sp => sp.GetRequiredService<Rab
 builder.Services.AddSingleton<IMessageSubscriber>(sp => sp.GetRequiredService<RabbitMqService>());
 builder.Services.AddSingleton<IMessagingInfrastructure>(sp => sp.GetRequiredService<RabbitMqService>());
 
+// Register Async Awaiter
+builder.Services.AddSingleton<IAsyncAwaiter, AsyncAwaiter>();
+
 // System readiness coordination
 builder.Services.Configure<SystemReadinessSettings>(o => o.ServiceName = "Engine");
 builder.Services.AddSingleton<ISystemReadinessService, SystemReadinessService>();

@@ -24,6 +24,10 @@ builder.Services.AddDatabase();
 builder.Services.AddScoped<IProviderRepository, ProviderRepository>();
 builder.Services.AddScoped<IOptimizationPlanRepository, OptimizationPlanRepository>();
 builder.Services.AddScoped<IOptimizationStrategyRepository, OptimizationStrategyRepository>();
+builder.Services.AddScoped<IOptimizationRequestRepository, OptimizationRequestRepository>();
+builder.Services.AddScoped<IProviderScheduleRepository, ProviderScheduleRepository>();
+builder.Services.AddScoped<IProcessEstimateRepository, ProcessEstimateRepository>();
+builder.Services.AddScoped<IAlternativeProvidersRepository, InMemoryAlternativeProvidersRepository>();
 
 // Database lifecycle management
 builder.Services.AddHostedService<DatabaseManagementService>();
@@ -32,7 +36,11 @@ builder.Services.AddHostedService<DatabaseManagementService>();
 builder.Services.AddCorsConfiguration();
 
 // Add Services
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient(); // Required for Legacy "Get Providers"
@@ -87,6 +95,8 @@ builder.Services.AddHostedService(sp => (SystemReadinessService)sp.GetRequiredSe
 builder.Services.AddHostedService<GatewayWorker>();
 builder.Services.AddScoped<IOptimizationService, OptimizationService>();
 builder.Services.AddScoped<IProviderService, ProviderService>();
+builder.Services.AddScoped<IOptimizationPlanService, OptimizationPlanService>();
+builder.Services.AddScoped<IOptimizationStrategyService, OptimizationStrategyService>();
 
 var app = builder.Build();
 

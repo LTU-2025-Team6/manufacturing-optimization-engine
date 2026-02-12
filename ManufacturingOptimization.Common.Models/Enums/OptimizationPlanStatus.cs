@@ -12,6 +12,7 @@ public enum OptimizationPlanStatus
     GeneratingStrategies,
     AwaitingStrategySelection,
     StrategySelected,
+    Ready,
     Confirmed,
     Failed,
     InProgress,

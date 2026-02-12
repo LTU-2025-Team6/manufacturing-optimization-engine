@@ -49,29 +49,25 @@ public class ProviderSimulatorWorker : BackgroundService
 
     private async Task SetupRabbitMq(CancellationToken cancellationToken)
     {
-        var proposalQueueName = $"simulator.process.proposal.{_provider.Provider.Id}";
-        _messagingInfrastructure.DeclareQueue(proposalQueueName);
-        _messagingInfrastructure.BindQueue(proposalQueueName, Exchanges.Process, proposalQueueName);
-        _messagingInfrastructure.PurgeQueue(proposalQueueName);
-        _messageSubscriber.Subscribe<ProposeProcessToProviderCommand>(proposalQueueName, e => _dispatcher.DispatchAsync(e));
+        _messagingInfrastructure.DeclareQueue($"simulator.process.proposal.{_provider.Provider.Id}");
+        _messagingInfrastructure.BindQueue($"simulator.process.proposal.{_provider.Provider.Id}", Exchanges.Process, $"{ProcessRoutingKeys.Propose}.{_provider.Provider.Id}");
+        _messagingInfrastructure.PurgeQueue($"simulator.process.proposal.{_provider.Provider.Id}");
+        _messageSubscriber.Subscribe<ProposeProcessToProviderCommand>($"simulator.process.proposal.{_provider.Provider.Id}", e => _dispatcher.DispatchAsync(e));
 
-        var confirmationQueueName = $"simulator.process.confirm.{_provider.Provider.Id}";
-        _messagingInfrastructure.DeclareQueue(confirmationQueueName);
-        _messagingInfrastructure.BindQueue(confirmationQueueName, Exchanges.Process, confirmationQueueName);
-        _messagingInfrastructure.PurgeQueue(confirmationQueueName);
-        _messageSubscriber.Subscribe<ConfirmProcessProposalCommand>(confirmationQueueName, e => _dispatcher.DispatchAsync(e));
+        _messagingInfrastructure.DeclareQueue($"simulator.process.confirm.{_provider.Provider.Id}");
+        _messagingInfrastructure.BindQueue($"simulator.process.confirm.{_provider.Provider.Id}", Exchanges.Process, $"{ProcessRoutingKeys.Confirm}.{_provider.Provider.Id}");
+        _messagingInfrastructure.PurgeQueue($"simulator.process.confirm.{_provider.Provider.Id}");
+        _messageSubscriber.Subscribe<ConfirmProcessProposalCommand>($"simulator.process.confirm.{_provider.Provider.Id}", e => _dispatcher.DispatchAsync(e));
 
-        var updateProviderQueueName = $"simulator.provider.update-provider.{_provider.Provider.Id}";
-        _messagingInfrastructure.DeclareQueue(updateProviderQueueName);
-        _messagingInfrastructure.BindQueue(updateProviderQueueName, Exchanges.Provider, ProviderRoutingKeys.UpdateProvider);
-        _messagingInfrastructure.PurgeQueue(updateProviderQueueName);
-        _messageSubscriber.Subscribe<UpdateProviderCommand>(updateProviderQueueName, e => _dispatcher.DispatchAsync(e));
+        _messagingInfrastructure.DeclareQueue("simulator.provider.update-provider");
+        _messagingInfrastructure.BindQueue("simulator.provider.update-provider", Exchanges.Provider, ProviderRoutingKeys.UpdateProvider);
+        _messagingInfrastructure.PurgeQueue("simulator.provider.update-provider");
+        _messageSubscriber.Subscribe<UpdateProviderCommand>("simulator.provider.update-provider", e => _dispatcher.DispatchAsync(e));
 
-        var requestScheduleQueueName = $"simulator.provider.request-schedule.{_provider.Provider.Id}";
-        _messagingInfrastructure.DeclareQueue(requestScheduleQueueName);
-        _messagingInfrastructure.BindQueue(requestScheduleQueueName, Exchanges.Provider, ProviderRoutingKeys.RequestProviderSchedule);
-        _messagingInfrastructure.PurgeQueue(requestScheduleQueueName);
-        _messageSubscriber.Subscribe<RequestProviderScheduleCommand>(requestScheduleQueueName, e => _dispatcher.DispatchAsync(e));
+        _messagingInfrastructure.DeclareQueue("simulator.provider.request-schedule");
+        _messagingInfrastructure.BindQueue("simulator.provider.request-schedule", Exchanges.Provider, ProviderRoutingKeys.RequestProviderSchedule);
+        _messagingInfrastructure.PurgeQueue("simulator.provider.request-schedule");
+        _messageSubscriber.Subscribe<RequestProviderScheduleCommand>("simulator.provider.request-schedule", e => _dispatcher.DispatchAsync(e));
 
         var executionQueueName = $"simulator.process.execute.{_provider.Provider.Id}";
         _messagingInfrastructure.DeclareQueue(executionQueueName);

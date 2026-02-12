@@ -1,5 +1,6 @@
 using AutoMapper;
 using ManufacturingOptimization.Common.Messaging.Abstractions;
+using ManufacturingOptimization.Common.Messaging.Messages;
 using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
 using ManufacturingOptimization.Common.Models.Contracts;
 using ManufacturingOptimization.Common.Models.Enums;
@@ -58,7 +59,6 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
             await _proposalRepository.SaveChangesAsync();
 
             response.IsAccepted = true;
-            _messagePublisher.PublishReply(command, response);
         }
         catch (Exception ex)
         {
@@ -67,7 +67,7 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
         }
         finally
         {
-            _messagePublisher.PublishReply(command, response);
+            _messagePublisher.Publish(Exchanges.Process, $"{ProcessRoutingKeys.Reviewed}.{_providerContext.Provider.Id}", response);
         }
     }
 

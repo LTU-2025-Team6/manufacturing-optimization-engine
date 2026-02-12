@@ -1,5 +1,13 @@
 ﻿namespace ManufacturingOptimization.Gateway.DTOs;
 
+public class OptimizationPlanPreviewDto
+{
+    public Guid Id { get; set; }
+    public Guid RequestId { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+}
+
 public class OptimizationPlanDto
 {
     public Guid Id { get; set; }

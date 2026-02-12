@@ -1,4 +1,4 @@
-using ManufacturingOptimization.Common.Models.DTOs;
+using ManufacturingOptimization.Gateway.DTOs;
 using ManufacturingOptimization.Common.Models.Enums;
 using Spectre.Console;
 using System.Net.Http.Json;
@@ -92,7 +92,7 @@ async Task SubmitOptimizationRequest()
     // Generate random MotorRequest
     var random = new Random();
     var efficiencyClasses = new[] { MotorEfficiencyClass.IE1, MotorEfficiencyClass.IE2, MotorEfficiencyClass.IE3, MotorEfficiencyClass.IE4 };
-    var startTime = DateTime.Now.AddDays(random.Next(1, 100));
+    var startTime = DateTime.UtcNow.AddDays(random.Next(1, 100));
 
     var motorRequestDto = new OptimizationRequestDto
     {
@@ -624,11 +624,11 @@ void DisplayTimeline(List<ProcessStepDto> steps)
     foreach (var step in orderedSteps)
     {
         var slotStr = step.AllocatedSlot != null
-            ? $"{step.AllocatedSlot.StartTime:yyyy-MM-dd HH:mm} - {step.AllocatedSlot.EndTime:HH:mm}"
+            ? $"{step.AllocatedSlot.Start:yyyy-MM-dd HH:mm} - {step.AllocatedSlot.End:HH:mm}"
             : "[dim]Not scheduled[/]";
             
         var duration = step.AllocatedSlot != null
-            ? $"{(step.AllocatedSlot.EndTime - step.AllocatedSlot.StartTime).TotalHours:N1}h"
+            ? $"{(step.AllocatedSlot.End - step.AllocatedSlot.Start).TotalHours:N1}h"
             : "-";
         
         timelineTable.AddRow(
@@ -761,8 +761,8 @@ void DisplayAvailableTimeSlots(List<ProcessStepDto> steps)
         foreach (var slot in step.Estimate.AvailableTimeSlots)
         {
             var isSelected = step.AllocatedSlot != null &&
-                           slot.StartTime >= step.AllocatedSlot.StartTime &&
-                           slot.EndTime <= step.AllocatedSlot.EndTime;
+                           slot.StartTime >= step.AllocatedSlot.Start &&
+                           slot.EndTime <= step.AllocatedSlot.End;
             
             var duration = slot.EndTime - slot.StartTime;
             

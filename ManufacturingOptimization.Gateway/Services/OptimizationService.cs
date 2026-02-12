@@ -16,6 +16,7 @@ namespace ManufacturingOptimization.Gateway.Services
         private readonly IMessagePublisher _messagePublisher;
         private readonly IOptimizationStrategyRepository _strategyRepository;
         private readonly IOptimizationPlanRepository _planRepository;
+        private readonly IOptimizationRequestRepository _requestRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<OptimizationService> _logger;
 
@@ -23,19 +24,27 @@ namespace ManufacturingOptimization.Gateway.Services
             IMessagePublisher messagePublisher,
             IOptimizationStrategyRepository strategyRepository,
             IOptimizationPlanRepository planRepository,
+            IOptimizationRequestRepository requestRepository,
             IMapper mapper,
             ILogger<OptimizationService> logger)
         {
             _messagePublisher = messagePublisher;
             _strategyRepository = strategyRepository;
             _planRepository = planRepository;
+            _requestRepository = requestRepository;
             _mapper = mapper;
             _logger = logger;
         }
 
         public async Task<Guid> RequestOptimizationPlanAsync(OptimizationRequestDto request)
         {
-            var requestModel = _mapper.Map<OptimizationRequestModel>(request);
+            // Save request to database
+            var requestEntity = _mapper.Map<OptimizationRequestEntity>(request);
+            await _requestRepository.AddAsync(requestEntity);
+            await _requestRepository.SaveChangesAsync();
+
+            // Map to model for messaging
+            var requestModel = _mapper.Map<OptimizationRequestModel>(requestEntity);
 
             var planModel = new OptimizationPlanModel
             {

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ManufacturingOptimization.Gateway.Migrations
 {
     [DbContext(typeof(GatewayDbContext))]
-    [Migration("20260203193753_Initial")]
+    [Migration("20260212133854_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -93,6 +93,25 @@ namespace ManufacturingOptimization.Gateway.Migrations
                         .IsUnique();
 
                     b.ToTable("OptimizationPlans");
+                });
+
+            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationRequestEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("OptimizationRequests");
                 });
 
             modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationStrategyEntity", b =>
@@ -213,6 +232,9 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.Property<string>("Process")
                         .IsRequired()
                         .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProposalId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("ProviderScheduleId")
@@ -448,6 +470,87 @@ namespace ManufacturingOptimization.Gateway.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("SelectedStrategy");
+                });
+
+            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationRequestEntity", b =>
+                {
+                    b.OwnsOne("ManufacturingOptimization.Common.Models.Data.Entities.MotorSpecificationsEntity", "MotorSpecs", b1 =>
+                        {
+                            b1.Property<Guid>("OptimizationRequestEntityId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int>("AxisHeightMM")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<string>("CurrentEfficiency")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("MalfunctionDescription")
+                                .HasMaxLength(1000)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<double>("PowerKW")
+                                .HasColumnType("REAL");
+
+                            b1.Property<string>("TargetEfficiency")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("OptimizationRequestEntityId");
+
+                            b1.ToTable("OptimizationRequests");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OptimizationRequestEntityId");
+                        });
+
+                    b.OwnsOne("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationRequestConstraintsEntity", "Constraints", b1 =>
+                        {
+                            b1.Property<Guid>("OptimizationRequestEntityId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<decimal?>("MaxBudget")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("OptimizationRequestEntityId");
+
+                            b1.ToTable("OptimizationRequests");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OptimizationRequestEntityId");
+
+                            b1.OwnsOne("ManufacturingOptimization.Common.Models.Data.Entities.TimeWindowEntity", "TimeWindow", b2 =>
+                                {
+                                    b2.Property<Guid>("OptimizationRequestConstraintsEntityOptimizationRequestEntityId")
+                                        .HasColumnType("TEXT");
+
+                                    b2.Property<DateTime>("EndTime")
+                                        .HasColumnType("TEXT");
+
+                                    b2.Property<DateTime>("StartTime")
+                                        .HasColumnType("TEXT");
+
+                                    b2.HasKey("OptimizationRequestConstraintsEntityOptimizationRequestEntityId");
+
+                                    b2.ToTable("OptimizationRequests");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("OptimizationRequestConstraintsEntityOptimizationRequestEntityId");
+                                });
+
+                            b1.Navigation("TimeWindow")
+                                .IsRequired();
+                        });
+
+                    b.Navigation("Constraints")
+                        .IsRequired();
+
+                    b.Navigation("MotorSpecs")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationStrategyEntity", b =>

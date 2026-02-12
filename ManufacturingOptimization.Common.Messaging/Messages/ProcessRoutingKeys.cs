@@ -2,7 +2,8 @@
 
 public static class ProcessRoutingKeys
 {
-    public const string Propose = "process.propose";
-    public const string Accepted = "process.accepted";
-    public const string Declined = "process.declined";
+    public const string Propose = "simulatior.process.proposal";
+    public const string Confirm = "simulatior.process.confirm";
+    public const string Estimated = "simulatior.process.estimated";
+    public const string Reviewed = "simulatior.process.reviewed";
 }

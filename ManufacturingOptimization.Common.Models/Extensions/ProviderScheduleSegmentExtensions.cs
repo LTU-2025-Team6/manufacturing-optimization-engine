@@ -235,7 +235,7 @@ public static class ProviderScheduleSegmentExtensions
 
         while (current + TimeSpan.FromHours(requiredWorkingHours) <= endTime)
         {
-            var slotTimeline = orderedTimeline.TryBuildPossibleWorkSlots(current, requiredWorkingHours);
+            var slotTimeline = orderedTimeline.TryBuildWorkSlot(current, requiredWorkingHours);
 
             if (slotTimeline != null)
             {
@@ -253,7 +253,7 @@ public static class ProviderScheduleSegmentExtensions
         return result;
     }
 
-    private static IReadOnlyList<ProviderScheduleSegmentModel>? TryBuildPossibleWorkSlots(this IReadOnlyList<ProviderScheduleSegmentModel> timeline, DateTime startTime, double requiredWorkingHours)
+    public static IReadOnlyList<ProviderScheduleSegmentModel>? TryBuildWorkSlot(this IReadOnlyList<ProviderScheduleSegmentModel> timeline, DateTime startTime, double requiredWorkingHours)
     {
         if (timeline == null || timeline.Count == 0)
             return null;

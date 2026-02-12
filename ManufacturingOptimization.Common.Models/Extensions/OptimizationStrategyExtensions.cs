@@ -50,8 +50,6 @@ public static class OptimizationStrategyExtensions
             step.AllocatedSchedule = new ProviderScheduleModel
             {
                 Id = schedule.Id,
-                StartTime = earliestWorkStart,
-                EndTime = latestWorkEnd,
                 Segments = clampedSegments
             };
         }

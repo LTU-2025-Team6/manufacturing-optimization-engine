@@ -113,8 +113,6 @@ public sealed partial class OptimizationStep : IWorkflowStep
                             SlotIndex = index,
                             Slot = new ProviderScheduleModel
                             {
-                                StartTime = startTime,
-                                EndTime = endTime,
                                 Segments = segments
                             },
                             StartTimeHours = (startTime - referenceTime).TotalHours,
@@ -252,8 +250,6 @@ public sealed partial class OptimizationStep : IWorkflowStep
                     AllocatedSchedule = scheduledProcess?.AllocatedSchedule != null 
                         ? new ProviderScheduleModel 
                         { 
-                            StartTime = scheduledProcess.AllocatedSchedule.StartTime, 
-                            EndTime = scheduledProcess.AllocatedSchedule.EndTime,
                             Segments = scheduledProcess.AllocatedSchedule.Segments
                         } 
                         : null,
@@ -574,8 +570,6 @@ public sealed partial class OptimizationStep : IWorkflowStep
             var selectedSlot = selectedSlots[0];
             var allocatedSchedule = new ProviderScheduleModel
             {
-                StartTime = referenceTime.AddHours(selectedSlot.StartTimeHours),
-                EndTime = referenceTime.AddHours(selectedSlot.EndTimeHours),
                 Segments = selectedSlot.Slot.Segments.Select(s => new ProviderScheduleSegmentModel
                 {
                     StartTime = s.StartTime,
@@ -600,7 +594,7 @@ public sealed partial class OptimizationStep : IWorkflowStep
         
         var firstSlot = scheduledProcesses.First().AllocatedSchedule!;
         var lastSlot = scheduledProcesses.Last().AllocatedSchedule!;
-        var totalDuration = lastSlot.EndTime - firstSlot.StartTime;
+        var totalDuration = lastSlot.EndWorkingTime - firstSlot.StartWorkingTime;
        
         return new OptimizationResult
         {

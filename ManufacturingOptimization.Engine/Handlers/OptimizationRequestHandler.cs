@@ -53,7 +53,7 @@ public class OptimizationRequestHandler : IMessageHandler<RequestOptimizationPla
 
         try
         {
-            var pipeline = _pipelineFactory.CreateWorkflowPipeline();
+            var pipeline = _pipelineFactory.CreateOptimizationPipeline();
             await pipeline.ExecuteAsync(context);
         }
         catch (Exception ex)

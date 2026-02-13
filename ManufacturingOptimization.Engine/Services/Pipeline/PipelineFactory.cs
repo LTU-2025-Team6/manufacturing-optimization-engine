@@ -36,7 +36,7 @@ public class PipelineFactory : IWorkflowPipelineFactory
         _mapper = mapper;
     }
 
-    public IWorkflowPipeline CreateWorkflowPipeline()
+    public IWorkflowPipeline CreateOptimizationPipeline()
     {
         var steps = new IWorkflowStep[]
         {
@@ -50,5 +50,15 @@ public class PipelineFactory : IWorkflowPipelineFactory
 
         return new WorkflowPipeline(steps, _loggerFactory.CreateLogger<WorkflowPipeline>());
     }
-}
 
+    public IWorkflowPipeline CreateExecutionPipeline()
+    {
+        var steps = new IWorkflowStep[]
+        {
+            // This pipeline only does execution
+            new ExecutionStep(_messagePublisher, _loggerFactory.CreateLogger<ExecutionStep>())
+        };
+
+        return new WorkflowPipeline(steps, _loggerFactory.CreateLogger<WorkflowPipeline>());
+    }
+}

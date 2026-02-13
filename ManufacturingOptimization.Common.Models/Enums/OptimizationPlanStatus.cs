@@ -14,6 +14,8 @@ public enum OptimizationPlanStatus
     StrategySelected,
     Ready,
     Confirmed,
-    Failed
+    Failed,
+    InProgress,
+    Completed
 }
 

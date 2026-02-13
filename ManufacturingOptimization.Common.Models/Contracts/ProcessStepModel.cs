@@ -4,7 +4,7 @@ namespace ManufacturingOptimization.Common.Models.Contracts;
 
 public class ProcessStepModel
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public int StepNumber { get; set; }
     public ProcessType Process { get; set; }
     public Guid SelectedProviderId { get; set; }

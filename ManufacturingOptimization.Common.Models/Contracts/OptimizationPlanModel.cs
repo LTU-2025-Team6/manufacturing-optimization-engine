@@ -12,6 +12,7 @@ public class OptimizationPlanModel
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? SelectedAt { get; set; }
     public DateTime? ConfirmedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
     public string? ErrorMessage { get; set; }
 }
 

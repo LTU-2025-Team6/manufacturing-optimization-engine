@@ -41,7 +41,9 @@ public class StartProviderHandler : IMessageHandler<StartProviderCommand>
 
         await _providerOrchestrator.StartAsync(provider);
 
-        // ProviderStartedEvent is emitted by provider simulators
-        // Running state is updated when the event is handled
+        _messagePublisher.Publish(
+            Exchanges.Provider,
+            ProviderRoutingKeys.ProviderContainerStarted,
+            new ProviderContainerStartedEvent { ProviderId = provider.Id });
     }
 }

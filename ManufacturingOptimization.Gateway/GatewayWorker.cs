@@ -78,7 +78,7 @@ public class GatewayWorker : BackgroundService
         _messageSubscriber.Subscribe<OptimizationPlanUpdatedEvent>("gateway.optimization.plan-updated", e => _dispatcher.DispatchAsync(e));
 
         // Give subscriptions time to register
-        await Task.Delay(1000, cancellationToken);
+        await Task.Delay(300, cancellationToken);
     }
 
     private void PublishStartupEvent()

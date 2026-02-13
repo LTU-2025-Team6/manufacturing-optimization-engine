@@ -56,29 +56,14 @@ public class ProviderRepository : Repository<ProviderEntity>, IProviderRepositor
             .ToListAsync(cancellationToken);
     }
 
-    public async Task UpdateRunningState(Guid providerId, bool isRunning, CancellationToken cancellationToken = default)
+    public async Task UpdateRunningStateAsync(Guid providerId, bool isRunning, CancellationToken cancellationToken = default)
     {
-        var provider = await _dbSet.FirstOrDefaultAsync(p => p.Id == providerId, cancellationToken);
-
-        if (provider == null)
-            throw new InvalidDataException($"Provider with ID {providerId} not found.");
-
+        var provider = await _dbSet.FirstOrDefaultAsync(p => p.Id == providerId, cancellationToken)
+            ?? throw new InvalidDataException($"Provider with ID {providerId} not found.");
+        
         provider.IsRunning = isRunning;
         await _context.SaveChangesAsync();
     }
-
-    public async Task UpdateAllRunningState(bool isRunning, CancellationToken cancellationToken = default)
-    {
-        var providers = await _dbSet.ToListAsync(cancellationToken);
-        foreach (var provider in providers)
-        {
-            provider.IsRunning = isRunning;
-        }
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task<bool> AreAllRunning(CancellationToken cancellationToken = default)
-        => await _dbSet.Where(p => p.AutoStart).AllAsync(p => p.IsRunning, cancellationToken);
 
     public Task DeleteAllAsync(CancellationToken cancellationToken = default)
         => _dbSet.ExecuteDeleteAsync(cancellationToken);

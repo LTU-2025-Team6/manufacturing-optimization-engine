@@ -67,7 +67,7 @@ public class EngineWorker : BackgroundService
         _messagingInfrastructure.PurgeQueue("engine.optimization.requests");
         _messageSubscriber.Subscribe<RequestOptimizationPlanCommand>("engine.optimization.requests", e => _dispatcher.DispatchAsync(e));
 
-        await Task.Delay(1000, cancellationToken);
+        await Task.Delay(300, cancellationToken);
     }
 
     private void PublishStartupEvent()

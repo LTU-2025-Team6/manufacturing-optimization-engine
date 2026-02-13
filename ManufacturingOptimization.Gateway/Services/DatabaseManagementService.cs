@@ -15,9 +15,6 @@ namespace ManufacturingOptimization.Gateway.Services;
 /// </summary>
 public class DatabaseManagementService : IHostedService
 {
-    // Toggle to recreate database on every startup (useful during development)
-    private const bool RECREATE_DATABASE_ON_STARTUP = false;
-
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DatabaseManagementService> _logger;
     private readonly IMapper _mapper;
@@ -41,12 +38,6 @@ public class DatabaseManagementService : IHostedService
         {
             using var scope = _serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<GatewayDbContext>();
-
-            if (RECREATE_DATABASE_ON_STARTUP)
-            {
-                // Clear for development purposes
-                await dbContext.Database.EnsureDeletedAsync(cancellationToken);
-            }
 
             await dbContext.Database.MigrateAsync(cancellationToken);
             await PrepareProviders(dbContext, cancellationToken);

@@ -75,6 +75,6 @@ public class ProviderSimulatorWorker : BackgroundService
         _messagingInfrastructure.PurgeQueue(executionQueueName);
         _messageSubscriber.Subscribe<ExecuteProcessCommand>(executionQueueName, e => _dispatcher.DispatchAsync(e));
 
-        await Task.Delay(1000, cancellationToken);
+        await Task.Delay(300, cancellationToken);
     }
 }

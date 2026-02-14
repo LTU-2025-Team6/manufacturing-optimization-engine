@@ -2,8 +2,8 @@ namespace ManufacturingOptimization.Gateway.DTOs;
 
 public class ProviderScheduleDto
 {
-    public DateTime StartWorkingTime { get; set; }
-    public DateTime EndWorkingTime { get; set; }
+    public DateTime StartTime { get; set; }
+    public DateTime EndTime { get; set; }
     public List<ProviderScheduleSegmentDto> Segments { get; set; } = [];
 }
 
@@ -18,4 +18,5 @@ public class ProviderScheduleSegmentDto
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public string SegmentType { get; set; } = string.Empty;
+    public int SegmentOrder { get; set; }
 }

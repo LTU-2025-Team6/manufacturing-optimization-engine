@@ -43,6 +43,7 @@ public class ProcessStepDto
     public string SelectedProviderName { get; set; } = string.Empty;
     public ProcessEstimateDto Estimate { get; set; } = new();
     public ProviderScheduleDto? AllocatedSchedule { get; set; }
+    public ProviderScheduleDto? AllocatedSlot { get; set; }
 }
 
 public class ProcessEstimateDto
@@ -52,6 +53,7 @@ public class ProcessEstimateDto
     public double QualityScore { get; set; }
     public double EmissionsKgCO2 { get; set; }
     public double Duration { get; set; }
+    public List<TimeWindowDto> AvailableTimeSlots { get; set; } = new();
 }
 
 public class OptimizationMetricsDto

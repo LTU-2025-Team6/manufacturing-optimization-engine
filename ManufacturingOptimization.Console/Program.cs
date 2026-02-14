@@ -890,6 +890,7 @@ void DisplayEvent(string routingKey, string json)
             break;
     }
 }
+                      
 //// Select role
 //var role = AnsiConsole.Prompt(
 //    new SelectionPrompt<string>()

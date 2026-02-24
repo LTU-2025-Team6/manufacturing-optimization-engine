@@ -15,7 +15,6 @@ public class ProviderDto
     public string Name { get; set; } = string.Empty;
     public bool AutoStart { get; set; }
     public bool IsRunning { get; set; }
-    public bool Enabled { get; set; }
     public List<ProcessCapabilityDto> ProcessCapabilities { get; set; } = new();
     public TechnicalCapabilitiesDto TechnicalCapabilities { get; set; } = new();
     public ProviderWorkingHoursDto WorkingHours { get; set; } = new();

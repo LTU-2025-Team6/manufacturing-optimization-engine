@@ -14,6 +14,8 @@ using ManufacturingOptimization.Gateway.Middleware;
 using ManufacturingOptimization.Gateway.Services;
 using ManufacturingOptimization.Gateway.Settings;
 using Microsoft.Extensions.Options;
+using ManufacturingOptimization.Common.Messaging.Messages.ExecutionManagement;
+using ManufacturingOptimization.Gateway.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,8 +79,14 @@ builder.Services.AddSingleton<IMessageSubscriber>(sp => sp.GetRequiredService<Ra
 // Notification Publisher Helper
 builder.Services.AddSingleton<INotificationPublisher, NotificationPublisher>();
 
+// Add SignalR
+builder.Services.AddSignalR();
+
 // Message dispatching
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
+builder.Services.AddSingleton<ExecutionEventHandler>();
+builder.Services.AddSingleton<IMessageHandler<ExecutionStepStartedEvent>>(sp => sp.GetRequiredService<ExecutionEventHandler>());
+builder.Services.AddSingleton<IMessageHandler<ExecutionStepCompletedEvent>>(sp => sp.GetRequiredService<ExecutionEventHandler>());
 builder.Services.AddScoped<IMessageHandler<ServiceReadyEvent>, ServiceReadyHandler>();
 builder.Services.AddScoped<IMessageHandler<SystemReadyEvent>, SystemReadyHandler>();
 builder.Services.AddScoped<IMessageHandler<StartAllProvidersCommand>, StartAllProvidersHandler>();
@@ -120,5 +128,8 @@ app.UseSystemReadiness();
 
 app.UseAuthorization();
 app.MapControllers();
+
+// Map SignalR Hubs
+app.MapHub<ExecutionHub>("/hubs/execution");
 
 app.Run();

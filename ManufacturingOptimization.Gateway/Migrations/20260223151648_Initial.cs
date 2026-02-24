@@ -12,6 +12,24 @@ namespace ManufacturingOptimization.Gateway.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Title = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Message = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: false),
+                    Type = table.Column<int>(type: "INTEGER", nullable: false),
+                    IsRead = table.Column<bool>(type: "INTEGER", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ReadAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Source = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OptimizationRequests",
                 columns: table => new
                 {
@@ -311,6 +329,26 @@ namespace ManufacturingOptimization.Gateway.Migrations
                 column: "ProviderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Notifications_CreatedAt",
+                table: "Notifications",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notifications_IsRead",
+                table: "Notifications",
+                column: "IsRead");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notifications_Source",
+                table: "Notifications",
+                column: "Source");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notifications_Type",
+                table: "Notifications",
+                column: "Type");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OptimizationMetrics_StrategyId",
                 table: "OptimizationMetrics",
                 column: "StrategyId",
@@ -392,6 +430,9 @@ namespace ManufacturingOptimization.Gateway.Migrations
 
             migrationBuilder.DropTable(
                 name: "BreakPeriods");
+
+            migrationBuilder.DropTable(
+                name: "Notifications");
 
             migrationBuilder.DropTable(
                 name: "OptimizationMetrics");

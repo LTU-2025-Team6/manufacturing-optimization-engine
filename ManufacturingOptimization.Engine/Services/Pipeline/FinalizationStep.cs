@@ -18,10 +18,14 @@ namespace ManufacturingOptimization.Engine.Services.Pipeline;
 public class FinalizationStep : IWorkflowStep
 {
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
 
-    public FinalizationStep(IMessagePublisher messagePublisher)
+    public FinalizationStep(
+        IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher)
     {
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
     }
 
     public string Name => "Process Finalization";

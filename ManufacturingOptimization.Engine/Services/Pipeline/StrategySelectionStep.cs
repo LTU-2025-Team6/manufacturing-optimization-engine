@@ -19,6 +19,7 @@ public class StrategySelectionStep : IWorkflowStep
 {
     private readonly TimeSpan TIMEOUT = TimeSpan.FromMinutes(10);
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
     private readonly IMessagingInfrastructure _messagingInfrastructure;
     private readonly IMessageSubscriber _messageSubscriber;
     private readonly IMapper _mapper;
@@ -27,11 +28,13 @@ public class StrategySelectionStep : IWorkflowStep
 
     public StrategySelectionStep(
         IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher,
         IMessagingInfrastructure messagingInfrastructure,
         IMessageSubscriber messageSubscriber,
         IMapper mapper)
     {
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
         _messagingInfrastructure = messagingInfrastructure;
         _messageSubscriber = messageSubscriber;
         _mapper = mapper;
@@ -39,6 +42,8 @@ public class StrategySelectionStep : IWorkflowStep
 
     public async Task ExecuteAsync(WorkflowContext context, CancellationToken cancellationToken = default)
     {
+        _notificationPublisher.NotifyOptimizationStepStarted("Strategy Selection", context.Plan.Id);
+
         if (context.Plan.Strategies.Count == 0)
             throw new OptimizationException("No strategies available for selection");
 
@@ -91,6 +96,9 @@ public class StrategySelectionStep : IWorkflowStep
             {
                 Plan = context.Plan
             });
+
+            // Notify strategy selection
+            _notificationPublisher.NotifyStrategySelected(context.Plan.Id, context.Plan.SelectedStrategy.Id);
         }
         catch (OperationCanceledException) when (cts.Token.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {

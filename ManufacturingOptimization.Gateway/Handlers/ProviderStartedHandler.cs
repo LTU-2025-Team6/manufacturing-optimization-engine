@@ -16,21 +16,26 @@ public class ProviderStartedHandler : IMessageHandler<ProviderStartedEvent>
     private readonly OrchestrationSettings _orchestrationSettings;
     private readonly IProviderRepository _providerRepository;
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
 
     public ProviderStartedHandler(
         IMapper mapper,
         IOptions<OrchestrationSettings> orchestrationSettings,
         IProviderRepository providerRepository,
-        IMessagePublisher messagePublisher)
+        IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher)
     {
         _mapper = mapper;
         _orchestrationSettings = orchestrationSettings.Value;
         _providerRepository = providerRepository;
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
     }
 
     public Task HandleAsync(ProviderStartedEvent evt)
     {
+        _notificationPublisher.NotifyProviderStarted(evt.Provider.Name);
+
         //if (_orchestrationSettings.IsDevelopmentMode)
         //{
         //    var providerEntity = _mapper.Map<ProviderEntity>(evt.Provider);

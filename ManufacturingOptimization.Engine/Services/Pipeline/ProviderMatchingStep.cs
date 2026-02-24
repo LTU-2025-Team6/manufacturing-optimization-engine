@@ -21,17 +21,24 @@ public class ProviderMatchingStep : IWorkflowStep
 {
     private readonly IProviderRepository _providerRepository;
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
 
     public string Name => "Provider Matching";
 
-    public ProviderMatchingStep(IProviderRepository providerRepository, IMessagePublisher messagePublisher)
+    public ProviderMatchingStep(
+        IProviderRepository providerRepository,
+        IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher)
     {
         _providerRepository = providerRepository;
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
     }
 
     public async Task ExecuteAsync(WorkflowContext context, CancellationToken cancellationToken = default)
     {
+        _notificationPublisher.NotifyOptimizationStepStarted("Provider Matching", context.Plan.Id);
+
         context.Plan.Status = OptimizationPlanStatus.MatchingProviders;
 
         _messagePublisher.Publish(Exchanges.Optimization, OptimizationRoutingKeys.PlanUpdated, new OptimizationPlanUpdatedEvent

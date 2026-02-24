@@ -21,6 +21,7 @@ public sealed class ProcessProposalHandler : IMessageHandler<ProposeProcessToPro
     private readonly IMapper _mapper;
     private readonly IProviderSimulationContext _context;
     private readonly IMessagePublisher _publisher;
+    private readonly INotificationPublisher _notificationPublisher;
     private readonly IProposalRepository _proposalRepository;
     private readonly IExecutionRepository _plannedProcessRepository;
 
@@ -29,11 +30,13 @@ public sealed class ProcessProposalHandler : IMessageHandler<ProposeProcessToPro
         IMapper mapper,
         IProviderSimulationContext context,
         IMessagePublisher publisher,
+        INotificationPublisher notificationPublisher,
         IProposalRepository proposalRepository,
         IExecutionRepository plannedProcessRepository)
     {
         _context = context;
         _publisher = publisher;
+        _notificationPublisher = notificationPublisher;
         _proposalRepository = proposalRepository;
         _plannedProcessRepository = plannedProcessRepository;
         _logger = logger;
@@ -44,6 +47,9 @@ public sealed class ProcessProposalHandler : IMessageHandler<ProposeProcessToPro
     {
         if (command.ProviderId != _context.Provider.Id)
             return;
+
+        // Notify request received
+        _notificationPublisher.NotifyProviderReceivedProposal(_context.Provider.Name, command.PlanId, command.Process);
 
         var proposal = CreateBaseProposal(command);
         var response = new ProcessProposalEstimatedEvent
@@ -76,7 +82,12 @@ public sealed class ProcessProposalHandler : IMessageHandler<ProposeProcessToPro
         {
             await SaveProposalAsync(proposal);
             response.ProposalId = proposal.Id;
+
+            // Publish the estimate response
             _publisher.Publish(Exchanges.Process, $"{ProcessRoutingKeys.Estimated}.{_context.Provider.Id}", response);
+
+            // Notify request completed
+            _notificationPublisher.NotifyProviderEstimatedProposal(_context.Provider.Name, command.PlanId, command.Process, response.Accepted, response.DeclineReason);
         }
     }
 

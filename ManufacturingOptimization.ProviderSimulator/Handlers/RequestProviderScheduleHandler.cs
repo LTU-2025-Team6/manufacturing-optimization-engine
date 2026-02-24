@@ -13,17 +13,20 @@ public sealed class RequestProviderScheduleHandler : IMessageHandler<RequestProv
     private readonly IProviderSimulationContext _providerContext;
     private readonly IExecutionRepository _executionRepository;
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
     private readonly ILogger<ProcessConfirmationHandler> _logger;
 
     public RequestProviderScheduleHandler(
         IProviderSimulationContext providerContext,
         IExecutionRepository executionRepository,
         IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher,
         ILogger<ProcessConfirmationHandler> logger)
     {
         _providerContext = providerContext;
         _executionRepository = executionRepository;
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
         _logger = logger;
     }
 
@@ -31,6 +34,9 @@ public sealed class RequestProviderScheduleHandler : IMessageHandler<RequestProv
     {
         if (command.ProviderId != _providerContext.Provider.Id)
             return;
+
+        // Notify request received
+        _notificationPublisher.NotifyProviderReceivedScheduleRequest(_providerContext.Provider.Name, command.Start, command.End);
 
         var schedule = await BuildSchedule(command);
         _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.ProviderScheduleCreated, new ProviderScheduleCreatedEvent
@@ -41,7 +47,8 @@ public sealed class RequestProviderScheduleHandler : IMessageHandler<RequestProv
             Schedules = schedule
         });
 
-        return;
+        // Notify request completed
+        _notificationPublisher.NotifyProviderCompletedScheduleRequest(_providerContext.Provider.Name, command.Start, command.End);
     }
 
     public async Task<List<ProviderDayScheduleModel>> BuildSchedule(RequestProviderScheduleCommand command)

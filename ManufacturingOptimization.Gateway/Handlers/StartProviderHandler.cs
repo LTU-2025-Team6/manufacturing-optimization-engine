@@ -13,23 +13,28 @@ public class StartProviderHandler : IMessageHandler<StartProviderCommand>
     private readonly IProviderOrchestrator _providerOrchestrator;
     private readonly IProviderRepository _providerRepository;
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
 
     public StartProviderHandler(
         IOptions<OrchestrationSettings> orchestrationSettings,
         IProviderOrchestrator providerOrchestrator,
         IProviderRepository providerRepository,
-        IMessagePublisher messagePublisher)
+        IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher)
     {
         _orchestrationSettings = orchestrationSettings.Value;
         _providerOrchestrator = providerOrchestrator;
         _providerRepository = providerRepository;
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
     }
 
     public async Task HandleAsync(StartProviderCommand evt)
     {
         if (_orchestrationSettings.IsDevelopmentMode)
             return;
+
+        _notificationPublisher.NotifyStartingProvider(evt.ProviderId);
 
         var provider = await _providerRepository.GetByIdAsync(evt.ProviderId);
 

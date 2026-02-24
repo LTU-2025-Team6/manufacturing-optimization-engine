@@ -21,13 +21,16 @@ namespace ManufacturingOptimization.Engine.Services.Pipeline;
 public class EstimationStep : IWorkflowStep
 {
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
     private readonly IAsyncAwaiter _asyncAwaiter;
 
     public EstimationStep(
         IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher,
         IAsyncAwaiter asyncAwaiter)
     {
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
         _asyncAwaiter = asyncAwaiter;
     }
 
@@ -35,6 +38,8 @@ public class EstimationStep : IWorkflowStep
 
     public async Task ExecuteAsync(WorkflowContext context, CancellationToken cancellationToken = default)
     {
+        _notificationPublisher.NotifyOptimizationStepStarted("Estimation", context.Plan.Id);
+
         context.Plan.Status = OptimizationPlanStatus.EstimatingCosts;
         _messagePublisher.Publish(Exchanges.Optimization, OptimizationRoutingKeys.PlanUpdated, new OptimizationPlanUpdatedEvent
         {

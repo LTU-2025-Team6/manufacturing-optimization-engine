@@ -22,6 +22,7 @@ public class OptimizationRequestHandler : IMessageHandler<RequestOptimizationPla
     private readonly IWorkflowPipelineFactory _pipelineFactory;
     private readonly ISystemReadinessService _readinessService;
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
     private readonly IMapper _mapper;
     private readonly ILogger<OptimizationRequestHandler> _logger;
 
@@ -29,12 +30,14 @@ public class OptimizationRequestHandler : IMessageHandler<RequestOptimizationPla
         IWorkflowPipelineFactory pipelineFactory,
         ISystemReadinessService readinessService,
         IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher,
         IMapper mapper,
         ILogger<OptimizationRequestHandler> logger)
     {
         _pipelineFactory = pipelineFactory;
         _readinessService = readinessService;
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
         _mapper = mapper;
         _logger = logger;
     }
@@ -44,6 +47,9 @@ public class OptimizationRequestHandler : IMessageHandler<RequestOptimizationPla
         // Wait for system to be ready before processing
         await _readinessService.WaitForSystemReadyAsync();
         await _readinessService.WaitForProvidersReadyAsync();
+
+        // Notify that optimization has started
+        _notificationPublisher.NotifyOptimizationStarted(command.Plan.Id);
 
         var context = new WorkflowContext
         {
@@ -55,15 +61,20 @@ public class OptimizationRequestHandler : IMessageHandler<RequestOptimizationPla
         {
             var pipeline = _pipelineFactory.CreateWorkflowPipeline();
             await pipeline.ExecuteAsync(context);
+
+            _notificationPublisher.NotifyOptimizationCompleted(command.Plan.Id);
         }
         catch (Exception ex)
         {
             context.Plan.ErrorMessage = ex.Message;
             context.Plan.Status = OptimizationPlanStatus.Failed;
-            _messagePublisher.Publish(Exchanges.Optimization, OptimizationRoutingKeys.PlanUpdated, new OptimizationPlanUpdatedEvent
-            {
-                Plan = context.Plan
-            });
+
+            _messagePublisher.Publish(
+                Exchanges.Optimization,
+                OptimizationRoutingKeys.PlanUpdated,
+                new OptimizationPlanUpdatedEvent { Plan = context.Plan });
+
+            _notificationPublisher.NotifyOptimizationFailed(command.Plan.Id, ex.Message);
         }
     }
 }

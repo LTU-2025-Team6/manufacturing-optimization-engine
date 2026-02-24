@@ -18,6 +18,7 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
     private readonly IProviderSimulationContext _providerContext;
     private readonly IMessagePublisher _messagePublisher;
     private readonly IProposalRepository _proposalRepository;
+    private readonly INotificationPublisher _notificationPublisher;
     private readonly IMapper _mapper;
     private readonly ILogger<ProcessConfirmationHandler> _logger;
 
@@ -25,18 +26,23 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
         IProviderSimulationContext providerContext,
         IMessagePublisher messagePublisher,
         IProposalRepository proposalRepository,
+        INotificationPublisher notificationPublisher,
         IMapper mapper,
         ILogger<ProcessConfirmationHandler> logger)
     {
         _providerContext = providerContext;
         _messagePublisher = messagePublisher;
         _proposalRepository = proposalRepository;
+        _notificationPublisher = notificationPublisher;
         _mapper = mapper;
         _logger = logger;
     }
 
     public async Task HandleAsync(ConfirmProcessProposalCommand command)
     {
+        // Notify request received
+        _notificationPublisher.NotifyProviderReceivedConfirmationRequest(_providerContext.Provider.Name, command.ProposalId, _providerContext.Provider.Id);
+
         var response = new ProcessProposalReviewedEvent
         {
             ProposalId = command.ProposalId
@@ -67,7 +73,12 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
         }
         finally
         {
+
+            // Publish the result of the confirmation process
             _messagePublisher.Publish(Exchanges.Process, $"{ProcessRoutingKeys.Reviewed}.{_providerContext.Provider.Id}", response);
+
+            // Notify request completed
+            _notificationPublisher.NotifyProviderCompletedConfirmationRequest(_providerContext.Provider.Name, command.ProposalId, _providerContext.Provider.Id, response.IsAccepted, response.DeclineReason);
         }
     }
 

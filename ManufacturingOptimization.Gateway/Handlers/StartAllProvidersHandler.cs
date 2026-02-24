@@ -19,6 +19,7 @@ public class StartAllProvidersHandler : IMessageHandler<StartAllProvidersCommand
     private readonly IProviderOrchestrator _providerOrchestrator;
     private readonly IProviderRepository _providerRepository;
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
     private readonly IAsyncAwaiter _asyncAwaiter;
 
     public StartAllProvidersHandler(
@@ -27,6 +28,7 @@ public class StartAllProvidersHandler : IMessageHandler<StartAllProvidersCommand
         IProviderOrchestrator providerOrchestrator,
         IProviderRepository providerRepository,
         IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher,
         IAsyncAwaiter asyncAwaiter)
     {
         _mapper = mapper;
@@ -34,11 +36,15 @@ public class StartAllProvidersHandler : IMessageHandler<StartAllProvidersCommand
         _providerOrchestrator = providerOrchestrator;
         _providerRepository = providerRepository;
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
         _asyncAwaiter = asyncAwaiter;
     }
 
     public async Task HandleAsync(StartAllProvidersCommand evt)
     {
+        // Notify request received
+        _notificationPublisher.NotifyStartingAllProviders();
+
         await _providerOrchestrator.CleanupOrphanedContainersAsync();
 
         IEnumerable<ProviderEntity>? providers = null;

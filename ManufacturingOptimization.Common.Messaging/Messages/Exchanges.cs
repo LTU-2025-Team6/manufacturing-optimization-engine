@@ -6,5 +6,6 @@
         public const string Process = "process";
         public const string Provider = "provider";
         public const string System = "system";
+        public const string Notification = "notification";
     }
 }

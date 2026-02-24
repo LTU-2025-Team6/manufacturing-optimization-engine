@@ -164,6 +164,10 @@ namespace ManufacturingOptimization.Gateway.Data
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
                 .ForMember(dest => dest.WorkingHours, opt => opt.Ignore());
+
+            // Notification
+            CreateMap<NotificationEntity, NotificationDto>();
+            CreateMap<NotificationEntity, NotificationPreviewDto>();
         }
 
         private static List<string> DeserializeWorkingDays(string json)

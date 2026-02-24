@@ -21,10 +21,12 @@ public sealed partial class OptimizationStep : IWorkflowStep
     private const int SlotGranularityMinutes = 60;
 
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
 
-    public OptimizationStep(IMessagePublisher messagePublisher)
+    public OptimizationStep(IMessagePublisher messagePublisher, INotificationPublisher notificationPublisher)
     {
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
     }
 
     /// All optimization priorities we want to generate strategies for.
@@ -43,6 +45,8 @@ public sealed partial class OptimizationStep : IWorkflowStep
     /// </summary>
     public async Task ExecuteAsync(WorkflowContext context, CancellationToken cancellationToken = default)
     {
+        _notificationPublisher.NotifyOptimizationStepStarted("Optimization", context.Plan.Id);
+
         context.Plan.Status = OptimizationPlanStatus.GeneratingStrategies;
         _messagePublisher.Publish(Exchanges.Optimization, OptimizationRoutingKeys.PlanUpdated, new OptimizationPlanUpdatedEvent
         {
@@ -50,14 +54,11 @@ public sealed partial class OptimizationStep : IWorkflowStep
         });
 
         // Ensure all process steps have at least one provider.
-        // Optimization is impossible otherwise.
         ValidateProviders(context);
-        
         PreprocessTimeSlots(context);
 
         foreach (var priority in Priorities)
         {
-            // Run pure optimization calculation
             var result = await OptimizeForPriorityAsync(context, priority, cancellationToken);
 
             if (result == null)
@@ -65,16 +66,14 @@ public sealed partial class OptimizationStep : IWorkflowStep
 
             // Convert calculation result into a domain strategy
             var strategy = CreateStrategy(priority, context, result);
-            
-            // Clamp schedules to actual working timeline (remove empty time before/after work)
             strategy.ClampSchedulesToWorkingTimeline();
-            
-            // Add to plan
             context.Plan.Strategies.Add(strategy);
         }
 
         if (context.Plan.Strategies.Count == 0)
             throw new OptimizationException("Failed to generate optimization strategies. No feasible solutions found for the given constraints.");
+
+        _notificationPublisher.NotifyStrategiesGenerated(context.Plan.Id, context.Plan.Strategies.Count);
     }
     
     /// <summary>

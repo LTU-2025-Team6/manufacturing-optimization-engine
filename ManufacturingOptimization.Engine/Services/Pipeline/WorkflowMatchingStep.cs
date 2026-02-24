@@ -14,16 +14,22 @@ namespace ManufacturingOptimization.Engine.Services.Pipeline;
 public class WorkflowMatchingStep : IWorkflowStep
 {
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
 
     public string Name => "Workflow Matching";
 
-    public WorkflowMatchingStep(IMessagePublisher messagePublisher)
+    public WorkflowMatchingStep(
+        IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher)
     {
-        _messagePublisher = messagePublisher;   
+        _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
     }
 
     public Task ExecuteAsync(WorkflowContext context, CancellationToken cancellationToken = default)
     {
+        _notificationPublisher.NotifyOptimizationStepStarted("Workflow Matching", context.Plan.Id);
+
         context.Plan.Status = OptimizationPlanStatus.MatchingWorkflow;
         _messagePublisher.Publish(Exchanges.Optimization, OptimizationRoutingKeys.PlanUpdated, new OptimizationPlanUpdatedEvent
         {

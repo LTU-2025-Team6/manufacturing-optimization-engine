@@ -14,6 +14,7 @@ public class PipelineFactory : IWorkflowPipelineFactory
     private readonly IProviderRepository _providerRepository;
     private readonly IAsyncAwaiter _asyncAwaiter;
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
     private readonly IMessageSubscriber _messageSubscriber;
     private readonly IMessagingInfrastructure _messagingInfrastructure;
     private readonly IMapper _mapper;
@@ -23,6 +24,7 @@ public class PipelineFactory : IWorkflowPipelineFactory
         IAsyncAwaiter asyncAwaiter,
         IProviderRepository providerRepository,
         IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher,
         IMessageSubscriber messageSubscriber,
         IMessagingInfrastructure messagingInfrastructure,
         IMapper mapper)
@@ -31,6 +33,7 @@ public class PipelineFactory : IWorkflowPipelineFactory
         _providerRepository = providerRepository;
         _asyncAwaiter = asyncAwaiter;
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
         _messageSubscriber = messageSubscriber;
         _messagingInfrastructure = messagingInfrastructure;
         _mapper = mapper;
@@ -40,12 +43,12 @@ public class PipelineFactory : IWorkflowPipelineFactory
     {
         var steps = new IWorkflowStep[]
         {
-            new WorkflowMatchingStep(_messagePublisher),
-            new ProviderMatchingStep(_providerRepository, _messagePublisher),
-            new EstimationStep(_messagePublisher, _asyncAwaiter),
-            new OptimizationStep(_messagePublisher),
-            new StrategySelectionStep(_messagePublisher, _messagingInfrastructure, _messageSubscriber, _mapper),
-            new FinalizationStep(_messagePublisher)
+            new WorkflowMatchingStep(_messagePublisher, _notificationPublisher),
+            new ProviderMatchingStep(_providerRepository, _messagePublisher, _notificationPublisher),
+            new EstimationStep(_messagePublisher, _notificationPublisher, _asyncAwaiter),
+            new OptimizationStep(_messagePublisher, _notificationPublisher),
+            new StrategySelectionStep(_messagePublisher, _notificationPublisher, _messagingInfrastructure, _messageSubscriber, _mapper),
+            new FinalizationStep(_messagePublisher, _notificationPublisher)
         };
 
         return new WorkflowPipeline(steps, _loggerFactory.CreateLogger<WorkflowPipeline>());

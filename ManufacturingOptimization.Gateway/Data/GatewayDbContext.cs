@@ -25,6 +25,7 @@ public class GatewayDbContext : DbContext, IOptimizationDbContext, IProviderDbCo
     public DbSet<WarrantyTermsEntity> WarrantyTerms => Set<WarrantyTermsEntity>();
     public DbSet<ProviderScheduleEntity> ProviderSchedules => Set<ProviderScheduleEntity>();
     public DbSet<ProviderScheduleSegmentEntity> ProviderScheduleSegments => Set<ProviderScheduleSegmentEntity>();
+    public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
 
     public GatewayDbContext(DbContextOptions<GatewayDbContext> options) : base(options)
     {
@@ -47,6 +48,7 @@ public class GatewayDbContext : DbContext, IOptimizationDbContext, IProviderDbCo
         modelBuilder.ApplyConfiguration(new ProcessEstimateConfiguration());
         modelBuilder.ApplyConfiguration(new OptimizationMetricsConfiguration());
         modelBuilder.ApplyConfiguration(new WarrantyTermsConfiguration());
+        modelBuilder.ApplyConfiguration(new NotificationConfiguration());
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {

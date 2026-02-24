@@ -16,17 +16,20 @@ public class OptimizationPlanUpdatedHandler : IMessageHandler<OptimizationPlanUp
     private readonly IOptimizationPlanRepository _planRepository;
     private readonly IOptimizationStrategyRepository _strategyRepository;
     private readonly IMapper _mapper;
+    private readonly INotificationPublisher _notificationPublisher;
     private readonly ILogger<OptimizationPlanUpdatedHandler> _logger;
 
     public OptimizationPlanUpdatedHandler(
         IOptimizationPlanRepository planRepository,
         IOptimizationStrategyRepository strategyRepository,
         IMapper mapper,
+        INotificationPublisher notificationPublisher,
         ILogger<OptimizationPlanUpdatedHandler> logger)
     {
         _planRepository = planRepository;
         _strategyRepository = strategyRepository;
         _mapper = mapper;
+        _notificationPublisher = notificationPublisher;
         _logger = logger;
     }
 
@@ -66,19 +69,15 @@ public class OptimizationPlanUpdatedHandler : IMessageHandler<OptimizationPlanUp
                     await _strategyRepository.DeleteAsync(strategy);
                     await _strategyRepository.SaveChangesAsync();
                 }
-
                 break;
 
             case OptimizationPlanStatus.Confirmed:
                 existingPlan.ConfirmedAt = DateTime.UtcNow;
                 break;
-
-            case OptimizationPlanStatus.Failed:
-                existingPlan.ErrorMessage = evt.Plan.ErrorMessage;
-                break;
         }
 
         await _planRepository.UpdateAsync(existingPlan);
         await _planRepository.SaveChangesAsync();
+        _notificationPublisher.NotifyOptimizationPlanUpdated(existingPlan.Id);
     }
 }

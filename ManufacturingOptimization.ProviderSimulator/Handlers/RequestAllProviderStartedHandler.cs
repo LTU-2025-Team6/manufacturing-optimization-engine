@@ -8,15 +8,18 @@ public sealed class RequestAllProviderStartedHandler : IMessageHandler<RequestAl
 {
     private readonly IProviderSimulationContext _providerContext;
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
     private readonly ILogger<RequestAllProviderStartedHandler> _logger;
 
     public RequestAllProviderStartedHandler(
         IProviderSimulationContext providerContext,
         IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher,
         ILogger<RequestAllProviderStartedHandler> logger)
     {
         _providerContext = providerContext;
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
         _logger = logger;
     }
 

@@ -26,6 +26,7 @@ namespace ManufacturingOptimization.Gateway.Services
         private readonly IProcessEstimateRepository _processEstimateRepository;
         private readonly IAlternativeProvidersRepository _alternativeProvidersRepository;
         private readonly IMessagePublisher _messagePublisher;
+        private readonly INotificationPublisher _notificationPublisher;
         private readonly IOptimizationDbContext _dbContext;
 
         public OptimizationStrategyService(
@@ -39,6 +40,7 @@ namespace ManufacturingOptimization.Gateway.Services
             IProcessEstimateRepository processEstimateRepository,
             IAlternativeProvidersRepository alternativeProvidersRepository,
             IMessagePublisher messagePublisher,
+            INotificationPublisher notificationPublisher,
             IOptimizationDbContext dbContext)
         {
             _mapper = mapper;
@@ -51,6 +53,7 @@ namespace ManufacturingOptimization.Gateway.Services
             _processEstimateRepository = processEstimateRepository;
             _alternativeProvidersRepository = alternativeProvidersRepository;
             _messagePublisher = messagePublisher;
+            _notificationPublisher = notificationPublisher;
             _dbContext = dbContext;
         }
 
@@ -243,6 +246,8 @@ namespace ManufacturingOptimization.Gateway.Services
 
             plan.Status = OptimizationPlanStatus.Confirmed.ToString();
             plan.ConfirmedAt = DateTime.UtcNow;
+
+            _notificationPublisher.NotifyOptimizationPlanConfirmed(plan.Id);
             
             await _optimizationPlanRepository.UpdateAsync(plan);
             await _optimizationPlanRepository.SaveChangesAsync();

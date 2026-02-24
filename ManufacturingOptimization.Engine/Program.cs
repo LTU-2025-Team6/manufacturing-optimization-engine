@@ -41,6 +41,9 @@ builder.Services.AddSingleton<IMessagePublisher>(sp => sp.GetRequiredService<Rab
 builder.Services.AddSingleton<IMessageSubscriber>(sp => sp.GetRequiredService<RabbitMqService>());
 builder.Services.AddSingleton<IMessagingInfrastructure>(sp => sp.GetRequiredService<RabbitMqService>());
 
+// Notification Publisher Helper
+builder.Services.AddSingleton<INotificationPublisher, NotificationPublisher>();
+
 // Register Async Awaiter
 builder.Services.AddSingleton<IAsyncAwaiter, AsyncAwaiter>();
 

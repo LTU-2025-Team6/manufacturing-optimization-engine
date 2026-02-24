@@ -45,6 +45,11 @@ public class GatewayWorker : BackgroundService
 
     private async Task SetupRabbitMq(CancellationToken cancellationToken)
     {
+        _messagingInfrastructure.DeclareQueue("gateway.system.service-ready");
+        _messagingInfrastructure.BindQueue("gateway.system.service-ready", Exchanges.System, SystemRoutingKeys.ServiceReady);
+        _messagingInfrastructure.PurgeQueue("gateway.system.service-ready");
+        _messageSubscriber.Subscribe<ServiceReadyEvent>("gateway.system.service-ready", e => _dispatcher.DispatchAsync(e));
+
         _messagingInfrastructure.DeclareQueue("gateway.system.ready");
         _messagingInfrastructure.BindQueue("gateway.system.ready", Exchanges.System, SystemRoutingKeys.SystemReady);
         _messagingInfrastructure.PurgeQueue("gateway.system.ready");
@@ -76,6 +81,10 @@ public class GatewayWorker : BackgroundService
         _messagingInfrastructure.BindQueue("gateway.optimization.plan-updated", Exchanges.Optimization, OptimizationRoutingKeys.PlanUpdated);
         _messagingInfrastructure.PurgeQueue("gateway.optimization.plan-updated");
         _messageSubscriber.Subscribe<OptimizationPlanUpdatedEvent>("gateway.optimization.plan-updated", e => _dispatcher.DispatchAsync(e));
+
+        _messagingInfrastructure.DeclareQueue("gateway.notifications");
+        _messagingInfrastructure.BindQueue("gateway.notifications", Exchanges.Notification, NotificationRoutingKeys.CreateNotification);
+        _messageSubscriber.Subscribe<CreateNotificationCommand>("gateway.notifications", e => _dispatcher.DispatchAsync(e));
 
         // Give subscriptions time to register
         await Task.Delay(300, cancellationToken);

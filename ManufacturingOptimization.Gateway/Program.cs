@@ -27,6 +27,7 @@ builder.Services.AddScoped<IOptimizationStrategyRepository, OptimizationStrategy
 builder.Services.AddScoped<IOptimizationRequestRepository, OptimizationRequestRepository>();
 builder.Services.AddScoped<IProviderScheduleRepository, ProviderScheduleRepository>();
 builder.Services.AddScoped<IProcessEstimateRepository, ProcessEstimateRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IAlternativeProvidersRepository, InMemoryAlternativeProvidersRepository>();
 
 // Database lifecycle management
@@ -73,8 +74,12 @@ builder.Services.AddSingleton<IMessagingInfrastructure>(sp => sp.GetRequiredServ
 builder.Services.AddSingleton<IMessagePublisher>(sp => sp.GetRequiredService<RabbitMqService>());
 builder.Services.AddSingleton<IMessageSubscriber>(sp => sp.GetRequiredService<RabbitMqService>());
 
+// Notification Publisher Helper
+builder.Services.AddSingleton<INotificationPublisher, NotificationPublisher>();
+
 // Message dispatching
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
+builder.Services.AddScoped<IMessageHandler<ServiceReadyEvent>, ServiceReadyHandler>();
 builder.Services.AddScoped<IMessageHandler<SystemReadyEvent>, SystemReadyHandler>();
 builder.Services.AddScoped<IMessageHandler<StartAllProvidersCommand>, StartAllProvidersHandler>();
 builder.Services.AddScoped<IMessageHandler<AllProvidersStartedEvent>, AllProvidersStartedHandler>();
@@ -85,6 +90,7 @@ builder.Services.AddScoped<IMessageHandler<ProviderStartedEvent>, ProviderStarte
 builder.Services.AddScoped<IMessageHandler<StopProviderCommand>, StopProviderHandler>();
 builder.Services.AddScoped<IMessageHandler<ProviderStoppedEvent>, ProviderStoppedHandler>();
 builder.Services.AddScoped<IMessageHandler<OptimizationPlanUpdatedEvent>, OptimizationPlanUpdatedHandler>();
+builder.Services.AddScoped<IMessageHandler<CreateNotificationCommand>, CreateNotificationHandler>();
 
 // System readiness coordination
 builder.Services.Configure<SystemReadinessSettings>(o => o.ServiceName = "Gateway");
@@ -97,6 +103,7 @@ builder.Services.AddScoped<IOptimizationService, OptimizationService>();
 builder.Services.AddScoped<IProviderService, ProviderService>();
 builder.Services.AddScoped<IOptimizationPlanService, OptimizationPlanService>();
 builder.Services.AddScoped<IOptimizationStrategyService, OptimizationStrategyService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 var app = builder.Build();
 

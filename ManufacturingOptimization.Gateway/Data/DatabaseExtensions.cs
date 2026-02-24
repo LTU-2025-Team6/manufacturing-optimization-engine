@@ -13,6 +13,7 @@ public static class DatabaseExtensions
 
         services.AddDbContext<GatewayDbContext>(options => options.UseSqlite($"Data Source={dbPath}"));
         
+        services.AddScoped<IDbContext, GatewayDbContext>();
         services.AddScoped<IProviderDbContext, GatewayDbContext>();
         services.AddScoped<IOptimizationDbContext, GatewayDbContext>();
 

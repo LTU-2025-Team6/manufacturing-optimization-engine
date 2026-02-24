@@ -13,23 +13,28 @@ public class StopProviderHandler : IMessageHandler<StopProviderCommand>
     private readonly IProviderOrchestrator _providerOrchestrator;
     private readonly IProviderRepository _providerRepository;
     private readonly IMessagePublisher _messagePublisher;
+    private readonly INotificationPublisher _notificationPublisher;
 
     public StopProviderHandler(
         IOptions<OrchestrationSettings> orchestrationSettings,
         IProviderOrchestrator providerOrchestrator,
         IProviderRepository providerRepository,
-        IMessagePublisher messagePublisher)
+        IMessagePublisher messagePublisher,
+        INotificationPublisher notificationPublisher)
     {
         _orchestrationSettings = orchestrationSettings.Value;
         _providerOrchestrator = providerOrchestrator;
         _providerRepository = providerRepository;
         _messagePublisher = messagePublisher;
+        _notificationPublisher = notificationPublisher;
     }
 
     public async Task HandleAsync(StopProviderCommand evt)
     {
         if (_orchestrationSettings.IsDevelopmentMode)
             return;
+
+        _notificationPublisher.NotifyStoppingProvider(evt.ProviderId);
 
         var provider = await _providerRepository.GetByIdAsync(evt.ProviderId);
 

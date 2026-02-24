@@ -7,8 +7,8 @@ namespace ManufacturingOptimization.Common.Models.Data.Abstractions;
 /// </summary>
 public interface IOptimizationPlanRepository : IRepository<OptimizationPlanEntity>
 {
-    /// <summary>
-    /// Get plan by request ID (since customer uses RequestId for tracking)
-    /// </summary>
     Task<OptimizationPlanEntity?> GetByRequestIdAsync(Guid requestId, CancellationToken cancellationToken = default);
+    Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default);
+    Task<int> GetRunningCountAsync(CancellationToken cancellationToken = default);
+    Task<int> GetCompletedThisMonthCountAsync(CancellationToken cancellationToken = default);
 }

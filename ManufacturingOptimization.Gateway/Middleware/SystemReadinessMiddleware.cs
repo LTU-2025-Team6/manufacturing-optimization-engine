@@ -17,7 +17,9 @@ namespace ManufacturingOptimization.Gateway.Middleware
         public async Task InvokeAsync(HttpContext context, ISystemReadinessService readinessService)
         {
             // Allow notification endpoints to work before system is fully ready
-            if (context.Request.Path.StartsWithSegments("/api/notifications"))
+            if (context.Request.Path.StartsWithSegments("/api/notifications") ||
+                context.Request.Path.StartsWithSegments("/api/system") ||
+                context.Request.Path.StartsWithSegments("/api/dashboard"))
             {
                 await _next(context);
                 return;

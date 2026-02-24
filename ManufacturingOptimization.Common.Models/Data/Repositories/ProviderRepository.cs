@@ -75,4 +75,7 @@ public class ProviderRepository : Repository<ProviderEntity>, IProviderRepositor
         => _dbSet
             .Where(p => p.ProcessCapabilities.Any(cap => cap.Process == process.ToString()) && p.Id != excludedProviderId)
             .ToListAsync();
+
+    public Task<int> GetActiveProvidersCountAsync(CancellationToken cancellationToken = default)
+        => _dbSet.CountAsync(p => p.IsRunning, cancellationToken);
 }

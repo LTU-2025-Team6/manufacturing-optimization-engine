@@ -78,6 +78,8 @@ builder.Services.AddSingleton<IProviderSimulationContext, ProviderSimulationCont
 
 builder.Services.AddHostedService<ProviderSimulatorWorker>();
 
+builder.Services.AddScoped<ProcessExecutionHandler>();
+
 var host = builder.Build();
 
 host.Run();

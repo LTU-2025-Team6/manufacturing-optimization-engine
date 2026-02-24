@@ -59,7 +59,7 @@ public class OptimizationRequestHandler : IMessageHandler<RequestOptimizationPla
 
         try
         {
-            var pipeline = _pipelineFactory.CreateWorkflowPipeline();
+            var pipeline = _pipelineFactory.CreateOptimizationPipeline();
             await pipeline.ExecuteAsync(context);
 
             _notificationPublisher.NotifyOptimizationCompleted(command.Plan.Id);

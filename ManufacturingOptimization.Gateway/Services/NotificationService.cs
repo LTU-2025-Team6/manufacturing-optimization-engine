@@ -37,9 +37,9 @@ public class NotificationService : INotificationService
         return _mapper.Map<List<NotificationDto>>(notifications);
     }
 
-    public async Task<List<NotificationDto>> GetTwoWeeksNotificationsAsync()
+    public async Task<List<NotificationDto>> GetNotificationsSinceAsync(DateTime since)
     {
-        var notifications = await _notificationRepository.GetTwoWeeksAsync();
+        var notifications = await _notificationRepository.GetSinceAsync(since);
         return _mapper.Map<List<NotificationDto>>(notifications);
     }
 

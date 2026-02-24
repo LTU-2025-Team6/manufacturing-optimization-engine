@@ -283,6 +283,38 @@ public class NotificationPublisher : INotificationPublisher
         );
     }
 
+    // === Demo Data Generation ===
+
+    public void NotifyDemoDataGenerationStarted(string providerName, Guid providerId)
+    {
+        Publish(
+            "Demo Data Generation Started",
+            $"Starting demo data generation for provider {providerName} (ID: {providerId})",
+            NotificationType.Info,
+            providerName
+        );
+    }
+
+    public void NotifyDemoDataGenerationCompleted(string providerName, Guid providerId)
+    {
+        Publish(
+            "Demo Data Generated",
+            $"Demo data successfully generated for provider {providerName} (ID: {providerId})",
+            NotificationType.Success,
+            providerName
+        );
+    }
+
+    public void NotifyDemoDataGenerationFailed(string providerName, Guid providerId, string error)
+    {
+        Publish(
+            "Demo Data Generation Failed",
+            $"Failed to generate demo data for provider {providerName} (ID: {providerId}): {error}",
+            NotificationType.Error,
+            providerName
+        );
+    }
+
     // === Private Helper ===
 
     private void Publish(string title, string message, NotificationType type, string source)

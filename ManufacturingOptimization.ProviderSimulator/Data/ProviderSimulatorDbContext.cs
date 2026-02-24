@@ -17,6 +17,7 @@ public class ProviderSimulatorDbContext : DbContext, IProviderSimulatorDbContext
     public DbSet<EstimateEntity> Estimates => Set<EstimateEntity>();
     public DbSet<ExecutionEntity> Executions => Set<ExecutionEntity>();
     public DbSet<ExecutionScheduleSegmentEntity> ExecutionScheduleSegments => Set<ExecutionScheduleSegmentEntity>();
+    public DbSet<DemoDataStatusEntity> DemoDataStatus => Set<DemoDataStatusEntity>();
 
 
     public ProviderSimulatorDbContext(DbContextOptions<ProviderSimulatorDbContext> options) : base(options)
@@ -31,6 +32,7 @@ public class ProviderSimulatorDbContext : DbContext, IProviderSimulatorDbContext
         modelBuilder.ApplyConfiguration(new EstimateConfiguration());
         modelBuilder.ApplyConfiguration(new ExecutionConfiguration());
         modelBuilder.ApplyConfiguration(new ExecutionScheduleSegmentConfiguration());
+        modelBuilder.ApplyConfiguration(new DemoDataStatusConfiguration());
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {

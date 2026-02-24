@@ -12,6 +12,21 @@ namespace ManufacturingOptimization.ProviderSimulator.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "DemoDataStatus",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ProviderId = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    IsGenerated = table.Column<bool>(type: "INTEGER", nullable: false),
+                    GeneratedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DemoDataStatus", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Proposals",
                 columns: table => new
                 {
@@ -95,6 +110,12 @@ namespace ManufacturingOptimization.ProviderSimulator.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_DemoDataStatus_ProviderId",
+                table: "DemoDataStatus",
+                column: "ProviderId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Estimates_ProposalId",
                 table: "Estimates",
                 column: "ProposalId",
@@ -115,6 +136,9 @@ namespace ManufacturingOptimization.ProviderSimulator.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "DemoDataStatus");
+
             migrationBuilder.DropTable(
                 name: "Estimates");
 

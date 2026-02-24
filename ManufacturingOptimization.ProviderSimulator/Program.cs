@@ -21,6 +21,13 @@ builder.Services.AddDatabase();
 builder.Services.AddScoped<IExecutionRepository, ExecutionRepository>();
 builder.Services.AddScoped<IProposalRepository, ProposalRepository>();
 
+// Core services
+builder.Services.AddScoped<IEstimationService, EstimationService>();
+builder.Services.AddScoped<IProposalService, ProposalService>();
+
+// Demo data generator
+builder.Services.AddScoped<DemoDataGeneratorService>();
+
 // Database lifecycle management
 builder.Services.AddHostedService<DatabaseManagementService>();
 
@@ -38,6 +45,7 @@ builder.Services.Configure<RabbitMqSettings>(builder.Configuration.GetSection(Ra
 
 builder.Services.Configure<ProcessStandardsSettings>(builder.Configuration.GetSection(ProcessStandardsSettings.SectionName));
 builder.Services.Configure<ProviderSettings>(builder.Configuration.GetSection(ProviderSettings.SectionName));
+builder.Services.Configure<DemoDataSettings>(builder.Configuration.GetSection(DemoDataSettings.SectionName));
 
 // Post-configure ProviderSettings to parse WorkingDays from comma-separated environment variable
 builder.Services.PostConfigure<ProviderSettings>(options =>

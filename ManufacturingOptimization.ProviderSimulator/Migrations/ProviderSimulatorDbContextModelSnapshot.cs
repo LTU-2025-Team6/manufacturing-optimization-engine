@@ -17,6 +17,31 @@ namespace ManufacturingOptimization.ProviderSimulator.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.12");
 
+            modelBuilder.Entity("ManufacturingOptimization.ProviderSimulator.Data.Entities.DemoDataStatusEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("GeneratedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsGenerated")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ProviderId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderId")
+                        .IsUnique();
+
+                    b.ToTable("DemoDataStatus", (string)null);
+                });
+
             modelBuilder.Entity("ManufacturingOptimization.ProviderSimulator.Data.Entities.EstimateEntity", b =>
                 {
                     b.Property<Guid>("Id")

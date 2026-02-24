@@ -9,7 +9,8 @@ public class ProviderBreakPeriodModel
     
     public DateTime GetStartTime(DateTime date)
     {
-        return new DateTime(date.Year, date.Month, date.Day, StartHour, StartMinute, 0);
+        // Create DateTime with UTC kind - constructor returns Unspecified!
+        return new DateTime(date.Year, date.Month, date.Day, StartHour, StartMinute, 0, DateTimeKind.Utc);
     }
 
     public DateTime GetEndTime(DateTime date)

@@ -2,10 +2,7 @@ using AutoMapper;
 using ManufacturingOptimization.Common.Messaging.Abstractions;
 using ManufacturingOptimization.Common.Messaging.Messages;
 using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Enums;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
-using ManufacturingOptimization.ProviderSimulator.Data.Entities;
 using ManufacturingOptimization.ProviderSimulator.Models;
 
 namespace ManufacturingOptimization.ProviderSimulator.Handlers;
@@ -21,6 +18,7 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
     private readonly INotificationPublisher _notificationPublisher;
     private readonly IMapper _mapper;
     private readonly ILogger<ProcessConfirmationHandler> _logger;
+    private readonly IProposalService _proposalService;
 
     public ProcessConfirmationHandler(
         IProviderSimulationContext providerContext,
@@ -28,7 +26,8 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
         IProposalRepository proposalRepository,
         INotificationPublisher notificationPublisher,
         IMapper mapper,
-        ILogger<ProcessConfirmationHandler> logger)
+        ILogger<ProcessConfirmationHandler> logger,
+        IProposalService proposalService)
     {
         _providerContext = providerContext;
         _messagePublisher = messagePublisher;
@@ -36,6 +35,7 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
         _notificationPublisher = notificationPublisher;
         _mapper = mapper;
         _logger = logger;
+        _proposalService = proposalService;
     }
 
     public async Task HandleAsync(ConfirmProcessProposalCommand command)
@@ -59,10 +59,7 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
             if (proposal.Estimate == null)
                 throw new InvalidOperationException("No estimate available for the proposal.");
 
-            ConfirmProposal(proposalEntity, command.SelectedSchedule);
-
-            await _proposalRepository.UpdateAsync(proposalEntity);
-            await _proposalRepository.SaveChangesAsync();
+            await _proposalService.ConfirmProposalAsync(command.ProposalId, command.SelectedSchedule);
 
             response.IsAccepted = true;
         }
@@ -80,24 +77,5 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
             // Notify request completed
             _notificationPublisher.NotifyProviderCompletedConfirmationRequest(_providerContext.Provider.Name, command.ProposalId, _providerContext.Provider.Id, response.IsAccepted, response.DeclineReason);
         }
-    }
-
-    private void ConfirmProposal(ProposalEntity proposalEntity, ProviderScheduleModel schedule)
-    {
-        var workingSegments = schedule.Segments
-            .Where(s => s.SegmentType == SegmentType.WorkingTime)
-            .Select(_mapper.Map<ExecutionScheduleSegmentEntity>)
-            .ToList();
-
-        proposalEntity.Status = ProposalStatus.Confirmed;
-        proposalEntity.ModifiedAt = DateTime.UtcNow;
-        proposalEntity.Execution = new ExecutionEntity
-        {
-            ProposalId = proposalEntity.Id,
-            ScheduleSegments = workingSegments
-        };
-
-        _proposalRepository.UpdateAsync(proposalEntity);
-        _proposalRepository.SaveChangesAsync();
     }
 }

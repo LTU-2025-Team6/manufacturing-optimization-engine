@@ -40,4 +40,9 @@ public interface INotificationPublisher
     void NotifyProviderCompletedScheduleRequest(string name, DateTime start, DateTime end);
     void NotifyProviderUpdateRequested(string name);
     void NotifyProviderUpdated(string name);
+
+
+    void NotifyDemoDataGenerationStarted(string providerName, Guid providerId);
+    void NotifyDemoDataGenerationCompleted(string providerName, Guid providerId);
+    void NotifyDemoDataGenerationFailed(string providerName, Guid providerId, string error);
 }

@@ -54,9 +54,11 @@ public sealed class RequestProviderScheduleHandler : IMessageHandler<RequestProv
     public async Task<List<ProviderDayScheduleModel>> BuildSchedule(RequestProviderScheduleCommand command)
     {
         List<ProviderDayScheduleModel> dailySchedules = [];
-        var date = command.Start.Date;
+        // Ensure we're working with UTC dates
+        var date = DateTime.SpecifyKind(command.Start.Date, DateTimeKind.Utc);
+        var endDate = DateTime.SpecifyKind(command.End.Date, DateTimeKind.Utc);
 
-        while (date < command.End.Date)
+        while (date < endDate)
         {
             var dailySchedule = await BuildDailySchedule(date);
             dailySchedules.Add(dailySchedule);
@@ -68,7 +70,8 @@ public sealed class RequestProviderScheduleHandler : IMessageHandler<RequestProv
 
     private async Task<ProviderDayScheduleModel> BuildDailySchedule(DateTime day)
     {
-        var startOfDay = day.Date;
+        // Ensure day is treated as UTC
+        var startOfDay = DateTime.SpecifyKind(day.Date, DateTimeKind.Utc);
         var endOfDay = startOfDay.AddDays(1);
 
         var breaks = _providerContext.Provider.WorkingHours.GetBreakSegments(startOfDay, endOfDay);

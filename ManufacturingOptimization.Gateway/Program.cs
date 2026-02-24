@@ -104,6 +104,7 @@ builder.Services.AddScoped<IProviderService, ProviderService>();
 builder.Services.AddScoped<IOptimizationPlanService, OptimizationPlanService>();
 builder.Services.AddScoped<IOptimizationStrategyService, OptimizationStrategyService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 var app = builder.Build();
 

@@ -97,4 +97,25 @@ public class OptimizationPlanRepository : Repository<OptimizationPlanEntity>, IO
                 .ThenInclude(s => s.Warranty)
             .ToListAsync(cancellationToken);
     }
+
+    public Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
+        => _dbSet.CountAsync(cancellationToken);
+
+    // ToDo: Just a placeholder
+    public Task<int> GetRunningCountAsync(CancellationToken cancellationToken = default)
+        => _dbSet.CountAsync(p => p.Status == "InProgress", cancellationToken);
+
+    public Task<int> GetCompletedThisMonthCountAsync(CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        var firstDayOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddSeconds(-1);
+
+        return _dbSet.CountAsync(
+            p => p.Status == "Completed" &&
+                 p.ConfirmedAt.HasValue &&
+                 p.ConfirmedAt.Value >= firstDayOfMonth &&
+                 p.ConfirmedAt.Value <= lastDayOfMonth,
+            cancellationToken);
+    }
 }

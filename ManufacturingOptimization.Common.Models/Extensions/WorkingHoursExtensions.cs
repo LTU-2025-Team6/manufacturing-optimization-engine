@@ -12,8 +12,9 @@ public static class WorkingHoursExtensions
         if (workingHours.Is24x7)
             return result;
 
-        var currentDay = windowStart.Date;
-        var lastDay = windowEnd.Date;
+        // Preserve UTC kind - .Date returns Unspecified!
+        var currentDay = DateTime.SpecifyKind(windowStart.Date, DateTimeKind.Utc);
+        var lastDay = DateTime.SpecifyKind(windowEnd.Date, DateTimeKind.Utc);
 
         while (currentDay <= lastDay)
         {

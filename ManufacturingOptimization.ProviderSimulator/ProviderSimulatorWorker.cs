@@ -69,9 +69,9 @@ public class ProviderSimulatorWorker : BackgroundService
         _messagingInfrastructure.PurgeQueue(requestScheduleQueue);
         _messageSubscriber.Subscribe<RequestProviderScheduleCommand>(requestScheduleQueue, e => _dispatcher.DispatchAsync(e));
 
-        var executionQueueName = $"simulator.process.execute.{_provider.Provider.Id}";
+        var executionQueueName = $"simulator.process.execute.{_providerContext.Provider.Id}";
         _messagingInfrastructure.DeclareQueue(executionQueueName);
-        _messagingInfrastructure.BindQueue(executionQueueName, Exchanges.Process, $"process.execute.{_provider.Provider.Id}");
+        _messagingInfrastructure.BindQueue(executionQueueName, Exchanges.Process, $"process.execute.{_providerContext.Provider.Id}");
         _messagingInfrastructure.PurgeQueue(executionQueueName);
         _messageSubscriber.Subscribe<ExecuteProcessCommand>(executionQueueName, e => _dispatcher.DispatchAsync(e));
 

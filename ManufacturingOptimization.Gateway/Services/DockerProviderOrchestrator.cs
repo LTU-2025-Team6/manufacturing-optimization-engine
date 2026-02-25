@@ -55,7 +55,12 @@ public class DockerProviderOrchestrator : IProviderOrchestrator
             HostConfig = new HostConfig
             {
                 NetworkMode = network,
-                AutoRemove = true
+                AutoRemove = true,
+                Binds = new List<string>
+                {
+                    // Mount shared volume for SQLite database - all providers use same DB
+                    "provider_simulator_data:/app/Data"
+                }
             },
             Labels = new Dictionary<string, string>
             {

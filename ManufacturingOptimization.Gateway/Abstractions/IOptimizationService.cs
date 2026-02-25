@@ -7,5 +7,6 @@ namespace ManufacturingOptimization.Gateway.Abstractions
         Task<Guid> RequestOptimizationPlanAsync(OptimizationRequestDto request);
         Task SelectStrategyAsync(Guid requestId, Guid strategyId);
         Task<OptimizationPlanDto> GetPlanAsync(Guid requestId);
+        Task<OptimizationRequestDto> GetRequestAsync(Guid requestId);
     }
 }

@@ -35,6 +35,7 @@ namespace ManufacturingOptimization.Gateway.Data
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.RequestId));
             CreateMap<OptimizationRequestEntity, OptimizationRequestModel>()
                 .ForMember(dest => dest.RequestId, opt => opt.MapFrom(src => src.Id));
+            CreateMap<OptimizationRequestEntity, OptimizationRequestDto>();
 
             CreateMap<OptimizationRequestConstraintsModel, OptimizationRequestConstraintsDto>().ReverseMap();
             CreateMap<OptimizationRequestConstraintsModel, OptimizationRequestConstraintsEntity>().ReverseMap();

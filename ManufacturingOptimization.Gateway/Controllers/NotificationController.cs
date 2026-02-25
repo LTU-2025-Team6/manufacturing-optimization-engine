@@ -52,14 +52,15 @@ public class NotificationController : ControllerBase
     }
 
     /// <summary>
-    /// Get notifications from the last two weeks
+    /// Get notifications since a specific date (default: last 14 days)
     /// </summary>
-    [HttpGet("two-weeks")]
+    [HttpGet("since")]
     [ProducesResponseType(typeof(List<NotificationDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> GetTwoWeekNotifications()
+    public async Task<IActionResult> GetNotificationsSince([FromQuery] DateTime? since = null)
     {
-        var notifications = await _notificationService.GetTwoWeeksNotificationsAsync();
+        var sinceDate = since ?? DateTime.UtcNow.AddDays(-14);
+        var notifications = await _notificationService.GetNotificationsSinceAsync(sinceDate);
         return Ok(notifications);
     }
 

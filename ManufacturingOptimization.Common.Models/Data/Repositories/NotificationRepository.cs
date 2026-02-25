@@ -29,11 +29,10 @@ public class NotificationRepository : Repository<NotificationEntity>, INotificat
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<NotificationEntity>> GetTwoWeeksAsync(CancellationToken cancellationToken = default)
+    public async Task<List<NotificationEntity>> GetSinceAsync(DateTime since, CancellationToken cancellationToken = default)
     {
-        var twoWeeksAgo = DateTime.UtcNow.AddDays(-14);
         return await _dbSet
-            .Where(n => n.CreatedAt >= twoWeeksAgo)
+            .Where(n => n.CreatedAt >= since)
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync(cancellationToken);
     }

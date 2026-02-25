@@ -87,6 +87,8 @@ public class GatewayWorker : BackgroundService
         _messagingInfrastructure.BindQueue("gateway.notifications", Exchanges.Notification, NotificationRoutingKeys.CreateNotification);
         _messageSubscriber.Subscribe<CreateNotificationCommand>("gateway.notifications", e => _dispatcher.DispatchAsync(e));
 
+        _messagingInfrastructure.DeclareExchange(Exchanges.Execution);
+
         _messagingInfrastructure.DeclareQueue("gateway.execution.events");
         _messagingInfrastructure.BindQueue("gateway.execution.events", Exchanges.Execution, ExecutionRoutingKeys.StepStarted);
         _messagingInfrastructure.BindQueue("gateway.execution.events", Exchanges.Execution, ExecutionRoutingKeys.StepCompleted);

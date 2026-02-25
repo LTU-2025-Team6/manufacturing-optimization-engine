@@ -28,6 +28,19 @@ namespace ManufacturingOptimization.Gateway.Controllers
         }
 
         /// <summary>
+        /// Get optimization request by ID
+        /// </summary>
+        [HttpGet("{id}")]
+        [ProducesResponseType(typeof(OptimizationRequestDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+        public async Task<IActionResult> GetRequest(Guid id)
+        {
+            var requestDto = await _optimizationService.GetRequestAsync(id);
+            return Ok(requestDto);
+        }
+
+        /// <summary>
         /// Select preferred optimization strategy
         /// </summary>
         [HttpPut("{requestId}/strategy")]

@@ -92,5 +92,15 @@ namespace ManufacturingOptimization.Gateway.Services
             var planDto = _mapper.Map<OptimizationPlanDto>(planModel);
             return planDto;
         }
+
+        public async Task<OptimizationRequestDto> GetRequestAsync(Guid requestId)
+        {
+            var requestEntity = await _requestRepository.GetByIdWithDetailsAsync(requestId);
+            if (requestEntity == null)
+                throw new NotFoundException($"No optimization request found with ID {requestId}");
+
+            var requestDto = _mapper.Map<OptimizationRequestDto>(requestEntity);
+            return requestDto;
+        }
     }
 }

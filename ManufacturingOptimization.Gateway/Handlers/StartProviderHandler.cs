@@ -31,9 +31,6 @@ public class StartProviderHandler : IMessageHandler<StartProviderCommand>
 
     public async Task HandleAsync(StartProviderCommand evt)
     {
-        if (_orchestrationSettings.IsDevelopmentMode)
-            return;
-
         _notificationPublisher.NotifyStartingProvider(evt.ProviderId);
 
         var provider = await _providerRepository.GetByIdAsync(evt.ProviderId);
@@ -44,11 +41,14 @@ public class StartProviderHandler : IMessageHandler<StartProviderCommand>
         if (provider.IsRunning)
             throw new InvalidOperationException($"Provider with Id {evt.ProviderId} is already running.");
 
-        await _providerOrchestrator.StartAsync(provider);
+        if (_orchestrationSettings.IsProductionMode)
+        {
+            await _providerOrchestrator.StartAsync(provider);
+        }
 
-        _messagePublisher.Publish(
-            Exchanges.Provider,
-            ProviderRoutingKeys.ProviderContainerStarted,
-            new ProviderContainerStartedEvent { ProviderId = provider.Id });
+        // Update status in DB in both modes
+        provider.IsRunning = true;
+        await _providerRepository.UpdateAsync(provider);
+        await _providerRepository.SaveChangesAsync();
     }
 }

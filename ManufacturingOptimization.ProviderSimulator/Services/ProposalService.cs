@@ -102,6 +102,24 @@ public class ProposalService : IProposalService
         await _proposalRepository.SaveChangesAsync();
     }
 
+    public async Task CancelProposalAsync(Guid proposalId)
+    {
+        var proposalEntity = await _proposalRepository.GetByIdAsync(proposalId);
+        if (proposalEntity == null)
+            throw new InvalidOperationException($"Proposal {proposalId} not found.");
+
+        if (proposalEntity.Status != ProposalStatus.Confirmed)
+            throw new InvalidOperationException($"Proposal {proposalId} is not confirmed and cannot be cancelled.");
+
+        // Remove execution and revert to Accepted status
+        proposalEntity.Execution = null;
+        proposalEntity.Status = ProposalStatus.Accepted;
+        proposalEntity.ModifiedAt = DateTime.UtcNow;
+
+        await _proposalRepository.UpdateAsync(proposalEntity);
+        await _proposalRepository.SaveChangesAsync();
+    }
+
     private ProcessCapabilityModel? GetProcessCapability(ProcessType process)
         => _context.Provider.ProcessCapabilities
             .FirstOrDefault(p => p.Process == process);

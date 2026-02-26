@@ -54,67 +54,50 @@ public class StartAllProvidersHandler : IMessageHandler<StartAllProvidersCommand
                 .Where(p => p.AutoStart)
                 .ToList();
 
+            // Start providers directly
             var errors = new List<string>();
-            var containerStartTasks = providers.Select(p => TriggerAndAwaitContainerStartAsync(p, errors));
-            await Task.WhenAll(containerStartTasks);
+            foreach (var provider in providers)
+            {
+                try
+                {
+                    await _providerOrchestrator.StartAsync(provider);
+                    provider.IsRunning = true;
+                }
+                catch (Exception ex)
+                {
+                    errors.Add($"Provider {provider.Name} start failed: {ex.Message}");
+                }
+            }
 
             if (errors.Any())
-                throw new Exception("One or more providers failed to start. See inner exception for details.", new AggregateException(errors.Select(e => new Exception(e))));
+                throw new Exception("One or more providers failed to start.", new AggregateException(errors.Select(e => new Exception(e))));
 
-            // Time for containers to setup RabbitMq
+            await _providerRepository.SaveChangesAsync();
+
+            // Wait for RabbitMQ setup in containers
             await Task.Delay(3000);
         }
 
         // Request providers registration
         var runningProviders = await TriggerAndAwaitRegistrationStartAsync(providers);
 
-        foreach (var provider in runningProviders)
+        if (_orchestrationSettings.IsDevelopmentMode)
         {
-            provider.IsRunning = true;
-
-            if (_orchestrationSettings.IsDevelopmentMode)
+            foreach (var providerModel in runningProviders)
             {
-                var providerEntity = _mapper.Map<ProviderEntity>(provider);
+                var providerEntity = _mapper.Map<ProviderEntity>(providerModel);
+                providerEntity.IsRunning = true;
                 await _providerRepository.AddAsync(providerEntity);
             }
-
-            if (_orchestrationSettings.IsProductionMode)
-            {
-                var providerEntity = providers?.FirstOrDefault(p => p.Id == provider.Id);
-                if (providerEntity != null)
-                    providerEntity.IsRunning = true;
-            }
+            
+            await _providerRepository.SaveChangesAsync();
         }
-
-        await _providerRepository.SaveChangesAsync();
 
         _messagePublisher.Publish(
             Exchanges.Provider,
             ProviderRoutingKeys.AllProvidersStarted,
             new AllProvidersStartedEvent());
         
-    }
-
-    private async Task TriggerAndAwaitContainerStartAsync(ProviderEntity provider, List<string> errors)
-    {
-        try
-        {
-            var response = await _asyncAwaiter.AwaitAsync(new AwaitScenario<ProviderContainerStartedEvent>
-            {
-                Exchange = Exchanges.Provider,
-                RoutingKey = ProviderRoutingKeys.ProviderContainerStarted,
-                Match = evt => evt.ProviderId == provider.Id,
-                Timeout = TimeSpan.FromSeconds(10),
-                BeforeAwait = () => _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.StartProvider, new StartProviderCommand
-                {
-                    ProviderId = provider.Id
-                })
-            });
-        }
-        catch (Exception ex)
-        {
-            errors.Add($"Provider {provider.Name} start failed: {ex.Message}");
-        }
     }
 
     private async Task<IEnumerable<ProviderModel>> TriggerAndAwaitRegistrationStartAsync(IEnumerable<ProviderEntity>? providers = null)

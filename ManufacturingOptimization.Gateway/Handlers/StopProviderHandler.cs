@@ -31,9 +31,6 @@ public class StopProviderHandler : IMessageHandler<StopProviderCommand>
 
     public async Task HandleAsync(StopProviderCommand evt)
     {
-        if (_orchestrationSettings.IsDevelopmentMode)
-            return;
-
         _notificationPublisher.NotifyStoppingProvider(evt.ProviderId);
 
         var provider = await _providerRepository.GetByIdAsync(evt.ProviderId);
@@ -44,11 +41,18 @@ public class StopProviderHandler : IMessageHandler<StopProviderCommand>
         if (!provider.IsRunning)
             throw new InvalidOperationException($"Provider with Id {evt.ProviderId} is not running.");
 
-        await _providerOrchestrator.StopAsync(evt.ProviderId);
-
-        _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.ProviderStopped, new ProviderStoppedEvent
+        if (_orchestrationSettings.IsProductionMode)
         {
-            ProviderId = provider.Id
-        });
+            await _providerOrchestrator.StopAsync(evt.ProviderId);
+        }
+
+        provider.IsRunning = false;
+        await _providerRepository.UpdateAsync(provider);
+        await _providerRepository.SaveChangesAsync();
+
+        _messagePublisher.Publish(
+            Exchanges.Provider,
+            ProviderRoutingKeys.ProviderStopped,
+            new ProviderStoppedEvent { ProviderId = provider.Id });
     }
 }

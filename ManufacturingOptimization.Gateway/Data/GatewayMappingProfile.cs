@@ -78,6 +78,32 @@ namespace ManufacturingOptimization.Gateway.Data
 
         private void ConfigureProviderMappings()
         {
+            // Provider Creation
+            CreateMap<CreateProviderRequest, ProviderEntity>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
+                .ForMember(dest => dest.IsRunning, opt => opt.MapFrom(src => false))
+                .ForMember(dest => dest.EnvironmentSource, opt => opt.MapFrom(src => "manual"));
+
+            CreateMap<CreateProcessCapabilityRequest, ProcessCapabilityEntity>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
+                .ForMember(dest => dest.Provider, opt => opt.Ignore());
+
+            CreateMap<CreateTechnicalCapabilitiesRequest, TechnicalCapabilitiesEntity>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
+                .ForMember(dest => dest.Provider, opt => opt.Ignore());
+
+            CreateMap<CreateWorkingHoursRequest, ProviderWorkingHoursEntity>()
+                .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
+                .ForMember(dest => dest.Provider, opt => opt.Ignore())
+                .ForMember(dest => dest.WorkingDaysJson, opt => opt.MapFrom(src => SerializeWorkingDays(src.WorkingDays)));
+
+            CreateMap<CreateBreakPeriodRequest, ProviderBreakPeriodEntity>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
+                .ForMember(dest => dest.WorkingHours, opt => opt.Ignore());
+
             // Provider Schedule
             CreateMap<ProviderScheduleModel, ProviderScheduleDto>();
             CreateMap<ProviderScheduleDto, ProviderScheduleModel>()

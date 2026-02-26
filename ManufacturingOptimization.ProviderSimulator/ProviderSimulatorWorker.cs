@@ -57,6 +57,12 @@ public class ProviderSimulatorWorker : BackgroundService
         _messagingInfrastructure.PurgeQueue(confirmQueue);
         _messageSubscriber.Subscribe<ConfirmProcessProposalCommand>(confirmQueue, e => _dispatcher.DispatchAsync(e));
 
+        var cancelQueue = $"simulator.process.cancel.{_providerContext.Provider.Id}";
+        _messagingInfrastructure.DeclareQueue(cancelQueue);
+        _messagingInfrastructure.BindQueue(cancelQueue, Exchanges.Process, $"{ProcessRoutingKeys.Cancel}.{_providerContext.Provider.Id}");
+        _messagingInfrastructure.PurgeQueue(cancelQueue);
+        _messageSubscriber.Subscribe<CancelProcessCommand>(cancelQueue, e => _dispatcher.DispatchAsync(e));
+
         var updateProviderQueue = $"simulator.provider.update-provider.{_providerContext.Provider.Id}";
         _messagingInfrastructure.DeclareQueue(updateProviderQueue);
         _messagingInfrastructure.BindQueue(updateProviderQueue, Exchanges.Provider, ProviderRoutingKeys.UpdateProvider);

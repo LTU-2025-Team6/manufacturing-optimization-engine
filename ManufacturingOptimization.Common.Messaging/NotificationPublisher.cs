@@ -314,7 +314,49 @@ public class NotificationPublisher : INotificationPublisher
             providerName
         );
     }
+    // === Process Cancellation ===
 
+    public void NotifyProviderReceivedCancellationRequest(string name, Guid proposalId)
+    {
+        Publish(
+            "Provider Received Cancellation Request",
+            $"Provider {name} received cancellation request for proposal {proposalId}",
+            NotificationType.Info,
+            name
+        );
+    }
+
+    public void NotifyProviderCompletedCancellationRequest(string name, Guid proposalId, bool success, string? errorMessage)
+    {
+        var status = success ? "successfully cancelled" : "failed to cancel";
+        var error = !success && !string.IsNullOrEmpty(errorMessage) ? $" (Error: {errorMessage})" : "";
+        Publish(
+            success ? "Provider Cancelled Proposal" : "Provider Cancellation Failed",
+            $"Provider {name} {status} proposal {proposalId}{error}",
+            success ? NotificationType.Success : NotificationType.Error,
+            name
+        );
+    }
+
+    public void NotifyOptimizationPlanCancelled(Guid planId)
+    {
+        Publish(
+            "Plan Cancelled",
+            $"Optimization plan {planId} has been cancelled and reverted to Ready status",
+            NotificationType.Warning,
+            "Gateway"
+        );
+    }
+
+    public void NotifyOptimizationPlanDeleted(Guid planId)
+    {
+        Publish(
+            "Plan Deleted",
+            $"Optimization plan {planId} has been deleted",
+            NotificationType.Warning,
+            "Gateway"
+        );
+    }
     // === Private Helper ===
 
     private void Publish(string title, string message, NotificationType type, string source)

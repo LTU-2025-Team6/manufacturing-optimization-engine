@@ -45,4 +45,10 @@ public interface INotificationPublisher
     void NotifyDemoDataGenerationStarted(string providerName, Guid providerId);
     void NotifyDemoDataGenerationCompleted(string providerName, Guid providerId);
     void NotifyDemoDataGenerationFailed(string providerName, Guid providerId, string error);
+
+    void NotifyProviderReceivedCancellationRequest(string name, Guid proposalId);
+    void NotifyProviderCompletedCancellationRequest(string name, Guid proposalId, bool success, string? errorMessage);
+
+    void NotifyOptimizationPlanCancelled(Guid planId);
+    void NotifyOptimizationPlanDeleted(Guid planId);
 }

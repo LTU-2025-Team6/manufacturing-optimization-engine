@@ -8,4 +8,5 @@ public interface IProposalService
 {
     Task<ProposalModel> CreateProposalAsync(Guid planId, ProcessType process, MotorSpecificationsModel motorSpecs, DateTime? arrivedAt = null);
     Task ConfirmProposalAsync(Guid proposalId, ProviderScheduleModel schedule);
+    Task CancelProposalAsync(Guid proposalId);
 }

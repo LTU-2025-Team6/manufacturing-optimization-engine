@@ -6,5 +6,7 @@ namespace ManufacturingOptimization.Gateway.Abstractions
     {
         Task<IEnumerable<OptimizationPlanPreviewDto>> GetAllAsync();
         Task<OptimizationPlanDto> GetByIdAsync(Guid id);
+        Task<CancelPlanResponse> CancelPlanAsync(Guid planId);
+        Task DeletePlanAsync(Guid planId);
     }
 }

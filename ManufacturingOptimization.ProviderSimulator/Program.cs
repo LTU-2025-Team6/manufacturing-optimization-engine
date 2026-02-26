@@ -76,6 +76,7 @@ builder.Services.AddSingleton<INotificationPublisher, NotificationPublisher>();
 // Message dispatching
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
 builder.Services.AddScoped<IMessageHandler<RequestAllProviderStartedCommand>, RequestAllProviderStartedHandler>();
+builder.Services.AddScoped<IMessageHandler<RequestProviderStartedCommand>, RequestProviderStartedHandler>();
 builder.Services.AddScoped<IMessageHandler<UpdateProviderCommand>, UpdateProviderHandler>();
 builder.Services.AddScoped<IMessageHandler<RequestProviderScheduleCommand>, RequestProviderScheduleHandler>();
 builder.Services.AddScoped<IMessageHandler<ProposeProcessToProviderCommand>, ProcessProposalHandler>();

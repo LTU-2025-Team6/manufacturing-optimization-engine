@@ -41,6 +41,19 @@ public class ProviderController : ControllerBase
     }
 
     /// <summary>
+    /// Create a new provider
+    /// </summary>
+    [HttpPost]
+    [ProducesResponseType(typeof(ProviderDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> CreateProvider([FromBody] CreateProviderRequest request)
+    {
+        var provider = await _providerService.CreateProviderAsync(request);
+        return CreatedAtAction(nameof(GetProvider), new { id = provider.Id }, provider);
+    }
+
+    /// <summary>
     /// Update a provider
     /// </summary>
     [HttpPut("{id}")]
@@ -52,6 +65,20 @@ public class ProviderController : ControllerBase
     {
         var updatedProvider = await _providerService.UpdateProviderAsync(id, request);
         return Ok(updatedProvider);
+    }
+
+    /// <summary>
+    /// Delete a provider
+    /// </summary>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> DeleteProvider(Guid id)
+    {
+        await _providerService.DeleteProviderAsync(id);
+        return NoContent();
     }
 
     /// <summary>

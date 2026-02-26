@@ -10,8 +10,8 @@ public static class ProviderRoutingKeys
     public const string StopAllProviders = "provider.stop-all";
     public const string AllProvidersStopped = "provider.all-stopped";
     public const string RequestAllProviderStarted = "provider.request-all-started";
+    public const string RequestProviderStarted = "provider.request-started";
     public const string StartProvider = "provider.start";
-    public const string ProviderContainerStarted = "provider.container-started";
     public const string ProviderStarted = "provider.started";
     public const string StopProvider = "provider.stop";
     public const string ProviderStopped = "provider.stopped";
@@ -48,7 +48,7 @@ public class RequestAllProviderStartedCommand : BaseCommand
 {
 }
 
-public class ProviderContainerStartedEvent : BaseEvent
+public class RequestProviderStartedCommand : BaseCommand
 {
     public Guid ProviderId { get; set; }
 }

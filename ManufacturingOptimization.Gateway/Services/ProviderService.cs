@@ -51,6 +51,18 @@ namespace ManufacturingOptimization.Gateway.Services
             return _mapper.Map<ProviderDto>(provider);
         }
 
+        public async Task<ProviderDto> CreateProviderAsync(CreateProviderRequest request)
+        {
+            // Map request to entity using AutoMapper
+            var provider = _mapper.Map<ProviderEntity>(request);
+
+            // Save to repository
+            await _providerRepository.AddAsync(provider);
+            await _providerRepository.SaveChangesAsync();
+
+            return _mapper.Map<ProviderDto>(provider);
+        }
+
         public async Task<ProviderDto> UpdateProviderAsync(Guid id, UpdateProviderRequest request)
         {
             var provider = await _providerRepository.GetByIdAsync(id);
@@ -178,11 +190,22 @@ namespace ManufacturingOptimization.Gateway.Services
             }
         }
 
+        public async Task DeleteProviderAsync(Guid id)
+        {
+            var provider = await _providerRepository.GetByIdAsync(id);
+
+            if (provider == null)
+                throw new NotFoundException($"Provider with Id {id} not found.");
+
+            if (provider.IsRunning)
+                throw new BusinessLogicErrorException("Cannot delete a running provider. Stop it first.");
+
+            await _providerRepository.DeleteAsync(provider);
+            await _providerRepository.SaveChangesAsync();
+        }
+
         public async Task<ProviderPreviewDto> ToggleProviderAsync(Guid id, bool isRunning)
         {
-            if (_orchestrationSettings.IsDevelopmentMode)
-                throw new BusinessLogicErrorException("Toggling providers is not allowed in development mode.");
-
             var provider = await _providerRepository.GetByIdAsync(id);
 
             if (provider == null)
@@ -193,7 +216,9 @@ namespace ManufacturingOptimization.Gateway.Services
             else
                 await TriggerAndAwaitProviderStartAsync(id);
 
-            provider.IsRunning = isRunning;
+            // Handler updated the DB, re-read the entity
+            provider = await _providerRepository.GetByIdAsync(id);
+
             return _mapper.Map<ProviderPreviewDto>(provider);
         }
 
@@ -222,15 +247,26 @@ namespace ManufacturingOptimization.Gateway.Services
                 Timeout = TimeSpan.FromSeconds(10),
                 Match = evt => evt.ProviderId == id,
                 BeforeAwait = () =>
-                    _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.StopProvider, new StopProviderCommand
-                    {
-                        ProviderId = id
-                    })
+                    _messagePublisher.Publish(
+                        Exchanges.Provider,
+                        ProviderRoutingKeys.StopProvider,
+                        new StopProviderCommand { ProviderId = id })
             });
         }
 
         private async Task TriggerAndAwaitProviderStartAsync(Guid id)
         {
+            _messagePublisher.Publish(
+                Exchanges.Provider,
+                ProviderRoutingKeys.StartProvider,
+                new StartProviderCommand { ProviderId = id });
+
+            if (_orchestrationSettings.IsProductionMode)
+                await Task.Delay(3000);
+            else
+                await Task.Delay(300); // Small delay to allow command processing in dev mode
+
+            // Request provider registration (works in both modes)
             await _asyncAwaiter.AwaitAsync(new AwaitScenario<ProviderStartedEvent>
             {
                 Exchange = Exchanges.Provider,
@@ -238,10 +274,10 @@ namespace ManufacturingOptimization.Gateway.Services
                 Timeout = TimeSpan.FromSeconds(10),
                 Match = evt => evt.Provider?.Id == id,
                 BeforeAwait = () =>
-                    _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.StartProvider, new StartProviderCommand
-                    {
-                        ProviderId = id
-                    })
+                    _messagePublisher.Publish(
+                        Exchanges.Provider,
+                        ProviderRoutingKeys.RequestProviderStarted,
+                        new RequestProviderStartedCommand { ProviderId = id })
             });
         }
 
@@ -254,10 +290,10 @@ namespace ManufacturingOptimization.Gateway.Services
                 Timeout = TimeSpan.FromSeconds(10),
                 Match = evt => evt.Provider?.Id == provider.Id,
                 BeforeAwait = () =>
-                    _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.UpdateProvider, new UpdateProviderCommand
-                    {
-                        Provider = _mapper.Map<ProviderModel>(provider)
-                    })
+                    _messagePublisher.Publish(
+                        Exchanges.Provider,
+                        ProviderRoutingKeys.UpdateProvider,
+                        new UpdateProviderCommand { Provider = _mapper.Map<ProviderModel>(provider) })
             });
 
             return updateResult.Provider;
@@ -272,12 +308,15 @@ namespace ManufacturingOptimization.Gateway.Services
                 Timeout = TimeSpan.FromSeconds(10),
                 Match = evt => evt.ProviderId == providerId,
                 BeforeAwait = () =>
-                    _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.RequestProviderSchedule, new RequestProviderScheduleCommand
-                    {
-                        ProviderId = providerId,
-                        Start = request.Start,
-                        End = request.End
-                    })
+                    _messagePublisher.Publish(
+                        Exchanges.Provider,
+                        ProviderRoutingKeys.RequestProviderSchedule,
+                        new RequestProviderScheduleCommand
+                        {
+                            ProviderId = providerId,
+                            Start = request.Start,
+                            End = request.End
+                        })
             });
 
             return scheduleCreatedEvent.Schedules;

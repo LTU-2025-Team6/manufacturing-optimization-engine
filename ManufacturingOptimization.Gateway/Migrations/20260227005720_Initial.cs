@@ -219,6 +219,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     SelectedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     ConfirmedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    CompletedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     ErrorMessage = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
@@ -260,7 +261,8 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     ProposalId = table.Column<Guid>(type: "TEXT", nullable: false),
                     SelectedProviderId = table.Column<Guid>(type: "TEXT", nullable: false),
                     SelectedProviderName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    ProviderScheduleId = table.Column<Guid>(type: "TEXT", nullable: true)
+                    ProviderScheduleId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    ExecutionStatus = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {

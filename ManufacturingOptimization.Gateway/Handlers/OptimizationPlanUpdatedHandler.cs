@@ -74,6 +74,10 @@ public class OptimizationPlanUpdatedHandler : IMessageHandler<OptimizationPlanUp
             case OptimizationPlanStatus.Confirmed:
                 existingPlan.ConfirmedAt = DateTime.UtcNow;
                 break;
+
+            case OptimizationPlanStatus.Completed:
+                existingPlan.CompletedAt = evt.Plan.CompletedAt ?? DateTime.UtcNow;
+                break;
         }
 
         await _planRepository.UpdateAsync(existingPlan);

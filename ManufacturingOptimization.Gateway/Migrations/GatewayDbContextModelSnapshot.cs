@@ -107,6 +107,9 @@ namespace ManufacturingOptimization.Gateway.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("ConfirmedAt")
                         .HasColumnType("TEXT");
 

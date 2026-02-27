@@ -92,10 +92,14 @@ public class GatewayWorker : BackgroundService
         _messagingInfrastructure.DeclareQueue("gateway.execution.events");
         _messagingInfrastructure.BindQueue("gateway.execution.events", Exchanges.Execution, ExecutionRoutingKeys.StepStarted);
         _messagingInfrastructure.BindQueue("gateway.execution.events", Exchanges.Execution, ExecutionRoutingKeys.StepCompleted);
+        _messagingInfrastructure.BindQueue("gateway.execution.events", Exchanges.Execution, ExecutionRoutingKeys.ExecutionStarted);
+        _messagingInfrastructure.BindQueue("gateway.execution.events", Exchanges.Execution, ExecutionRoutingKeys.ExecutionCompleted);
         _messagingInfrastructure.PurgeQueue("gateway.execution.events");
-        
+
         _messageSubscriber.Subscribe<ExecutionStepStartedEvent>("gateway.execution.events", e => _dispatcher.DispatchAsync(e));
         _messageSubscriber.Subscribe<ExecutionStepCompletedEvent>("gateway.execution.events", e => _dispatcher.DispatchAsync(e));
+        _messageSubscriber.Subscribe<ExecutionStartedEvent>("gateway.execution.events", e => _dispatcher.DispatchAsync(e));
+        _messageSubscriber.Subscribe<ExecutionCompletedEvent>("gateway.execution.events", e => _dispatcher.DispatchAsync(e));
 
         // Give subscriptions time to register
         await Task.Delay(300, cancellationToken);

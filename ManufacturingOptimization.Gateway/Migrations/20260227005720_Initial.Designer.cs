@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ManufacturingOptimization.Gateway.Migrations
 {
     [DbContext(typeof(GatewayDbContext))]
-    [Migration("20260224104147_AddStepExecutionStatus")]
-    partial class AddStepExecutionStatus
+    [Migration("20260227005720_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -108,6 +108,9 @@ namespace ManufacturingOptimization.Gateway.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("ConfirmedAt")

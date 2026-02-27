@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ManufacturingOptimization.ProviderSimulator.Migrations
 {
     [DbContext(typeof(ProviderSimulatorDbContext))]
-    [Migration("20260224173728_Initial")]
+    [Migration("20260227005841_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

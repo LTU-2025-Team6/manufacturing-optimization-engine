@@ -113,9 +113,9 @@ public class OptimizationPlanRepository : Repository<OptimizationPlanEntity>, IO
 
         return _dbSet.CountAsync(
             p => p.Status == "Completed" &&
-                 p.ConfirmedAt.HasValue &&
-                 p.ConfirmedAt.Value >= firstDayOfMonth &&
-                 p.ConfirmedAt.Value <= lastDayOfMonth,
+                 p.CompletedAt.HasValue &&
+                 p.CompletedAt.Value >= firstDayOfMonth &&
+                 p.CompletedAt.Value <= lastDayOfMonth,
             cancellationToken);
     }
 }

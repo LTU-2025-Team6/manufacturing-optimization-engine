@@ -106,4 +106,17 @@ public class ProviderController : ControllerBase
         var schedule = await _providerService.GetProviderScheduleAsync(id, request);
         return Ok(schedule);
     }
+
+    /// <summary>
+    /// Get execution details from a provider
+    /// </summary>
+    [HttpGet("{providerId}/executions/{executionId}")]
+    [ProducesResponseType(typeof(ExecutionDetailsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GetExecutionDetails(Guid providerId, Guid executionId)
+    {
+        var executionDetails = await _providerService.GetExecutionDetailsAsync(providerId, executionId);
+        return Ok(executionDetails);
+    }
 }

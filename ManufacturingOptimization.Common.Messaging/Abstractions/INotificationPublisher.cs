@@ -38,6 +38,8 @@ public interface INotificationPublisher
     void NotifyProviderCompletedConfirmationRequest(string name, Guid proposalId, Guid id, bool isAccepted, string? declineReason);
     void NotifyProviderReceivedScheduleRequest(string name, DateTime start, DateTime end);
     void NotifyProviderCompletedScheduleRequest(string name, DateTime start, DateTime end);
+    void NotifyProviderReceivedExecutionDetailsRequest(string name, Guid executionId);
+    void NotifyProviderCompletedExecutionDetailsRequest(string name, Guid executionId);
     void NotifyProviderUpdateRequested(string name);
     void NotifyProviderUpdated(string name);
 

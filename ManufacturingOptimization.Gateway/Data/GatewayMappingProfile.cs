@@ -111,9 +111,17 @@ namespace ManufacturingOptimization.Gateway.Data
                 .ForMember(dest => dest.EndWorkingTime, opt => opt.Ignore());
             CreateMap<ProviderDayScheduleModel, ProviderDayScheduleDto>().ReverseMap();
             CreateMap<ProviderScheduleSegmentModel, ProviderScheduleSegmentDto>()
-                .ForMember(dest => dest.SegmentType, opt => opt.MapFrom(src => src.SegmentType.ToString()));
+                .ForMember(dest => dest.SegmentType, opt => opt.MapFrom(src => src.SegmentType.ToString()))
+                .ForMember(dest => dest.ExecutionId, opt => opt.MapFrom(src => src.ExecutionId));
             CreateMap<ProviderScheduleSegmentDto, ProviderScheduleSegmentModel>()
-                .ForMember(dest => dest.SegmentType, opt => opt.MapFrom(src => Enum.Parse<SegmentType>(src.SegmentType)));
+                .ForMember(dest => dest.SegmentType, opt => opt.MapFrom(src => Enum.Parse<SegmentType>(src.SegmentType)))
+                .ForMember(dest => dest.ExecutionId, opt => opt.MapFrom(src => src.ExecutionId));
+
+            // Execution Details
+            CreateMap<ExecutionDetailsModel, ExecutionDetailsDto>()
+                .ForMember(dest => dest.Process, opt => opt.MapFrom(src => src.Process.ToString()))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+            CreateMap<ExecutionTimeSlot, ExecutionScheduleSegmentDto>();
 
             // Provider & Capabilities
             CreateMap<ProviderModel, ProviderDto>().ReverseMap();

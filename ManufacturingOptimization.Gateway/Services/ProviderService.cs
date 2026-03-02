@@ -321,5 +321,39 @@ namespace ManufacturingOptimization.Gateway.Services
 
             return scheduleCreatedEvent.Schedules;
         }
+
+        public async Task<ExecutionDetailsDto> GetExecutionDetailsAsync(Guid providerId, Guid executionId)
+        {
+            var provider = await _providerRepository.GetByIdAsync(providerId);
+
+            if (provider == null)
+                throw new NotFoundException($"Provider with Id {providerId} not found.");
+
+            var executionDetails = await TriggerAndAwaitExecutionDetailsAsync(providerId, executionId);
+
+            return _mapper.Map<ExecutionDetailsDto>(executionDetails);
+        }
+
+        private async Task<ExecutionDetailsModel> TriggerAndAwaitExecutionDetailsAsync(Guid providerId, Guid executionId)
+        {
+            var executionDetailsEvent = await _asyncAwaiter.AwaitAsync(new AwaitScenario<ExecutionDetailsProvidedEvent>
+            {
+                Exchange = Exchanges.Provider,
+                RoutingKey = ProviderRoutingKeys.ExecutionDetailsProvided,
+                Timeout = TimeSpan.FromSeconds(10),
+                Match = evt => evt.ExecutionId == executionId,
+                BeforeAwait = () =>
+                    _messagePublisher.Publish(
+                        Exchanges.Provider,
+                        ProviderRoutingKeys.RequestExecutionDetails,
+                        new RequestExecutionDetailsCommand
+                        {
+                            ProviderId = providerId,
+                            ExecutionId = executionId
+                        })
+            });
+
+            return executionDetailsEvent.Details;
+        }
     }
 }

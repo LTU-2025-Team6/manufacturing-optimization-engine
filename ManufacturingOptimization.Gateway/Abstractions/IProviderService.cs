@@ -11,5 +11,6 @@ namespace ManufacturingOptimization.Gateway.Abstractions
         Task DeleteProviderAsync(Guid id);
         Task<ProviderPreviewDto> ToggleProviderAsync(Guid id, bool isRunning);
         Task<List<ProviderDayScheduleDto>> GetProviderScheduleAsync(Guid providerId, ProviderScheduleRequest request);
+        Task<ExecutionDetailsDto> GetExecutionDetailsAsync(Guid providerId, Guid executionId);
     }
 }

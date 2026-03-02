@@ -193,14 +193,16 @@ public static class ProviderScheduleSegmentExtensions
                     result.Add(NewSegment(
                         s.StartTime,
                         overlay.StartTime,
-                        s.SegmentType));
+                        s.SegmentType,
+                        s.ExecutionId));
                 }
 
-                // middle part (overlay type)
+                // middle part (overlay type) - preserve ExecutionId from overlay
                 result.Add(NewSegment(
                     Max(s.StartTime, overlay.StartTime),
                     Min(s.EndTime, overlay.EndTime),
-                    overlay.SegmentType));
+                    overlay.SegmentType,
+                    overlay.ExecutionId));
 
                 // right fragment (keep original type)
                 if (overlay.EndTime < s.EndTime)
@@ -208,7 +210,8 @@ public static class ProviderScheduleSegmentExtensions
                     result.Add(NewSegment(
                         overlay.EndTime,
                         s.EndTime,
-                        s.SegmentType));
+                        s.SegmentType,
+                        s.ExecutionId));
                 }
             }
         }
@@ -393,12 +396,13 @@ public static class ProviderScheduleSegmentExtensions
 
     private static DateTime Min(DateTime a, DateTime b) => a < b ? a : b;
 
-    private static ProviderScheduleSegmentModel NewSegment(DateTime start, DateTime end, SegmentType type)
+    private static ProviderScheduleSegmentModel NewSegment(DateTime start, DateTime end, SegmentType type, Guid? executionId = null)
         => new()
         {
             StartTime = start,
             EndTime = end,
-            SegmentType = type
+            SegmentType = type,
+            ExecutionId = executionId
         };
 
     private static List<ProviderScheduleSegmentModel> MergeAdjacent(List<ProviderScheduleSegmentModel> segments)

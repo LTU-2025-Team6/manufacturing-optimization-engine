@@ -102,11 +102,12 @@ public sealed class RequestProviderScheduleHandler : IMessageHandler<RequestProv
         var planned = await _executionRepository.GetAllExecutionScheduleSegmentsInTimeWindowAsync(_providerContext.Provider.Id, start, end);
 
         return planned
-            .Select(s => new ProviderScheduleSegmentModel
+            .Select(s =>  new ProviderScheduleSegmentModel
             {
                 StartTime = s.StartTime,
                 EndTime = s.EndTime,
-                SegmentType = SegmentType.Occupied
+                SegmentType = SegmentType.Occupied,
+                ExecutionId = s.ExecutionId
             })
             .ToList();
     }

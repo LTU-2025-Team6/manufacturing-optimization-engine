@@ -82,6 +82,7 @@ builder.Services.AddScoped<IMessageHandler<RequestProviderScheduleCommand>, Requ
 builder.Services.AddScoped<IMessageHandler<ProposeProcessToProviderCommand>, ProcessProposalHandler>();
 builder.Services.AddScoped<IMessageHandler<ConfirmProcessProposalCommand>, ProcessConfirmationHandler>();
 builder.Services.AddScoped<IMessageHandler<CancelProcessCommand>, CancelProcessHandler>();
+builder.Services.AddScoped<IMessageHandler<RequestExecutionDetailsCommand>, RequestExecutionDetailsHandler>();
 
 // Register provider simulator
 builder.Services.AddSingleton<IProviderSimulationContext, ProviderSimulationContext>();

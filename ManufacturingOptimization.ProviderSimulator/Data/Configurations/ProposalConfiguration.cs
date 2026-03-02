@@ -32,9 +32,6 @@ public class ProposalConfiguration : IEntityTypeConfiguration<ProposalEntity>
             .HasForeignKey<EstimateEntity>(x => x.ProposalId)
             .OnDelete(DeleteBehavior.Cascade);
         
-        builder.HasOne(x => x.Execution)
-            .WithOne(x => x.Proposal)
-            .HasForeignKey<ExecutionEntity>(x => x.ProposalId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // Execution relationship is configured in ExecutionConfiguration
     }
 }

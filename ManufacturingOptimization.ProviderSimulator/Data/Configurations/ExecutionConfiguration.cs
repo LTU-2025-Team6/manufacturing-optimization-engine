@@ -20,7 +20,7 @@ public class ExecutionConfiguration : IEntityTypeConfiguration<ExecutionEntity>
 
         entity.HasMany(e => e.ScheduleSegments)
             .WithOne(s => s.Execution)
-            .HasForeignKey(e => e.ExecutionId)
+            .HasForeignKey(s => s.ExecutionId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

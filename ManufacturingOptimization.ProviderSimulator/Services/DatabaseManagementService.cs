@@ -67,8 +67,15 @@ public class DatabaseManagementService : IHostedService
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error during database initialization or demo data generation for provider {ProviderId}", 
+                    _providerContext.Provider.Id);
+                
+                _notificationPublisher.NotifyDemoDataGenerationFailed(
+                    _providerContext.Provider.Name,
+                    _providerContext.Provider.Id,
+                    ex.Message);
             }
         });
 
@@ -115,8 +122,9 @@ public class DatabaseManagementService : IHostedService
                 return false; // Skip generation
             }
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Error claiming demo data generation for provider {ProviderId}", providerId);
             return false; // Skip generation on error to allow provider to start
         }
     }

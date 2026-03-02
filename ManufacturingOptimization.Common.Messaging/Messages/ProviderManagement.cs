@@ -19,6 +19,8 @@ public static class ProviderRoutingKeys
     public const string ProviderUpdated = "provider.updated";
     public const string RequestProviderSchedule = "provider.request-schedule";
     public const string ProviderScheduleCreated = "provider.schedule-created";
+    public const string RequestExecutionDetails = "provider.request-execution-details";
+    public const string ExecutionDetailsProvided = "provider.execution-details-provided";
 }
 
 
@@ -91,4 +93,16 @@ public class ProviderScheduleCreatedEvent : BaseEvent
     public DateTime Start { get; set; }
     public DateTime End { get; set; }
     public List<ProviderDayScheduleModel> Schedules { get; set; } = null!;
+}
+
+public class RequestExecutionDetailsCommand : BaseCommand
+{
+    public Guid ProviderId { get; set; }
+    public Guid ExecutionId { get; set; }
+}
+
+public class ExecutionDetailsProvidedEvent : BaseEvent
+{
+    public Guid ExecutionId { get; set; }
+    public ExecutionDetailsModel Details { get; set; } = null!;
 }

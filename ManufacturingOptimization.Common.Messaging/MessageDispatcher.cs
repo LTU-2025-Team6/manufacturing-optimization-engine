@@ -37,6 +37,7 @@ public class MessageDispatcher : IMessageDispatcher
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error dispatching message of type {MessageType}", typeof(TMessage).Name);
             throw;
         }
     }

@@ -13,20 +13,20 @@ namespace ManufacturingOptimization.ProviderSimulator.Services;
 /// </summary>
 public class ProposalService : IProposalService
 {
-    private readonly IProviderSimulationContext _context;
+    private readonly IProviderSimulationContext _providerContext;
     private readonly IEstimationService _estimationService;
     private readonly IProposalRepository _proposalRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<ProposalService> _logger;
 
     public ProposalService(
-        IProviderSimulationContext context,
+        IProviderSimulationContext providerContext,
         IEstimationService estimationService,
         IProposalRepository proposalRepository,
         IMapper mapper,
         ILogger<ProposalService> logger)
     {
-        _context = context;
+        _providerContext = providerContext;
         _estimationService = estimationService;
         _proposalRepository = proposalRepository;
         _mapper = mapper;
@@ -40,12 +40,12 @@ public class ProposalService : IProposalService
         DateTime? arrivedAt = null)
     {
         var capability = GetProcessCapability(process)
-            ?? throw new InvalidOperationException($"{_context.Provider.Name} does not support process {process}");
+            ?? throw new InvalidOperationException($"{_providerContext.Provider.Name} does not support process {process}");
 
         var proposal = new ProposalModel
         {
             PlanId = planId,
-            ProviderId = _context.Provider.Id,
+            ProviderId = _providerContext.Provider.Id,
             Process = process,
             MotorSpecs = motorSpecs,
             ArrivedAt = arrivedAt ?? DateTime.UtcNow,
@@ -92,11 +92,19 @@ public class ProposalService : IProposalService
 
         proposalEntity.Status = ProposalStatus.Confirmed;
         proposalEntity.ModifiedAt = DateTime.UtcNow;
-        proposalEntity.Execution = new ExecutionEntity
+        
+        var executionEntity = new ExecutionEntity
         {
             ProposalId = proposalEntity.Id,
             ScheduleSegments = workingSegments
         };
+        
+        proposalEntity.Execution = executionEntity;
+        
+        foreach (var segment in workingSegments)
+        {
+            segment.ExecutionId = executionEntity.Id;
+        }
 
         await _proposalRepository.UpdateAsync(proposalEntity);
         await _proposalRepository.SaveChangesAsync();
@@ -121,6 +129,6 @@ public class ProposalService : IProposalService
     }
 
     private ProcessCapabilityModel? GetProcessCapability(ProcessType process)
-        => _context.Provider.ProcessCapabilities
+        => _providerContext.Provider.ProcessCapabilities
             .FirstOrDefault(p => p.Process == process);
 }

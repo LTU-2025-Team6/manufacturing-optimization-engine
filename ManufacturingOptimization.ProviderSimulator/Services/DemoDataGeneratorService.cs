@@ -46,10 +46,16 @@ public class DemoDataGeneratorService
     public async Task GenerateAsync()
     {
         if (!_settings.Enabled)
+        {
+            _logger.LogInformation("Demo data generation is disabled");
             return;
+        }
 
         var totalExecutions = _settings.MonthsAhead * _settings.ExecutionsPerMonth;
         var generatedCount = 0;
+
+        _logger.LogInformation("Starting demo data generation: {TotalExecutions} executions for provider {ProviderId}", 
+            totalExecutions, _context.Provider.Id);
 
         for (int i = 0; i < totalExecutions; i++)
         {
@@ -64,6 +70,9 @@ public class DemoDataGeneratorService
                 _logger.LogWarning(ex, "Failed to generate execution {Index}", i + 1);
             }
         }
+
+        _logger.LogInformation("Demo data generation completed: {GeneratedCount}/{TotalExecutions} executions created for provider {ProviderId}", 
+            generatedCount, totalExecutions, _context.Provider.Id);
     }
 
     /// <summary>
@@ -109,7 +118,8 @@ public class DemoDataGeneratorService
             {
                 StartTime = s.StartTime,
                 EndTime = s.EndTime,
-                SegmentType = SegmentType.Occupied
+                SegmentType = SegmentType.Occupied,
+                ExecutionId = s.ExecutionId
             })
             .ToList();
     }
@@ -125,10 +135,10 @@ public class DemoDataGeneratorService
             return false;
 
         var process = supportedProcesses[_random.Next(supportedProcesses.Count)];
-        
+
         // Random duration (2-12 hours)
         var durationHours = _random.Next(2, 13);
-        
+
         // Random time window
         var now = DateTime.UtcNow;
         var maxDaysAhead = _settings.MonthsAhead * 30;

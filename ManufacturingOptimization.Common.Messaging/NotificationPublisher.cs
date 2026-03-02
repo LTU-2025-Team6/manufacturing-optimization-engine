@@ -263,6 +263,26 @@ public class NotificationPublisher : INotificationPublisher
         );
     }
 
+    public void NotifyProviderReceivedExecutionDetailsRequest(string name, Guid executionId)
+    {
+        Publish(
+            "Provider Received Execution Details Request",
+            $"Provider {name} received execution details request for execution {executionId}",
+            NotificationType.Info,
+            name
+        );
+    }
+
+    public void NotifyProviderCompletedExecutionDetailsRequest(string name, Guid executionId)
+    {
+        Publish(
+            "Provider Completed Execution Details Request",
+            $"Provider {name} sent execution details for execution {executionId}",
+            NotificationType.Success,
+            name
+        );
+    }
+
     public void NotifyProviderUpdateRequested(string name)
     {
         Publish(

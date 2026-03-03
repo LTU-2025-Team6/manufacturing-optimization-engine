@@ -14,7 +14,7 @@ using ManufacturingOptimization.Gateway.Middleware;
 using ManufacturingOptimization.Gateway.Services;
 using ManufacturingOptimization.Gateway.Settings;
 using Microsoft.Extensions.Options;
-using ManufacturingOptimization.Common.Messaging.Messages.ExecutionManagement;
+using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
 using ManufacturingOptimization.Gateway.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -79,14 +79,19 @@ builder.Services.AddSingleton<IMessageSubscriber>(sp => sp.GetRequiredService<Ra
 // Notification Publisher Helper
 builder.Services.AddSingleton<INotificationPublisher, NotificationPublisher>();
 
+// Simulation Clock
+builder.Services.AddSingleton<ISimulationClock, SimulationClock>();
+builder.Services.AddScoped<ISimulationTimeService, SimulationTimeService>();
+
 // Add SignalR
 builder.Services.AddSignalR();
 
 // Message dispatching
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
-builder.Services.AddSingleton<ExecutionEventHandler>();
-builder.Services.AddSingleton<IMessageHandler<ExecutionStepStartedEvent>>(sp => sp.GetRequiredService<ExecutionEventHandler>());
-builder.Services.AddSingleton<IMessageHandler<ExecutionStepCompletedEvent>>(sp => sp.GetRequiredService<ExecutionEventHandler>());
+builder.Services.AddScoped<ProcessExecutionStartedEventHandler>();
+builder.Services.AddScoped<ProcessExecutionCompletedEventHandler>();
+builder.Services.AddScoped<IMessageHandler<ProcessExecutionStartedEvent>>(sp => sp.GetRequiredService<ProcessExecutionStartedEventHandler>());
+builder.Services.AddScoped<IMessageHandler<ProcessExecutionCompletedEvent>>(sp => sp.GetRequiredService<ProcessExecutionCompletedEventHandler>());
 builder.Services.AddScoped<IMessageHandler<ServiceReadyEvent>, ServiceReadyHandler>();
 builder.Services.AddScoped<IMessageHandler<SystemReadyEvent>, SystemReadyHandler>();
 builder.Services.AddScoped<IMessageHandler<StartAllProvidersCommand>, StartAllProvidersHandler>();
@@ -113,6 +118,7 @@ builder.Services.AddScoped<IOptimizationPlanService, OptimizationPlanService>();
 builder.Services.AddScoped<IOptimizationStrategyService, OptimizationStrategyService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IExecutionStatusService, ExecutionStatusService>();
 
 var app = builder.Build();
 

@@ -44,6 +44,9 @@ builder.Services.AddSingleton<IMessagingInfrastructure>(sp => sp.GetRequiredServ
 // Notification Publisher Helper
 builder.Services.AddSingleton<INotificationPublisher, NotificationPublisher>();
 
+// Simulation Clock
+builder.Services.AddSingleton<ISimulationClock, SimulationClock>();
+
 // Register Async Awaiter
 builder.Services.AddSingleton<IAsyncAwaiter, AsyncAwaiter>();
 

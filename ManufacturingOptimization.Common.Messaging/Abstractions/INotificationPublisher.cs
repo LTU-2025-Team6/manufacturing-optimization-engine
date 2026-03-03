@@ -40,6 +40,8 @@ public interface INotificationPublisher
     void NotifyProviderCompletedScheduleRequest(string name, DateTime start, DateTime end);
     void NotifyProviderReceivedExecutionDetailsRequest(string name, Guid executionId);
     void NotifyProviderCompletedExecutionDetailsRequest(string name, Guid executionId);
+    void NotifyProviderStartedExecution(string providerName, Guid executionId, ProcessType process);
+    void NotifyProviderCompletedExecution(string providerName, Guid executionId, ProcessType process, bool success);
     void NotifyProviderUpdateRequested(string name);
     void NotifyProviderUpdated(string name);
 
@@ -53,4 +55,8 @@ public interface INotificationPublisher
 
     void NotifyOptimizationPlanCancelled(Guid planId);
     void NotifyOptimizationPlanDeleted(Guid planId);
+
+    void NotifyExecutionStepStarted(Guid planId, string processName, string providerName, int stepNumber);
+    void NotifyExecutionStepCompleted(Guid planId, string processName, string providerName, int stepNumber);
+    void NotifyExecutionStepFailed(Guid planId, string processName, string providerName, int stepNumber, string reason);
 }

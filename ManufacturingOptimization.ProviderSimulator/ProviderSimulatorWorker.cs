@@ -1,6 +1,7 @@
 using ManufacturingOptimization.Common.Messaging.Abstractions;
 using ManufacturingOptimization.Common.Messaging.Messages;
 using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
+using ManufacturingOptimization.Common.Messaging.Messages.SystemManagement;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
 using System.Threading.Tasks;
 
@@ -14,6 +15,7 @@ public class ProviderSimulatorWorker : BackgroundService
     private readonly IMessagePublisher _messagePublisher;
     private readonly IMessageDispatcher _dispatcher;
     private readonly IProviderSimulationContext _providerContext;
+    private readonly ISimulationClock _clock;
 
     public ProviderSimulatorWorker(
         ILogger<ProviderSimulatorWorker> logger,
@@ -21,7 +23,8 @@ public class ProviderSimulatorWorker : BackgroundService
         IMessageSubscriber messageSubscriber,
         IMessagePublisher messagePublisher,
         IMessageDispatcher dispatcher,
-        IProviderSimulationContext providerLogic)
+        IProviderSimulationContext providerLogic,
+        ISimulationClock clock)
     {
         _logger = logger;
         _messagingInfrastructure = messagingInfrastructure;
@@ -29,6 +32,7 @@ public class ProviderSimulatorWorker : BackgroundService
         _messagePublisher = messagePublisher;
         _dispatcher = dispatcher;
         _providerContext = providerLogic;
+        _clock = clock;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -92,6 +96,16 @@ public class ProviderSimulatorWorker : BackgroundService
         _messagingInfrastructure.BindQueue(executionQueueName, Exchanges.Process, $"process.execute.{_providerContext.Provider.Id}");
         _messagingInfrastructure.PurgeQueue(executionQueueName);
         _messageSubscriber.Subscribe<ExecuteProcessCommand>(executionQueueName, e => _dispatcher.DispatchAsync(e));
+
+        // Subscribe to simulation time changes from Gateway
+        var timeChangedQueue = $"simulator.system.time-changed.{_providerContext.Provider.Id}";
+        _messagingInfrastructure.DeclareQueue(timeChangedQueue);
+        _messagingInfrastructure.BindQueue(timeChangedQueue, Exchanges.System, SystemRoutingKeys.TimeChanged);
+        _messagingInfrastructure.PurgeQueue(timeChangedQueue);
+        _messageSubscriber.Subscribe<SimulationTimeChangedEvent>(timeChangedQueue, e =>
+        {
+            _clock.SetTime(e.SimulatedUtcNow, e.SpeedMultiplier);
+        });
 
         await Task.Delay(300, cancellationToken);
     }

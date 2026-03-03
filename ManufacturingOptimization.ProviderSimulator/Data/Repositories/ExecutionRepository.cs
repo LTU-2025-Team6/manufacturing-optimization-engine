@@ -1,5 +1,6 @@
 using ManufacturingOptimization.Common.Models.Data.Abstractions;
 using ManufacturingOptimization.Common.Models.Data.Repositories;
+using ManufacturingOptimization.Common.Models.Enums;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
 using ManufacturingOptimization.ProviderSimulator.Data.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -33,5 +34,16 @@ public class ExecutionRepository : Repository<ExecutionEntity>, IExecutionReposi
                 .ThenInclude(p => p.Estimate)
             .Include(e => e.ScheduleSegments)
             .FirstOrDefaultAsync(e => e.Id == id);
+    }
+
+    public async Task<List<ExecutionEntity>> GetExecutionsByProviderAndStatusAsync(Guid providerId, StepExecutionStatus status)
+    {
+        return await _dbSet
+            .Include(e => e.Proposal)
+            .Include(e => e.ScheduleSegments)
+            .Where(e => e.Proposal.ProviderId == providerId)
+            .Where(e => e.Status == status)
+            .Where(e => !e.IsDemo) // Exclude demo executions - they are for display only
+            .ToListAsync();
     }
 }

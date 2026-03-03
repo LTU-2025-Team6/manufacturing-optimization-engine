@@ -1,4 +1,6 @@
 using ManufacturingOptimization.Common.Messaging.Abstractions;
+using ManufacturingOptimization.Gateway.Abstractions;
+using ManufacturingOptimization.Gateway.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ManufacturingOptimization.Gateway.Controllers
@@ -8,10 +10,14 @@ namespace ManufacturingOptimization.Gateway.Controllers
     public class SystemController : ControllerBase
     {
         private readonly ISystemReadinessService _readinessService;
+        private readonly ISimulationTimeService _timeService;
 
-        public SystemController(ISystemReadinessService readinessService)
+        public SystemController(
+            ISystemReadinessService readinessService,
+            ISimulationTimeService timeService)
         {
             _readinessService = readinessService;
+            _timeService = timeService;
         }
 
         /// <summary>
@@ -22,6 +28,30 @@ namespace ManufacturingOptimization.Gateway.Controllers
         {
             var isReady = _readinessService.IsSystemReady && _readinessService.IsProvidersReady;
             return Ok(new { ready = isReady });
+        }
+
+        /// <summary>
+        /// Get current simulation time and speed multiplier.
+        /// </summary>
+        [HttpGet]
+        [ProducesResponseType(typeof(SimulationTimeDto), StatusCodes.Status200OK)]
+        public IActionResult GetTime()
+        {
+            return Ok(_timeService.GetCurrentTime());
+        }
+
+        /// <summary>
+        /// Set simulation time and/or speed multiplier.
+        /// Updates all services (Engine, ProviderSimulators) via RabbitMQ.
+        /// </summary>
+        /// <param name="request">New time and/or speed. Null values keep current settings.</param>
+        [HttpPut]
+        [ProducesResponseType(typeof(SimulationTimeDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        public IActionResult SetTime([FromBody] SetSimulationTimeRequest request)
+        {
+            _timeService.SetTime(request.SimulatedUtcNow, request.SpeedMultiplier);
+            return Ok(_timeService.GetCurrentTime());
         }
     }
 }

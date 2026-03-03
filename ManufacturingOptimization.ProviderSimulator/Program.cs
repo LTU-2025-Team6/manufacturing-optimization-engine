@@ -73,6 +73,9 @@ builder.Services.AddSingleton<IMessagingInfrastructure>(sp => sp.GetRequiredServ
 // Notification Publisher Helper
 builder.Services.AddSingleton<INotificationPublisher, NotificationPublisher>();
 
+// Simulation Clock
+builder.Services.AddSingleton<ISimulationClock, SimulationClock>();
+
 // Message dispatching
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
 builder.Services.AddScoped<IMessageHandler<RequestAllProviderStartedCommand>, RequestAllProviderStartedHandler>();
@@ -87,7 +90,9 @@ builder.Services.AddScoped<IMessageHandler<RequestExecutionDetailsCommand>, Requ
 // Register provider simulator
 builder.Services.AddSingleton<IProviderSimulationContext, ProviderSimulationContext>();
 
+// Background services
 builder.Services.AddHostedService<ProviderSimulatorWorker>();
+builder.Services.AddHostedService<ExecutionSchedulerService>();
 
 builder.Services.AddScoped<ProcessExecutionHandler>();
 

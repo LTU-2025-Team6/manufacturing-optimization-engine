@@ -283,6 +283,28 @@ public class NotificationPublisher : INotificationPublisher
         );
     }
 
+    public void NotifyProviderStartedExecution(string providerName, Guid executionId, ProcessType process)
+    {
+        Publish(
+            "Provider Started Execution",
+            $"{providerName} started {process} execution {executionId}",
+            NotificationType.Info,
+            providerName
+        );
+    }
+
+    public void NotifyProviderCompletedExecution(string providerName, Guid executionId, ProcessType process, bool success)
+    {
+        Publish(
+            success ? "Provider Completed Execution" : "Provider Failed Execution",
+            success 
+                ? $"{providerName} completed {process} execution {executionId}"
+                : $"{providerName} failed {process} execution {executionId}",
+            success ? NotificationType.Success : NotificationType.Error,
+            providerName
+        );
+    }
+
     public void NotifyProviderUpdateRequested(string name)
     {
         Publish(
@@ -377,6 +399,37 @@ public class NotificationPublisher : INotificationPublisher
             "Gateway"
         );
     }
+
+    public void NotifyExecutionStepStarted(Guid planId, string processName, string providerName, int stepNumber)
+    {
+        Publish(
+            "▶️ Execution Started",
+            $"Step {stepNumber}: {processName} execution started at {providerName}",
+            NotificationType.Info,
+            "Gateway"
+        );
+    }
+
+    public void NotifyExecutionStepCompleted(Guid planId, string processName, string providerName, int stepNumber)
+    {
+        Publish(
+            "✅ Execution Completed",
+            $"Step {stepNumber}: {processName} execution completed successfully at {providerName}",
+            NotificationType.Success,
+            "Gateway"
+        );
+    }
+
+    public void NotifyExecutionStepFailed(Guid planId, string processName, string providerName, int stepNumber, string reason)
+    {
+        Publish(
+            "❌ Execution Failed",
+            $"Step {stepNumber}: {processName} execution failed at {providerName}. Reason: {reason}",
+            NotificationType.Error,
+            "Gateway"
+        );
+    }
+
     // === Private Helper ===
 
     private void Publish(string title, string message, NotificationType type, string source)

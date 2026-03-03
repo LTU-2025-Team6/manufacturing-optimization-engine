@@ -14,19 +14,22 @@ public class EngineWorker : BackgroundService
     private readonly IMessageSubscriber _messageSubscriber;
     private readonly IMessagePublisher _messagePublisher;
     private readonly IMessageDispatcher _dispatcher;
+    private readonly ISimulationClock _clock;
 
     public EngineWorker(
         ILogger<EngineWorker> logger,
         IMessagingInfrastructure messagingInfrastructure,
         IMessageSubscriber messageSubscriber,
         IMessagePublisher messagePublisher,
-        IMessageDispatcher dispatcher)
+        IMessageDispatcher dispatcher,
+        ISimulationClock clock)
     {
         _logger = logger;
         _messagingInfrastructure = messagingInfrastructure;
         _messageSubscriber = messageSubscriber;
         _messagePublisher = messagePublisher;
         _dispatcher = dispatcher;
+        _clock = clock;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -66,6 +69,15 @@ public class EngineWorker : BackgroundService
         _messagingInfrastructure.BindQueue("engine.optimization.requests", Exchanges.Optimization, OptimizationRoutingKeys.PlanRequested);
         _messagingInfrastructure.PurgeQueue("engine.optimization.requests");
         _messageSubscriber.Subscribe<RequestOptimizationPlanCommand>("engine.optimization.requests", e => _dispatcher.DispatchAsync(e));
+
+        // Subscribe to simulation time changes from Gateway
+        _messagingInfrastructure.DeclareQueue("engine.system.time-changed");
+        _messagingInfrastructure.BindQueue("engine.system.time-changed", Exchanges.System, SystemRoutingKeys.TimeChanged);
+        _messagingInfrastructure.PurgeQueue("engine.system.time-changed");
+        _messageSubscriber.Subscribe<SimulationTimeChangedEvent>("engine.system.time-changed", e =>
+        {
+            _clock.SetTime(e.SimulatedUtcNow, e.SpeedMultiplier);
+        });
 
         await Task.Delay(300, cancellationToken);
     }

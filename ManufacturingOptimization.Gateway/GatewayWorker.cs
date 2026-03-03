@@ -1,7 +1,7 @@
 using ManufacturingOptimization.Common.Messaging.Abstractions;
 using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.ExecutionManagement;
 using ManufacturingOptimization.Common.Messaging.Messages.OptimizationManagement;
+using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
 using ManufacturingOptimization.Common.Messaging.Messages.SystemManagement;
 using ManufacturingOptimization.Gateway.Abstractions;
 
@@ -87,19 +87,13 @@ public class GatewayWorker : BackgroundService
         _messagingInfrastructure.BindQueue("gateway.notifications", Exchanges.Notification, NotificationRoutingKeys.CreateNotification);
         _messageSubscriber.Subscribe<CreateNotificationCommand>("gateway.notifications", e => _dispatcher.DispatchAsync(e));
 
-        _messagingInfrastructure.DeclareExchange(Exchanges.Execution);
-
-        _messagingInfrastructure.DeclareQueue("gateway.execution.events");
-        _messagingInfrastructure.BindQueue("gateway.execution.events", Exchanges.Execution, ExecutionRoutingKeys.StepStarted);
-        _messagingInfrastructure.BindQueue("gateway.execution.events", Exchanges.Execution, ExecutionRoutingKeys.StepCompleted);
-        _messagingInfrastructure.BindQueue("gateway.execution.events", Exchanges.Execution, ExecutionRoutingKeys.ExecutionStarted);
-        _messagingInfrastructure.BindQueue("gateway.execution.events", Exchanges.Execution, ExecutionRoutingKeys.ExecutionCompleted);
-        _messagingInfrastructure.PurgeQueue("gateway.execution.events");
-
-        _messageSubscriber.Subscribe<ExecutionStepStartedEvent>("gateway.execution.events", e => _dispatcher.DispatchAsync(e));
-        _messageSubscriber.Subscribe<ExecutionStepCompletedEvent>("gateway.execution.events", e => _dispatcher.DispatchAsync(e));
-        _messageSubscriber.Subscribe<ExecutionStartedEvent>("gateway.execution.events", e => _dispatcher.DispatchAsync(e));
-        _messageSubscriber.Subscribe<ExecutionCompletedEvent>("gateway.execution.events", e => _dispatcher.DispatchAsync(e));
+        // Subscribe to process execution events from providers
+        _messagingInfrastructure.DeclareQueue("gateway.process.execution-events");
+        _messagingInfrastructure.BindQueue("gateway.process.execution-events", Exchanges.Process, ProcessRoutingKeys.ExecutionStarted);
+        _messagingInfrastructure.BindQueue("gateway.process.execution-events", Exchanges.Process, ProcessRoutingKeys.ExecutionCompleted);
+        _messagingInfrastructure.PurgeQueue("gateway.process.execution-events");
+        _messageSubscriber.Subscribe<ProcessExecutionStartedEvent>("gateway.process.execution-events", e => _dispatcher.DispatchAsync(e));
+        _messageSubscriber.Subscribe<ProcessExecutionCompletedEvent>("gateway.process.execution-events", e => _dispatcher.DispatchAsync(e));
 
         // Give subscriptions time to register
         await Task.Delay(300, cancellationToken);

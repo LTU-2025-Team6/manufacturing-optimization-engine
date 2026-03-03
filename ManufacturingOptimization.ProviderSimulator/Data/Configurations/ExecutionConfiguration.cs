@@ -12,6 +12,7 @@ public class ExecutionConfiguration : IEntityTypeConfiguration<ExecutionEntity>
 
         entity.HasKey(e => e.Id);
         entity.Property(e => e.ProposalId).IsRequired();
+        entity.Property(e => e.IsDemo).IsRequired().HasDefaultValue(false);
 
         entity.HasOne(e => e.Proposal)
             .WithOne(p => p.Execution)

@@ -76,7 +76,11 @@ namespace ManufacturingOptimization.ProviderSimulator.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ProposalId = table.Column<Guid>(type: "TEXT", nullable: false)
+                    ProposalId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    IsDemo = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
+                    StartedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    CompletedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {

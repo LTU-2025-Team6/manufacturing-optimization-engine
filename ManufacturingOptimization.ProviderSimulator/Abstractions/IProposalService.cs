@@ -7,6 +7,6 @@ namespace ManufacturingOptimization.ProviderSimulator.Abstractions;
 public interface IProposalService
 {
     Task<ProposalModel> CreateProposalAsync(Guid planId, ProcessType process, MotorSpecificationsModel motorSpecs, DateTime? arrivedAt = null);
-    Task ConfirmProposalAsync(Guid proposalId, ProviderScheduleModel schedule);
+    Task ConfirmProposalAsync(Guid proposalId, ProviderScheduleModel schedule, bool isDemo = false);
     Task CancelProposalAsync(Guid proposalId);
 }

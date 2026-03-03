@@ -5,5 +5,6 @@ public enum StepExecutionStatus
     Pending,
     InProgress,
     Completed,
-    Failed
+    Failed,
+    Cancelled
 }

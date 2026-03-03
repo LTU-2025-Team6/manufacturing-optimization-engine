@@ -171,7 +171,7 @@ public class DemoDataGeneratorService
                 {
                     Id = Guid.NewGuid(),
                     Segments = workSlot.ToList()
-                });
+                }, isDemo: true); // Mark as demo execution
 
                 return true;
             }

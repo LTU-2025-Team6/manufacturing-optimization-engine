@@ -76,7 +76,7 @@ public class ProposalService : IProposalService
         return proposal;
     }
 
-    public async Task ConfirmProposalAsync(Guid proposalId, ProviderScheduleModel schedule)
+    public async Task ConfirmProposalAsync(Guid proposalId, ProviderScheduleModel schedule, bool isDemo = false)
     {
         var proposalEntity = await _proposalRepository.GetByIdAsync(proposalId);
         if (proposalEntity == null)
@@ -96,6 +96,7 @@ public class ProposalService : IProposalService
         var executionEntity = new ExecutionEntity
         {
             ProposalId = proposalEntity.Id,
+            IsDemo = isDemo, // Mark demo executions vs real confirmed proposals
             ScheduleSegments = workingSegments
         };
         

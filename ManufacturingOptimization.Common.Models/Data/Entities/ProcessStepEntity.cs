@@ -1,4 +1,5 @@
 namespace ManufacturingOptimization.Common.Models.Data.Entities;
+using ManufacturingOptimization.Common.Models.Enums;
 
 /// <summary>
 /// Process step entity for database storage.
@@ -18,4 +19,5 @@ public class ProcessStepEntity
     public OptimizationStrategyEntity Strategy { get; set; } = null!;
     public ProcessEstimateEntity? Estimate { get; set; }
     public ProviderScheduleEntity? ProviderSchedule { get; set; }
+    public StepExecutionStatus ExecutionStatus { get; set; } = StepExecutionStatus.Pending;
 }

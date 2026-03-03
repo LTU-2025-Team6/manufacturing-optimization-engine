@@ -18,6 +18,7 @@ public class OptimizationPlanDto
     public DateTime CreatedAt { get; set; }
     public DateTime? SelectedAt { get; set; }
     public DateTime? ConfirmedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
     public string? ErrorMessage { get; set; }
 }
 
@@ -41,6 +42,7 @@ public class ProcessStepDto
     public string Process { get; set; } = string.Empty;
     public Guid SelectedProviderId { get; set; }
     public string SelectedProviderName { get; set; } = string.Empty;
+    public string ExecutionStatus { get; set; } = "Pending";
     public ProcessEstimateDto Estimate { get; set; } = new();
     public ProviderScheduleDto? AllocatedSchedule { get; set; }
 }

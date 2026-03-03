@@ -169,7 +169,8 @@ namespace ManufacturingOptimization.Gateway.Data
             // ProcessStep
             CreateMap<ProcessStepEntity, ProcessStepDto>()
                 .ForMember(dest => dest.Process, opt => opt.MapFrom(src => src.Process))
-                .ForMember(dest => dest.AllocatedSchedule, opt => opt.MapFrom(src => src.ProviderSchedule));
+                .ForMember(dest => dest.AllocatedSchedule, opt => opt.MapFrom(src => src.ProviderSchedule))
+                .ForMember(dest => dest.ExecutionStatus, opt => opt.MapFrom(src => src.ExecutionStatus.ToString()));
 
             // ProcessEstimate
             CreateMap<ProcessEstimateEntity, ProcessEstimateDto>();

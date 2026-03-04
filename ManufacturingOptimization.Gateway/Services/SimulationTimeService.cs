@@ -1,8 +1,7 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.SystemManagement;
-using ManufacturingOptimization.Gateway.Abstractions;
-using ManufacturingOptimization.Gateway.DTOs;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Gateway.Abstractions.Services;
+using ManufacturingOptimization.Gateway.DTOs.System;
 
 namespace ManufacturingOptimization.Gateway.Services;
 

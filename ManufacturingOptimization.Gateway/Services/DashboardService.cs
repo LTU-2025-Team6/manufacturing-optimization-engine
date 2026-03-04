@@ -1,6 +1,6 @@
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Gateway.Abstractions;
-using ManufacturingOptimization.Gateway.DTOs;
+using ManufacturingOptimization.Gateway.DTOs.Dashboard;
+using ManufacturingOptimization.Gateway.Abstractions.Services;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
 
 namespace ManufacturingOptimization.Gateway.Services;
 

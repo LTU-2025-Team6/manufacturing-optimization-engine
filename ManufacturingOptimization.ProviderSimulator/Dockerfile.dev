@@ -3,8 +3,8 @@ WORKDIR /app
 
 # Restore dependencies (cached layer)
 COPY ["ManufacturingOptimization.ProviderSimulator/ManufacturingOptimization.ProviderSimulator.csproj", "ManufacturingOptimization.ProviderSimulator/"]
-COPY ["ManufacturingOptimization.Common.Models/ManufacturingOptimization.Common.Models.csproj", "ManufacturingOptimization.Common.Models/"]
-COPY ["ManufacturingOptimization.Common.Messaging/ManufacturingOptimization.Common.Messaging.csproj", "ManufacturingOptimization.Common.Messaging/"]
+COPY ["ManufacturingOptimization.Common/ManufacturingOptimization.Common.csproj", "ManufacturingOptimization.Common/"]
+COPY ["ManufacturingOptimization.Common/ManufacturingOptimization.Common.csproj", "ManufacturingOptimization.Common/"]
 
 RUN dotnet restore "ManufacturingOptimization.ProviderSimulator/ManufacturingOptimization.ProviderSimulator.csproj"
 

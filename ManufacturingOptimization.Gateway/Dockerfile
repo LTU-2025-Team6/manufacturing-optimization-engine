@@ -5,8 +5,7 @@ WORKDIR /src
 # Copy solution and project files
 COPY ["ManufacturingOptimization.sln", "./"]
 COPY ["ManufacturingOptimization.Gateway/ManufacturingOptimization.Gateway.csproj", "ManufacturingOptimization.Gateway/"]
-COPY ["ManufacturingOptimization.Common.Models/ManufacturingOptimization.Common.Models.csproj", "ManufacturingOptimization.Common.Models/"]
-COPY ["ManufacturingOptimization.Common.Messaging/ManufacturingOptimization.Common.Messaging.csproj", "ManufacturingOptimization.Common.Messaging/"]
+COPY ["ManufacturingOptimization.Common/ManufacturingOptimization.Common.csproj", "ManufacturingOptimization.Common/"]
 
 # Restore dependencies
 RUN dotnet restore "ManufacturingOptimization.Gateway/ManufacturingOptimization.Gateway.csproj"

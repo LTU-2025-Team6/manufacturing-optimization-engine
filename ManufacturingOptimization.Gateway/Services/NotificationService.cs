@@ -1,8 +1,9 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Gateway.Abstractions;
-using ManufacturingOptimization.Gateway.DTOs;
+using ManufacturingOptimization.Gateway.DTOs.Common;
+using ManufacturingOptimization.Gateway.DTOs.Notification;
 using ManufacturingOptimization.Gateway.Exceptions;
+using ManufacturingOptimization.Gateway.Abstractions.Services;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
 
 namespace ManufacturingOptimization.Gateway.Services;
 
@@ -19,28 +20,31 @@ public class NotificationService : INotificationService
         _notificationRepository = notificationRepository;
     }
 
-    public async Task<List<NotificationDto>> GetAllNotificationsAsync()
+    public async Task<PagedResult<NotificationPreviewDto>> GetAllNotificationsAsync(PaginationRequest pagination)
     {
-        var notifications = await _notificationRepository.GetAllAsync();
-        return _mapper.Map<List<NotificationDto>>(notifications);
+        var skip = (pagination.PageNumber - 1) * pagination.PageSize;
+        var (notifications, totalCount) = await _notificationRepository.GetPagedAsync(skip, pagination.PageSize);
+        return new PagedResult<NotificationPreviewDto>(
+            _mapper.Map<List<NotificationPreviewDto>>(notifications),
+            pagination.PageNumber, pagination.PageSize, totalCount);
     }
 
-    public async Task<List<NotificationDto>> GetNewNotificationsAsync()
+    public async Task<IEnumerable<NotificationPreviewDto>> GetNewNotificationsAsync()
     {
         var notifications = await _notificationRepository.GetNewNotificationsAsync();
-        return _mapper.Map<List<NotificationDto>>(notifications);
+        return _mapper.Map<List<NotificationPreviewDto>>(notifications);
     }
 
-    public async Task<List<NotificationDto>> GetRecentNotificationsAsync(int count = 10)
+    public async Task<IEnumerable<NotificationPreviewDto>> GetRecentNotificationsAsync()
     {
-        var notifications = await _notificationRepository.GetRecentAsync(count);
-        return _mapper.Map<List<NotificationDto>>(notifications);
+        var notifications = await _notificationRepository.GetAllAsync();
+        return _mapper.Map<List<NotificationPreviewDto>>(notifications);
     }
 
-    public async Task<List<NotificationDto>> GetNotificationsSinceAsync(DateTime since)
+    public async Task<IEnumerable<NotificationPreviewDto>> GetNotificationsSinceAsync(DateTime since)
     {
         var notifications = await _notificationRepository.GetSinceAsync(since);
-        return _mapper.Map<List<NotificationDto>>(notifications);
+        return _mapper.Map<List<NotificationPreviewDto>>(notifications);
     }
 
     public async Task<NotificationDto> GetNotificationByIdAsync(Guid id)

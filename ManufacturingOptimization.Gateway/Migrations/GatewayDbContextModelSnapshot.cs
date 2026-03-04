@@ -17,7 +17,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.12");
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.NotificationEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.NotificationEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -63,7 +63,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("Notifications");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationMetricsEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.OptimizationMetricsEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -101,7 +101,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("OptimizationMetrics");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationPlanEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.OptimizationPlanEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -141,7 +141,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("OptimizationPlans");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationRequestEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.OptimizationRequestEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -160,7 +160,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("OptimizationRequests");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationStrategyEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.OptimizationStrategyEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -199,7 +199,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("OptimizationStrategies");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProcessCapabilityEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProcessCapabilityEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -239,7 +239,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("ProcessCapabilities");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProcessEstimateEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProcessEstimateEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -269,7 +269,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("ProcessEstimates");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProcessStepEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProcessStepEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -313,7 +313,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("ProcessSteps");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderBreakPeriodEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProviderBreakPeriodEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -342,7 +342,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("BreakPeriods");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProviderEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -373,7 +373,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("Providers");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderScheduleEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProviderScheduleEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -390,7 +390,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("ProviderSchedules");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderScheduleSegmentEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProviderScheduleSegmentEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -417,7 +417,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("ProviderScheduleSegments");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderWorkingHoursEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProviderWorkingHoursEntity", b =>
                 {
                     b.Property<Guid>("ProviderId")
                         .HasColumnType("TEXT");
@@ -441,7 +441,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("WorkingHours");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.TechnicalCapabilitiesEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.TechnicalCapabilitiesEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -467,7 +467,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("TechnicalCapabilities");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.WarrantyTermsEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.WarrantyTermsEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -500,30 +500,30 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.ToTable("WarrantyTerms");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationMetricsEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.OptimizationMetricsEntity", b =>
                 {
-                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationStrategyEntity", "Strategy")
+                    b.HasOne("ManufacturingOptimization.Gateway.Data.Entities.OptimizationStrategyEntity", "Strategy")
                         .WithOne("Metrics")
-                        .HasForeignKey("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationMetricsEntity", "StrategyId")
+                        .HasForeignKey("ManufacturingOptimization.Gateway.Data.Entities.OptimizationMetricsEntity", "StrategyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Strategy");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationPlanEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.OptimizationPlanEntity", b =>
                 {
-                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationStrategyEntity", "SelectedStrategy")
+                    b.HasOne("ManufacturingOptimization.Gateway.Data.Entities.OptimizationStrategyEntity", "SelectedStrategy")
                         .WithOne()
-                        .HasForeignKey("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationPlanEntity", "SelectedStrategyId")
+                        .HasForeignKey("ManufacturingOptimization.Gateway.Data.Entities.OptimizationPlanEntity", "SelectedStrategyId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("SelectedStrategy");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationRequestEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.OptimizationRequestEntity", b =>
                 {
-                    b.OwnsOne("ManufacturingOptimization.Common.Models.Data.Entities.MotorSpecificationsEntity", "MotorSpecs", b1 =>
+                    b.OwnsOne("ManufacturingOptimization.Gateway.Data.Entities.MotorSpecificationsEntity", "MotorSpecs", b1 =>
                         {
                             b1.Property<Guid>("OptimizationRequestEntityId")
                                 .HasColumnType("TEXT");
@@ -556,7 +556,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                                 .HasForeignKey("OptimizationRequestEntityId");
                         });
 
-                    b.OwnsOne("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationRequestConstraintsEntity", "Constraints", b1 =>
+                    b.OwnsOne("ManufacturingOptimization.Gateway.Data.Entities.OptimizationRequestConstraintsEntity", "Constraints", b1 =>
                         {
                             b1.Property<Guid>("OptimizationRequestEntityId")
                                 .HasColumnType("TEXT");
@@ -572,7 +572,7 @@ namespace ManufacturingOptimization.Gateway.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("OptimizationRequestEntityId");
 
-                            b1.OwnsOne("ManufacturingOptimization.Common.Models.Data.Entities.TimeWindowEntity", "TimeWindow", b2 =>
+                            b1.OwnsOne("ManufacturingOptimization.Gateway.Data.Entities.TimeWindowEntity", "TimeWindow", b2 =>
                                 {
                                     b2.Property<Guid>("OptimizationRequestConstraintsEntityOptimizationRequestEntityId")
                                         .HasColumnType("TEXT");
@@ -602,9 +602,9 @@ namespace ManufacturingOptimization.Gateway.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationStrategyEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.OptimizationStrategyEntity", b =>
                 {
-                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationPlanEntity", "Plan")
+                    b.HasOne("ManufacturingOptimization.Gateway.Data.Entities.OptimizationPlanEntity", "Plan")
                         .WithMany("Strategies")
                         .HasForeignKey("PlanId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -612,9 +612,9 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.Navigation("Plan");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProcessCapabilityEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProcessCapabilityEntity", b =>
                 {
-                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.ProviderEntity", "Provider")
+                    b.HasOne("ManufacturingOptimization.Gateway.Data.Entities.ProviderEntity", "Provider")
                         .WithMany("ProcessCapabilities")
                         .HasForeignKey("ProviderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -623,25 +623,25 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.Navigation("Provider");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProcessEstimateEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProcessEstimateEntity", b =>
                 {
-                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.ProcessStepEntity", "ProcessStep")
+                    b.HasOne("ManufacturingOptimization.Gateway.Data.Entities.ProcessStepEntity", "ProcessStep")
                         .WithOne("Estimate")
-                        .HasForeignKey("ManufacturingOptimization.Common.Models.Data.Entities.ProcessEstimateEntity", "ProcessStepId")
+                        .HasForeignKey("ManufacturingOptimization.Gateway.Data.Entities.ProcessEstimateEntity", "ProcessStepId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ProcessStep");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProcessStepEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProcessStepEntity", b =>
                 {
-                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.ProviderScheduleEntity", "ProviderSchedule")
+                    b.HasOne("ManufacturingOptimization.Gateway.Data.Entities.ProviderScheduleEntity", "ProviderSchedule")
                         .WithOne()
-                        .HasForeignKey("ManufacturingOptimization.Common.Models.Data.Entities.ProcessStepEntity", "ProviderScheduleId")
+                        .HasForeignKey("ManufacturingOptimization.Gateway.Data.Entities.ProcessStepEntity", "ProviderScheduleId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationStrategyEntity", "Strategy")
+                    b.HasOne("ManufacturingOptimization.Gateway.Data.Entities.OptimizationStrategyEntity", "Strategy")
                         .WithMany("Steps")
                         .HasForeignKey("StrategyId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -652,9 +652,9 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.Navigation("Strategy");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderBreakPeriodEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProviderBreakPeriodEntity", b =>
                 {
-                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.ProviderWorkingHoursEntity", "WorkingHours")
+                    b.HasOne("ManufacturingOptimization.Gateway.Data.Entities.ProviderWorkingHoursEntity", "WorkingHours")
                         .WithMany("Breaks")
                         .HasForeignKey("ProviderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -663,9 +663,9 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.Navigation("WorkingHours");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderScheduleSegmentEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProviderScheduleSegmentEntity", b =>
                 {
-                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.ProviderScheduleEntity", "ProviderSchedule")
+                    b.HasOne("ManufacturingOptimization.Gateway.Data.Entities.ProviderScheduleEntity", "ProviderSchedule")
                         .WithMany("Segments")
                         .HasForeignKey("ProviderScheduleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -674,45 +674,45 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.Navigation("ProviderSchedule");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderWorkingHoursEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProviderWorkingHoursEntity", b =>
                 {
-                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.ProviderEntity", "Provider")
+                    b.HasOne("ManufacturingOptimization.Gateway.Data.Entities.ProviderEntity", "Provider")
                         .WithOne("WorkingHours")
-                        .HasForeignKey("ManufacturingOptimization.Common.Models.Data.Entities.ProviderWorkingHoursEntity", "ProviderId")
+                        .HasForeignKey("ManufacturingOptimization.Gateway.Data.Entities.ProviderWorkingHoursEntity", "ProviderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Provider");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.TechnicalCapabilitiesEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.TechnicalCapabilitiesEntity", b =>
                 {
-                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.ProviderEntity", "Provider")
+                    b.HasOne("ManufacturingOptimization.Gateway.Data.Entities.ProviderEntity", "Provider")
                         .WithOne("TechnicalCapabilities")
-                        .HasForeignKey("ManufacturingOptimization.Common.Models.Data.Entities.TechnicalCapabilitiesEntity", "ProviderId")
+                        .HasForeignKey("ManufacturingOptimization.Gateway.Data.Entities.TechnicalCapabilitiesEntity", "ProviderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Provider");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.WarrantyTermsEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.WarrantyTermsEntity", b =>
                 {
-                    b.HasOne("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationStrategyEntity", "Strategy")
+                    b.HasOne("ManufacturingOptimization.Gateway.Data.Entities.OptimizationStrategyEntity", "Strategy")
                         .WithOne("Warranty")
-                        .HasForeignKey("ManufacturingOptimization.Common.Models.Data.Entities.WarrantyTermsEntity", "StrategyId")
+                        .HasForeignKey("ManufacturingOptimization.Gateway.Data.Entities.WarrantyTermsEntity", "StrategyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Strategy");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationPlanEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.OptimizationPlanEntity", b =>
                 {
                     b.Navigation("Strategies");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.OptimizationStrategyEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.OptimizationStrategyEntity", b =>
                 {
                     b.Navigation("Metrics");
 
@@ -721,12 +721,12 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.Navigation("Warranty");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProcessStepEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProcessStepEntity", b =>
                 {
                     b.Navigation("Estimate");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProviderEntity", b =>
                 {
                     b.Navigation("ProcessCapabilities");
 
@@ -735,12 +735,12 @@ namespace ManufacturingOptimization.Gateway.Migrations
                     b.Navigation("WorkingHours");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderScheduleEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProviderScheduleEntity", b =>
                 {
                     b.Navigation("Segments");
                 });
 
-            modelBuilder.Entity("ManufacturingOptimization.Common.Models.Data.Entities.ProviderWorkingHoursEntity", b =>
+            modelBuilder.Entity("ManufacturingOptimization.Gateway.Data.Entities.ProviderWorkingHoursEntity", b =>
                 {
                     b.Navigation("Breaks");
                 });

@@ -1,4 +1,4 @@
-using ManufacturingOptimization.Common.Models.Contracts;
+using ManufacturingOptimization.Common.Contracts;
 
 namespace ManufacturingOptimization.Engine.Models;
 

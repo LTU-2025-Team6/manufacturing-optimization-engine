@@ -1,14 +1,7 @@
-using AutoMapper;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.OptimizationManagement;
-using ManufacturingOptimization.Common.Messaging.Messages.PlanManagement;
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Entities;
-using ManufacturingOptimization.Common.Models.Enums;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Enums;
+using ManufacturingOptimization.Common.Messages;
 using ManufacturingOptimization.Engine.Abstractions;
-using ManufacturingOptimization.Common.Models.Exceptions;
 using ManufacturingOptimization.Engine.Models;
 
 namespace ManufacturingOptimization.Engine.Handlers;
@@ -23,7 +16,6 @@ public class OptimizationRequestHandler : IMessageHandler<RequestOptimizationPla
     private readonly ISystemReadinessService _readinessService;
     private readonly IMessagePublisher _messagePublisher;
     private readonly INotificationPublisher _notificationPublisher;
-    private readonly IMapper _mapper;
     private readonly ILogger<OptimizationRequestHandler> _logger;
 
     public OptimizationRequestHandler(
@@ -31,14 +23,12 @@ public class OptimizationRequestHandler : IMessageHandler<RequestOptimizationPla
         ISystemReadinessService readinessService,
         IMessagePublisher messagePublisher,
         INotificationPublisher notificationPublisher,
-        IMapper mapper,
         ILogger<OptimizationRequestHandler> logger)
     {
         _pipelineFactory = pipelineFactory;
         _readinessService = readinessService;
         _messagePublisher = messagePublisher;
         _notificationPublisher = notificationPublisher;
-        _mapper = mapper;
         _logger = logger;
     }
 

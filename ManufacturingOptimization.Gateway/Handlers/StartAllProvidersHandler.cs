@@ -1,10 +1,10 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Entities;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Contracts;
+using ManufacturingOptimization.Common.Messages;
 using ManufacturingOptimization.Gateway.Abstractions;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
+using ManufacturingOptimization.Gateway.Data.Entities;
 using ManufacturingOptimization.Gateway.Settings;
 using Microsoft.Extensions.Options;
 
@@ -50,7 +50,7 @@ public class StartAllProvidersHandler : IMessageHandler<StartAllProvidersCommand
         IEnumerable<ProviderEntity>? providers = null;
         if (_orchestrationSettings.IsProductionMode)
         {
-            providers = (await _providerRepository.GetAllAsync())
+            providers = (await _providerRepository.GetAllWithFullDetailsAsync())
                 .Where(p => p.AutoStart)
                 .ToList();
 

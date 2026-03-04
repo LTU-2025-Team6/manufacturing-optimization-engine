@@ -1,5 +1,6 @@
-﻿using ManufacturingOptimization.Gateway.Abstractions;
-using ManufacturingOptimization.Gateway.DTOs;
+﻿using ManufacturingOptimization.Gateway.Abstractions.Services;
+using ManufacturingOptimization.Gateway.DTOs.Common;
+using ManufacturingOptimization.Gateway.DTOs.Provider;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ManufacturingOptimization.Gateway.Controllers;
@@ -16,14 +17,14 @@ public class ProviderController : ControllerBase
     }
 
     /// <summary>
-    /// Get list of all registered providers
+    /// Get list of all registered providers with pagination
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(List<ProviderDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<ProviderPreviewDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> GetProviders()
+    public async Task<IActionResult> GetProviders([FromQuery] PaginationRequest pagination)
     {
-        var response = await _providerService.GetProvidersAsync();
+        var response = await _providerService.GetProvidersAsync(pagination);
         return Ok(response);
     }
 
@@ -98,7 +99,7 @@ public class ProviderController : ControllerBase
     /// Get provider schedule for a given period
     /// </summary>
     [HttpGet("{id}/schedule")]
-    [ProducesResponseType(typeof(List<ProviderScheduleDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<ProviderDayScheduleDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetProviderSchedule(Guid id, [FromQuery] ProviderScheduleRequest request)

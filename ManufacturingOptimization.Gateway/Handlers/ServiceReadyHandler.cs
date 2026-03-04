@@ -1,5 +1,5 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages.SystemManagement;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
 
 namespace ManufacturingOptimization.Gateway.Handlers;
 

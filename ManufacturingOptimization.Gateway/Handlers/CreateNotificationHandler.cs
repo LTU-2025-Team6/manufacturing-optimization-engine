@@ -1,7 +1,7 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Entities;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
+using ManufacturingOptimization.Gateway.Data.Entities;
 
 namespace ManufacturingOptimization.Gateway.Handlers;
 

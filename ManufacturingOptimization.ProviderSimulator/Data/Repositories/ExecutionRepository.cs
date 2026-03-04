@@ -1,6 +1,6 @@
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Repositories;
-using ManufacturingOptimization.Common.Models.Enums;
+using ManufacturingOptimization.Common.Data.Abstractions;
+using ManufacturingOptimization.Common.Enums;
+using ManufacturingOptimization.Common.Services;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
 using ManufacturingOptimization.ProviderSimulator.Data.Entities;
 using Microsoft.EntityFrameworkCore;

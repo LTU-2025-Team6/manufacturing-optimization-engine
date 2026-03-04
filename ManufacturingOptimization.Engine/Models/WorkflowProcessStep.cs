@@ -1,5 +1,4 @@
-using ManufacturingOptimization.Common.Models.Enums;
-using ManufacturingOptimization.Engine.Models.OptimizationStep;
+using ManufacturingOptimization.Common.Enums;
 
 namespace ManufacturingOptimization.Engine.Models;
 

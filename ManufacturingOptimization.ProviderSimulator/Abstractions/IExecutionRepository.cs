@@ -1,5 +1,5 @@
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Enums;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Enums;
 using ManufacturingOptimization.ProviderSimulator.Data.Entities;
 
 namespace ManufacturingOptimization.ProviderSimulator.Abstractions; 

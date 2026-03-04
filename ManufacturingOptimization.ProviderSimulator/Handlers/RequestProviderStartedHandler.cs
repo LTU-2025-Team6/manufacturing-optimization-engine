@@ -1,5 +1,5 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
 
 namespace ManufacturingOptimization.ProviderSimulator.Handlers;

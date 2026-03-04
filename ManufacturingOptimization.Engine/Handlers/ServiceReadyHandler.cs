@@ -1,6 +1,6 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.SystemManagement;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Common.Messages;
 
 namespace ManufacturingOptimization.Engine.Handlers;
 
@@ -12,16 +12,13 @@ public class ServiceReadyHandler : IMessageHandler<ServiceReadyEvent>
         "Engine"
     };
     private readonly IMessagePublisher _messagePublisher;
-    private readonly ISystemReadinessService _systemReadinessService;
 
     private readonly static HashSet<string> _readyServices = new();
     private bool _systemReadyPublished = false;
 
     public ServiceReadyHandler(
-        ISystemReadinessService systemReadinessService,
         IMessagePublisher messagePublisher)
     {
-        _systemReadinessService = systemReadinessService;
         _messagePublisher = messagePublisher;
     }
 

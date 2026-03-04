@@ -1,10 +1,7 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
-using ManufacturingOptimization.Common.Models.Enums;
-using ManufacturingOptimization.ProviderRegistry.Data;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Enums;
+using ManufacturingOptimization.Common.Messages;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
-using Microsoft.EntityFrameworkCore;
 
 namespace ManufacturingOptimization.ProviderSimulator.Services;
 

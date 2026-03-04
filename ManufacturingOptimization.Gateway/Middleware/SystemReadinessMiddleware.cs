@@ -1,4 +1,4 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
+using ManufacturingOptimization.Common.Abstractions;
 using ManufacturingOptimization.Gateway.Exceptions;
 
 namespace ManufacturingOptimization.Gateway.Middleware

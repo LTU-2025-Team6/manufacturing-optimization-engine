@@ -1,23 +1,19 @@
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using AutoMapper;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Engine.Abstractions;
 
 namespace ManufacturingOptimization.Engine.Handlers;
 
 public class ProviderStoppedHandler : IMessageHandler<ProviderStoppedEvent>
 {
     private readonly IProviderRepository _repository;
-    private readonly IMapper _mapper;
     private readonly ILogger<ProviderStoppedHandler> _logger;
 
     public ProviderStoppedHandler(
         IProviderRepository repository,
-        IMapper mapper,
         ILogger<ProviderStoppedHandler> logger)
     {
         _repository = repository;
-        _mapper = mapper;
         _logger = logger;
     }
 

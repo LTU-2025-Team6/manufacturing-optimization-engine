@@ -1,7 +1,6 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
 using ManufacturingOptimization.ProviderSimulator.Models;
 
@@ -43,14 +42,14 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
         // Notify request received
         _notificationPublisher.NotifyProviderReceivedConfirmationRequest(_providerContext.Provider.Name, command.ProposalId, _providerContext.Provider.Id);
 
-        var response = new ProcessProposalReviewedEvent
+        var response = new ProcessProposalConfirmedEvent
         {
             ProposalId = command.ProposalId
         };
 
         try
         {
-            var proposalEntity = await _proposalRepository.GetByIdAsync(command.ProposalId);
+            var proposalEntity = await _proposalRepository.GetByIdWithDetailsAsync(command.ProposalId);
             if (proposalEntity == null)
                 throw new InvalidOperationException("Proposal not found.");
 
@@ -72,7 +71,7 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
         {
 
             // Publish the result of the confirmation process
-            _messagePublisher.Publish(Exchanges.Process, $"{ProcessRoutingKeys.Reviewed}.{_providerContext.Provider.Id}", response);
+            _messagePublisher.Publish(Exchanges.Process, $"{ProcessRoutingKeys.Confirmed}.{_providerContext.Provider.Id}", response);
 
             // Notify request completed
             _notificationPublisher.NotifyProviderCompletedConfirmationRequest(_providerContext.Provider.Name, command.ProposalId, _providerContext.Provider.Id, response.IsAccepted, response.DeclineReason);

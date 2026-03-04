@@ -1,14 +1,13 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Enums;
-using ManufacturingOptimization.Common.Models.Extensions;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Contracts;
+using ManufacturingOptimization.Common.Enums;
+using ManufacturingOptimization.Common.Extensions;
+using ManufacturingOptimization.Common.Messages;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
 using ManufacturingOptimization.ProviderSimulator.Data.Entities;
 using ManufacturingOptimization.ProviderSimulator.Models;
-using static ManufacturingOptimization.Common.Models.Extensions.ProviderScheduleSegmentExtensions;
+using static ManufacturingOptimization.Common.Extensions.ProviderScheduleSegmentExtensions;
 
 namespace ManufacturingOptimization.ProviderSimulator.Handlers;
 

@@ -6,7 +6,6 @@ $ErrorActionPreference = 'Stop'
 # Configuration
 $Projects = @(
     @{ Name = "ManufacturingOptimization.Gateway"; Csproj = "ManufacturingOptimization.Gateway.csproj" }
-    @{ Name = "ManufacturingOptimization.Engine"; Csproj = "ManufacturingOptimization.Engine.csproj" }
     @{ Name = "ManufacturingOptimization.ProviderSimulator"; Csproj = "ManufacturingOptimization.ProviderSimulator.csproj" }
 )
 

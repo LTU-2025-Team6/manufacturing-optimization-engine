@@ -7,9 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManufacturingOptimization.G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManufacturingOptimization.Engine", "ManufacturingOptimization.Engine\ManufacturingOptimization.Engine.csproj", "{0E15062B-4784-4B32-B71C-9AC934B06563}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManufacturingOptimization.Common.Messaging", "ManufacturingOptimization.Common.Messaging\ManufacturingOptimization.Common.Messaging.csproj", "{1B50DE46-FC18-4298-9115-C7FA3941F76F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManufacturingOptimization.Common.Models", "ManufacturingOptimization.Common.Models\ManufacturingOptimization.Common.Models.csproj", "{E72A3216-8C09-4710-B079-4FA1BA132F29}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManufacturingOptimization.Common", "ManufacturingOptimization.Common\ManufacturingOptimization.Common.csproj", "{E72A3216-8C09-4710-B079-4FA1BA132F29}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManufacturingOptimization.ProviderSimulator", "ManufacturingOptimization.ProviderSimulator\ManufacturingOptimization.ProviderSimulator.csproj", "{6DEBBCA4-2888-443A-9755-1289F564A4D5}"
 EndProject
@@ -29,10 +27,6 @@ Global
 		{0E15062B-4784-4B32-B71C-9AC934B06563}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E15062B-4784-4B32-B71C-9AC934B06563}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E15062B-4784-4B32-B71C-9AC934B06563}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1B50DE46-FC18-4298-9115-C7FA3941F76F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1B50DE46-FC18-4298-9115-C7FA3941F76F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1B50DE46-FC18-4298-9115-C7FA3941F76F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1B50DE46-FC18-4298-9115-C7FA3941F76F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E72A3216-8C09-4710-B079-4FA1BA132F29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E72A3216-8C09-4710-B079-4FA1BA132F29}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E72A3216-8C09-4710-B079-4FA1BA132F29}.Release|Any CPU.ActiveCfg = Release|Any CPU

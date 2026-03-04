@@ -1,5 +1,6 @@
-using ManufacturingOptimization.Gateway.Abstractions;
-using ManufacturingOptimization.Gateway.DTOs;
+using ManufacturingOptimization.Gateway.Abstractions.Services;
+using ManufacturingOptimization.Gateway.DTOs.Common;
+using ManufacturingOptimization.Gateway.DTOs.Execution;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ManufacturingOptimization.Gateway.Controllers;
@@ -19,50 +20,57 @@ public class ExecutionStatusController : ControllerBase
     }
 
     /// <summary>
-    /// Get summary of all execution plans with their progress.
+    /// Get all execution plans with their progress and pagination
     /// </summary>
     [HttpGet("plans")]
-    public async Task<ActionResult<List<ExecutionPlanSummaryDto>>> GetAllPlans()
+    [ProducesResponseType(typeof(PagedResult<ExecutionPlanSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllPlans([FromQuery] PaginationRequest pagination)
     {
-        var plans = await _executionStatusService.GetAllPlansAsync();
+        var plans = await _executionStatusService.GetAllPlansAsync(pagination);
         return Ok(plans);
     }
 
     /// <summary>
-    /// Get detailed information about a specific execution plan.
+    /// Get detailed information about a specific execution plan
     /// </summary>
     [HttpGet("plans/{id:guid}")]
-    public async Task<ActionResult<ExecutionPlanDetailDto>> GetPlanDetail(Guid id)
+    [ProducesResponseType(typeof(ExecutionPlanDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPlanDetail(Guid id)
     {
         var detail = await _executionStatusService.GetPlanDetailAsync(id);
         return Ok(detail);
     }
 
     /// <summary>
-    /// Get all plans currently in progress.
+    /// Get all plans currently in progress
     /// </summary>
     [HttpGet("plans/in-progress")]
-    public async Task<ActionResult<List<ExecutionPlanSummaryDto>>> GetInProgressPlans()
+    [ProducesResponseType(typeof(PagedResult<ExecutionPlanSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetInProgressPlans([FromQuery] PaginationRequest pagination)
     {
-        var plans = await _executionStatusService.GetInProgressPlansAsync();
+        var plans = await _executionStatusService.GetInProgressPlansAsync(pagination);
         return Ok(plans);
     }
 
     /// <summary>
-    /// Get execution steps for a specific plan.
+    /// Get execution steps for a specific plan
     /// </summary>
     [HttpGet("plans/{id:guid}/steps")]
-    public async Task<ActionResult<List<ExecutionStepDto>>> GetPlanSteps(Guid id)
+    [ProducesResponseType(typeof(List<ExecutionStepDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPlanSteps(Guid id)
     {
         var steps = await _executionStatusService.GetPlanStepsAsync(id);
         return Ok(steps);
     }
 
     /// <summary>
-    /// Get overall execution statistics and summary.
+    /// Get overall execution statistics and summary
     /// </summary>
     [HttpGet("summary")]
-    public async Task<ActionResult<ExecutionSummaryDto>> GetExecutionSummary()
+    [ProducesResponseType(typeof(ExecutionSummaryDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetExecutionSummary()
     {
         var summary = await _executionStatusService.GetExecutionSummaryAsync();
         return Ok(summary);

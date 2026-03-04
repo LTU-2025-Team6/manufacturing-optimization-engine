@@ -1,9 +1,9 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages.OptimizationManagement;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Entities;
-using ManufacturingOptimization.Common.Models.Enums;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Enums;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
+using ManufacturingOptimization.Gateway.Data.Entities;
 
 namespace ManufacturingOptimization.Gateway.Handlers;
 
@@ -35,7 +35,7 @@ public class OptimizationPlanUpdatedHandler : IMessageHandler<OptimizationPlanUp
 
     public async Task HandleAsync(OptimizationPlanUpdatedEvent evt)
     {
-        var existingPlan = await _planRepository.GetByIdAsync(evt.Plan.Id);
+        var existingPlan = await _planRepository.GetWithAllStrategiesForUpdateAsync(evt.Plan.Id);
 
         if (existingPlan == null)
             return;

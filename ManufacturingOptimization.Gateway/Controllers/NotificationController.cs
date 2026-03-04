@@ -1,5 +1,6 @@
-using ManufacturingOptimization.Gateway.Abstractions;
-using ManufacturingOptimization.Gateway.DTOs;
+using ManufacturingOptimization.Gateway.Abstractions.Services;
+using ManufacturingOptimization.Gateway.DTOs.Common;
+using ManufacturingOptimization.Gateway.DTOs.Notification;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ManufacturingOptimization.Gateway.Controllers;
@@ -16,14 +17,14 @@ public class NotificationController : ControllerBase
     }
 
     /// <summary>
-    /// Get all notifications
+    /// Get all notifications with pagination
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(List<NotificationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<NotificationPreviewDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> GetAllNotifications()
+    public async Task<IActionResult> GetAllNotifications([FromQuery] PaginationRequest pagination)
     {
-        var notifications = await _notificationService.GetAllNotificationsAsync();
+        var notifications = await _notificationService.GetAllNotificationsAsync(pagination);
         return Ok(notifications);
     }
 
@@ -31,7 +32,7 @@ public class NotificationController : ControllerBase
     /// Get new (unread) notifications
     /// </summary>
     [HttpGet("new")]
-    [ProducesResponseType(typeof(List<NotificationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<NotificationPreviewDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetNewNotifications()
     {
@@ -40,14 +41,14 @@ public class NotificationController : ControllerBase
     }
 
     /// <summary>
-    /// Get recent notifications (default: last 10)
+    /// Get recent notifications
     /// </summary>
     [HttpGet("recent")]
-    [ProducesResponseType(typeof(List<NotificationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<NotificationPreviewDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> GetRecentNotifications([FromQuery] int count = 10)
+    public async Task<IActionResult> GetRecentNotifications()
     {
-        var notifications = await _notificationService.GetRecentNotificationsAsync(count);
+        var notifications = await _notificationService.GetRecentNotificationsAsync();
         return Ok(notifications);
     }
 
@@ -55,7 +56,7 @@ public class NotificationController : ControllerBase
     /// Get notifications since a specific date (default: last 14 days)
     /// </summary>
     [HttpGet("since")]
-    [ProducesResponseType(typeof(List<NotificationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<NotificationPreviewDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetNotificationsSince([FromQuery] DateTime? since = null)
     {

@@ -1,12 +1,12 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Entities;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Common.Contracts;
+using ManufacturingOptimization.Gateway.Data.Entities;
 using ManufacturingOptimization.Gateway.Abstractions;
 using ManufacturingOptimization.Gateway.Settings;
 using Microsoft.Extensions.Options;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
 
 namespace ManufacturingOptimization.Gateway.Handlers;
 

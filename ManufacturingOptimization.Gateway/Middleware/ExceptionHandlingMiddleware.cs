@@ -1,4 +1,4 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
+using ManufacturingOptimization.Common.Abstractions;
 using ManufacturingOptimization.Gateway.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc.Infrastructure;

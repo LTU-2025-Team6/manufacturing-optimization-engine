@@ -1,7 +1,7 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Data.Entities;
-using ManufacturingOptimization.Common.Models.Enums;
+using ManufacturingOptimization.Common.Contracts;
+using ManufacturingOptimization.Gateway.Data.Entities;
+using ManufacturingOptimization.Common.Enums;
 using ManufacturingOptimization.Gateway.Data;
 using ManufacturingOptimization.Gateway.Settings;
 using Microsoft.EntityFrameworkCore;

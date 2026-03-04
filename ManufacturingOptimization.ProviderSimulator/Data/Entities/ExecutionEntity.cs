@@ -1,4 +1,4 @@
-﻿using ManufacturingOptimization.Common.Models.Enums;
+﻿using ManufacturingOptimization.Common.Enums;
 
 namespace ManufacturingOptimization.ProviderSimulator.Data.Entities;
 

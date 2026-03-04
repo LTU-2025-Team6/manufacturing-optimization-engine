@@ -1,7 +1,7 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Enums;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Enums;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
 
 namespace ManufacturingOptimization.Gateway.Handlers;
 
@@ -23,8 +23,8 @@ public class ProcessExecutionCompletedEventHandler : IMessageHandler<ProcessExec
 
     public async Task HandleAsync(ProcessExecutionCompletedEvent @event)
     {
-        // Get plan with strategies and steps
-        var plan = await _planRepository.GetByIdAsync(@event.PlanId);
+        // Get plan with SelectedStrategy and Steps only
+        var plan = await _planRepository.GetWithSelectedStrategyStepsForExecutionAsync(@event.PlanId);
         if (plan == null)
             return;
 

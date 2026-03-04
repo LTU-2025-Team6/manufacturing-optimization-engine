@@ -1,11 +1,11 @@
-using ManufacturingOptimization.Common.Messaging;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Common.Services;
+using ManufacturingOptimization.Common.Settings;
 using ManufacturingOptimization.ProviderRegistry.Data;
 using ManufacturingOptimization.ProviderSimulator;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
-using ManufacturingOptimization.ProviderSimulator.Data.Mappings;
+using ManufacturingOptimization.ProviderSimulator.Data;
 using ManufacturingOptimization.ProviderSimulator.Data.Repositories;
 using ManufacturingOptimization.ProviderSimulator.Handlers;
 using ManufacturingOptimization.ProviderSimulator.Models;
@@ -17,7 +17,7 @@ var builder = Host.CreateApplicationBuilder(args);
 // Configure SQLite database
 builder.Services.AddDatabase();
 
-// Register repositories (Singleton to support Singleton IProviderSimulator)
+// Register repositories
 builder.Services.AddScoped<IExecutionRepository, ExecutionRepository>();
 builder.Services.AddScoped<IProposalRepository, ProposalRepository>();
 
@@ -31,13 +31,10 @@ builder.Services.AddScoped<DemoDataGeneratorService>();
 // Database lifecycle management
 builder.Services.AddHostedService<DatabaseManagementService>();
 
-// Database lifecycle management
+// Configure AutoMapper with unified profile
 builder.Services.AddAutoMapper(c =>
 {
-    c.AddProfile<MotorSpecificationsMappingProfile>();
-    c.AddProfile<ProposalMappingProfile>();
-    c.AddProfile<EstimateMappingProfile>();
-    c.AddProfile<ExecutionScheduleSegmentMappingProfile>();
+    c.AddProfile<ProviderSimulatorMappingProfile>();
 });
 
 // Configure RabbitMQ
@@ -93,8 +90,6 @@ builder.Services.AddSingleton<IProviderSimulationContext, ProviderSimulationCont
 // Background services
 builder.Services.AddHostedService<ProviderSimulatorWorker>();
 builder.Services.AddHostedService<ExecutionSchedulerService>();
-
-builder.Services.AddScoped<ProcessExecutionHandler>();
 
 var host = builder.Build();
 

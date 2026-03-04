@@ -1,9 +1,9 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
 using ManufacturingOptimization.Gateway.Abstractions;
 using ManufacturingOptimization.Gateway.Settings;
 using Microsoft.Extensions.Options;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
 
 namespace ManufacturingOptimization.Gateway.Handlers;
 
@@ -33,7 +33,7 @@ public class StartProviderHandler : IMessageHandler<StartProviderCommand>
     {
         _notificationPublisher.NotifyStartingProvider(evt.ProviderId);
 
-        var provider = await _providerRepository.GetByIdAsync(evt.ProviderId);
+        var provider = await _providerRepository.GetByIdWithFullDetailsAsync(evt.ProviderId);
 
         if (provider == null)
             throw new InvalidOperationException($"Provider with Id {evt.ProviderId} not found in gateway.");

@@ -1,4 +1,4 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
+using ManufacturingOptimization.Common.Abstractions;
 using ManufacturingOptimization.ProviderRegistry.Data;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
 using ManufacturingOptimization.ProviderSimulator.Data.Entities;

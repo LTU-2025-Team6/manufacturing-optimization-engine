@@ -1,21 +1,17 @@
-using ManufacturingOptimization.Common.Messaging;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.OptimizationManagement;
-using ManufacturingOptimization.Common.Messaging.Messages.SystemManagement;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Mappings;
-using ManufacturingOptimization.Common.Models.Data.Repositories;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Common.Services;
+using ManufacturingOptimization.Common.Settings;
 using ManufacturingOptimization.Gateway.Abstractions;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
+using ManufacturingOptimization.Gateway.Abstractions.Services;
 using ManufacturingOptimization.Gateway.Data;
+using ManufacturingOptimization.Gateway.Data.Repositories;
 using ManufacturingOptimization.Gateway.Extensions;
 using ManufacturingOptimization.Gateway.Handlers;
 using ManufacturingOptimization.Gateway.Middleware;
 using ManufacturingOptimization.Gateway.Services;
 using ManufacturingOptimization.Gateway.Settings;
-using Microsoft.Extensions.Options;
-using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
-using ManufacturingOptimization.Gateway.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,17 +39,15 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient(); // Required for Legacy "Get Providers"
 
-// Add AutoMapper
-// Add AutoMapper
+// Configure AutoMapper with unified profile
 builder.Services.AddAutoMapper(c =>
 {
-    c.AddProfile<ProviderMappingProfile>();
-    c.AddProfile<OptimizationMappingProfile>();
     c.AddProfile<GatewayMappingProfile>();
 });
 
@@ -88,10 +82,8 @@ builder.Services.AddSignalR();
 
 // Message dispatching
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
-builder.Services.AddScoped<ProcessExecutionStartedEventHandler>();
-builder.Services.AddScoped<ProcessExecutionCompletedEventHandler>();
-builder.Services.AddScoped<IMessageHandler<ProcessExecutionStartedEvent>>(sp => sp.GetRequiredService<ProcessExecutionStartedEventHandler>());
-builder.Services.AddScoped<IMessageHandler<ProcessExecutionCompletedEvent>>(sp => sp.GetRequiredService<ProcessExecutionCompletedEventHandler>());
+builder.Services.AddScoped<IMessageHandler<ProcessExecutionStartedEvent>, ProcessExecutionStartedEventHandler>();
+builder.Services.AddScoped<IMessageHandler<ProcessExecutionCompletedEvent>, ProcessExecutionCompletedEventHandler>();
 builder.Services.AddScoped<IMessageHandler<ServiceReadyEvent>, ServiceReadyHandler>();
 builder.Services.AddScoped<IMessageHandler<SystemReadyEvent>, SystemReadyHandler>();
 builder.Services.AddScoped<IMessageHandler<StartAllProvidersCommand>, StartAllProvidersHandler>();
@@ -106,13 +98,12 @@ builder.Services.AddScoped<IMessageHandler<OptimizationPlanUpdatedEvent>, Optimi
 builder.Services.AddScoped<IMessageHandler<CreateNotificationCommand>, CreateNotificationHandler>();
 
 // System readiness coordination
-builder.Services.Configure<SystemReadinessSettings>(o => o.ServiceName = "Gateway");
 builder.Services.AddSingleton<ISystemReadinessService, SystemReadinessService>();
 builder.Services.AddHostedService(sp => (SystemReadinessService)sp.GetRequiredService<ISystemReadinessService>());
 
 // Add Background Worker
 builder.Services.AddHostedService<GatewayWorker>();
-builder.Services.AddScoped<IOptimizationService, OptimizationService>();
+builder.Services.AddScoped<IOptimizationRequestService, OptimizationRequestService>();
 builder.Services.AddScoped<IProviderService, ProviderService>();
 builder.Services.AddScoped<IOptimizationPlanService, OptimizationPlanService>();
 builder.Services.AddScoped<IOptimizationStrategyService, OptimizationStrategyService>();
@@ -135,8 +126,5 @@ app.UseSystemReadiness();
 
 app.UseAuthorization();
 app.MapControllers();
-
-// Map SignalR Hubs
-app.MapHub<ExecutionHub>("/hubs/execution");
 
 app.Run();

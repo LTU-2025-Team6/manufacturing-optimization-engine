@@ -1,6 +1,6 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Enums;
+using ManufacturingOptimization.Common.Contracts;
+using ManufacturingOptimization.Common.Enums;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
 using ManufacturingOptimization.ProviderSimulator.Data.Entities;
 using ManufacturingOptimization.ProviderSimulator.Models;
@@ -78,7 +78,7 @@ public class ProposalService : IProposalService
 
     public async Task ConfirmProposalAsync(Guid proposalId, ProviderScheduleModel schedule, bool isDemo = false)
     {
-        var proposalEntity = await _proposalRepository.GetByIdAsync(proposalId);
+        var proposalEntity = await _proposalRepository.GetByIdWithDetailsAsync(proposalId);
         if (proposalEntity == null)
             throw new InvalidOperationException($"Proposal {proposalId} not found.");
 
@@ -113,7 +113,7 @@ public class ProposalService : IProposalService
 
     public async Task CancelProposalAsync(Guid proposalId)
     {
-        var proposalEntity = await _proposalRepository.GetByIdAsync(proposalId);
+        var proposalEntity = await _proposalRepository.GetByIdWithDetailsAsync(proposalId);
         if (proposalEntity == null)
             throw new InvalidOperationException($"Proposal {proposalId} not found.");
 

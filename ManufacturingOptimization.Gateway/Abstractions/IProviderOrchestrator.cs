@@ -1,5 +1,4 @@
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Entities;
+using ManufacturingOptimization.Gateway.Data.Entities;
 
 namespace ManufacturingOptimization.Gateway.Abstractions;
 

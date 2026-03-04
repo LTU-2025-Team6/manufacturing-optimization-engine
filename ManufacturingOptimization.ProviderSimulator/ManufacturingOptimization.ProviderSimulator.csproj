@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ManufacturingOptimization.Common.Models\ManufacturingOptimization.Common.Models.csproj" />
-    <ProjectReference Include="..\ManufacturingOptimization.Common.Messaging\ManufacturingOptimization.Common.Messaging.csproj" />
+    <ProjectReference Include="..\ManufacturingOptimization.Common\ManufacturingOptimization.Common.csproj" />
+    <ProjectReference Include="..\ManufacturingOptimization.Common\ManufacturingOptimization.Common.csproj" />
   </ItemGroup>
 </Project>

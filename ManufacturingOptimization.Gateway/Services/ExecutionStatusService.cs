@@ -1,53 +1,35 @@
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Entities;
-using ManufacturingOptimization.Common.Models.Enums;
-using ManufacturingOptimization.Gateway.Abstractions;
-using ManufacturingOptimization.Gateway.DTOs;
+using ManufacturingOptimization.Gateway.Data.Entities;
+using ManufacturingOptimization.Common.Enums;
+using ManufacturingOptimization.Gateway.DTOs.Common;
+using ManufacturingOptimization.Gateway.DTOs.Execution;
 using ManufacturingOptimization.Gateway.Exceptions;
+using ManufacturingOptimization.Gateway.Abstractions.Services;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
 
 namespace ManufacturingOptimization.Gateway.Services;
 
 public class ExecutionStatusService : IExecutionStatusService
 {
-    private readonly IOptimizationPlanRepository _planRepo;
-    private readonly ILogger<ExecutionStatusService> _logger;
+    private readonly IOptimizationPlanRepository _optimizationPlanRepository;
 
-    public ExecutionStatusService(
-        IOptimizationPlanRepository planRepo,
-        ILogger<ExecutionStatusService> logger)
+    public ExecutionStatusService(IOptimizationPlanRepository optimizationPlanRepository)
     {
-        _planRepo = planRepo;
-        _logger = logger;
+        _optimizationPlanRepository = optimizationPlanRepository;
     }
 
-    public async Task<List<ExecutionPlanSummaryDto>> GetAllPlansAsync()
+    public async Task<PagedResult<ExecutionPlanSummaryDto>> GetAllPlansAsync(PaginationRequest pagination)
     {
-        var plans = await _planRepo.GetAllAsync();
-        
-        var summaries = plans
-            .Where(p => p.SelectedStrategy != null)
-            .Select(MapToPlanSummary)
-            .OrderByDescending(p => p.CreatedAt)
-            .ToList();
-
-        return summaries;
+        var skip = (pagination.PageNumber - 1) * pagination.PageSize;
+        var (plans, totalCount) = await _optimizationPlanRepository.GetPagedWithSelectedStrategyStepsAsync(skip, pagination.PageSize);
+        var summaries = plans.Select(MapToPlanSummary).ToList();
+        return new PagedResult<ExecutionPlanSummaryDto>(summaries, pagination.PageNumber, pagination.PageSize, totalCount);
     }
 
     public async Task<ExecutionPlanDetailDto> GetPlanDetailAsync(Guid id)
     {
-        var plan = await _planRepo.GetByIdAsync(id);
-        
-        if (plan == null)
-        {
-            throw new NotFoundException($"Plan {id} not found");
-        }
+        var plan = await GetPlanWithStrategyOrThrowAsync(id);
 
-        if (plan.SelectedStrategy == null)
-        {
-            throw new NotFoundException($"Plan {id} has no selected strategy");
-        }
-
-        var detail = new ExecutionPlanDetailDto
+        return new ExecutionPlanDetailDto
         {
             Id = plan.Id,
             RequestId = plan.RequestId,
@@ -56,54 +38,34 @@ public class ExecutionStatusService : IExecutionStatusService
             ConfirmedAt = plan.ConfirmedAt,
             CompletedAt = plan.CompletedAt,
             ErrorMessage = plan.ErrorMessage,
-            Steps = plan.SelectedStrategy.Steps
+            Steps = plan.SelectedStrategy!.Steps
                 .OrderBy(s => s.StepNumber)
                 .Select(MapToStepDto)
                 .ToList()
         };
-
-        return detail;
     }
 
-    public async Task<List<ExecutionPlanSummaryDto>> GetInProgressPlansAsync()
+    public async Task<PagedResult<ExecutionPlanSummaryDto>> GetInProgressPlansAsync(PaginationRequest pagination)
     {
-        var plans = await _planRepo.GetAllAsync();
-        
-        var inProgress = plans
-            .Where(p => p.SelectedStrategy != null)
-            .Where(p => p.SelectedStrategy.Steps.Any(s => s.ExecutionStatus == StepExecutionStatus.InProgress))
-            .Select(MapToPlanSummary)
-            .OrderBy(p => p.ConfirmedAt)
-            .ToList();
-
-        return inProgress;
+        var skip = (pagination.PageNumber - 1) * pagination.PageSize;
+        var (plans, totalCount) = await _optimizationPlanRepository.GetPagedInProgressAsync(skip, pagination.PageSize);
+        var inProgress = plans.Select(MapToPlanSummary).ToList();
+        return new PagedResult<ExecutionPlanSummaryDto>(inProgress, pagination.PageNumber, pagination.PageSize, totalCount);
     }
 
     public async Task<List<ExecutionStepDto>> GetPlanStepsAsync(Guid id)
     {
-        var plan = await _planRepo.GetByIdAsync(id);
-        
-        if (plan == null)
-        {
-            throw new NotFoundException($"Plan {id} not found");
-        }
+        var plan = await GetPlanWithStrategyOrThrowAsync(id);
 
-        if (plan.SelectedStrategy == null)
-        {
-            throw new NotFoundException($"Plan {id} has no selected strategy");
-        }
-
-        var steps = plan.SelectedStrategy.Steps
+        return plan.SelectedStrategy!.Steps
             .OrderBy(s => s.StepNumber)
             .Select(MapToStepDto)
             .ToList();
-
-        return steps;
     }
 
     public async Task<ExecutionSummaryDto> GetExecutionSummaryAsync()
     {
-        var allPlans = await _planRepo.GetAllAsync();
+        var allPlans = await _optimizationPlanRepository.GetAllWithSelectedStrategyStepsAsync();
         
         var plansWithStrategy = allPlans
             .Where(p => p.SelectedStrategy != null)
@@ -113,13 +75,13 @@ public class ExecutionStatusService : IExecutionStatusService
         {
             TotalPlans = plansWithStrategy.Count,
             // Plan is in progress if it has any steps with InProgress status
-            InProgressPlans = plansWithStrategy.Count(p => p.SelectedStrategy.Steps.Any(s => s.ExecutionStatus == StepExecutionStatus.InProgress)),
+            InProgressPlans = plansWithStrategy.Count(p => p.SelectedStrategy!.Steps.Any(s => s.ExecutionStatus == StepExecutionStatus.InProgress)),
             CompletedPlans = plansWithStrategy.Count(p => p.Status == OptimizationPlanStatus.Completed.ToString()),
             FailedPlans = plansWithStrategy.Count(p => p.Status == OptimizationPlanStatus.Failed.ToString()),
             ConfirmedPlans = plansWithStrategy.Count(p => p.Status == OptimizationPlanStatus.Confirmed.ToString()),
             
             ActivePlans = plansWithStrategy
-                .Where(p => p.SelectedStrategy.Steps.Any(s => s.ExecutionStatus == StepExecutionStatus.InProgress))
+                .Where(p => p.SelectedStrategy!.Steps.Any(s => s.ExecutionStatus == StepExecutionStatus.InProgress))
                 .Select(MapToPlanSummary)
                 .OrderBy(p => p.ConfirmedAt)
                 .ToList(),
@@ -140,6 +102,17 @@ public class ExecutionStatusService : IExecutionStatusService
         };
 
         return summary;
+    }
+
+    private async Task<OptimizationPlanEntity> GetPlanWithStrategyOrThrowAsync(Guid id)
+    {
+        var plan = await _optimizationPlanRepository.GetWithSelectedStrategyDetailsForExecutionStatusAsync(id)
+            ?? throw new NotFoundException($"Plan {id} not found");
+
+        if (plan.SelectedStrategy == null)
+            throw new NotFoundException($"Plan {id} has no selected strategy");
+
+        return plan;
     }
 
     private ExecutionPlanSummaryDto MapToPlanSummary(OptimizationPlanEntity plan)

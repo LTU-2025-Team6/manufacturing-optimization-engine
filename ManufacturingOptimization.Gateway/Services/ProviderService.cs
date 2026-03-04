@@ -1,11 +1,12 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Entities;
-using ManufacturingOptimization.Gateway.Abstractions;
-using ManufacturingOptimization.Gateway.DTOs;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Contracts;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
+using ManufacturingOptimization.Gateway.Abstractions.Services;
+using ManufacturingOptimization.Gateway.Data.Entities;
+using ManufacturingOptimization.Gateway.DTOs.Common;
+using ManufacturingOptimization.Gateway.DTOs.Provider;
 using ManufacturingOptimization.Gateway.Exceptions;
 using ManufacturingOptimization.Gateway.Settings;
 using Microsoft.Extensions.Options;
@@ -35,15 +36,18 @@ namespace ManufacturingOptimization.Gateway.Services
             _messagePublisher = messagePublisher;
         }
 
-        public async Task<List<ProviderPreviewDto>> GetProvidersAsync()
+        public async Task<PagedResult<ProviderPreviewDto>> GetProvidersAsync(PaginationRequest pagination)
         {
-            var providers = await _providerRepository.GetAllAsync();
-            return _mapper.Map<List<ProviderPreviewDto>>(providers);
+            var skip = (pagination.PageNumber - 1) * pagination.PageSize;
+            var (providers, totalCount) = await _providerRepository.GetPagedAsync(skip, pagination.PageSize);
+            return new PagedResult<ProviderPreviewDto>(
+                _mapper.Map<List<ProviderPreviewDto>>(providers),
+                pagination.PageNumber, pagination.PageSize, totalCount);
         }
 
         public async Task<ProviderDto> GetProviderByIdAsync(Guid id)
         {
-            var provider = await _providerRepository.GetByIdAsync(id);
+            var provider = await _providerRepository.GetByIdWithFullDetailsAsync(id);
 
             if (provider == null)
                 throw new NotFoundException($"Provider with Id {id} not found.");
@@ -65,17 +69,22 @@ namespace ManufacturingOptimization.Gateway.Services
 
         public async Task<ProviderDto> UpdateProviderAsync(Guid id, UpdateProviderRequest request)
         {
-            var provider = await _providerRepository.GetByIdAsync(id);
+            var provider = await _providerRepository.GetByIdWithFullDetailsAsync(id);
 
             if (provider == null)
                 throw new NotFoundException($"Provider with Id {id} not found.");
 
             // Update provider fields
-            provider.Name = request.Name;
-            provider.AutoStart = request.AutoStart;
-            UpdateProcessCapabilities(provider, request.ProcessCapabilities);
-            UpdateTechnicalCapabilities(provider, request.TechnicalCapabilities);
-            UpdateWorkingHours(provider, request.WorkingHours);
+            if (request.Name != null)
+                provider.Name = request.Name;
+            if (request.AutoStart != null)
+                provider.AutoStart = request.AutoStart.Value;
+            if (request.ProcessCapabilities != null)
+                UpdateProcessCapabilities(provider, request.ProcessCapabilities);
+            if (request.TechnicalCapabilities != null)
+                UpdateTechnicalCapabilities(provider, request.TechnicalCapabilities);
+            if (request.WorkingHours != null)
+                UpdateWorkingHours(provider, request.WorkingHours);
 
             // Send update to provider simulator and await confirmation
             await TriggerAndAwaitProviderUpdateAsync(provider);
@@ -314,8 +323,8 @@ namespace ManufacturingOptimization.Gateway.Services
                         new RequestProviderScheduleCommand
                         {
                             ProviderId = providerId,
-                            Start = request.Start,
-                            End = request.End
+                            Start = request.StartDate,
+                            End = request.EndDate
                         })
             });
 

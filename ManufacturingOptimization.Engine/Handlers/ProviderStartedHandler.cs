@@ -1,9 +1,7 @@
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Entities;
-using ManufacturingOptimization.Engine.Abstractions;
 using AutoMapper;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Engine.Abstractions;
 
 namespace ManufacturingOptimization.Engine.Handlers;
 
@@ -14,22 +12,18 @@ namespace ManufacturingOptimization.Engine.Handlers;
 public class ProviderStartedHandler : IMessageHandler<ProviderStartedEvent>
 {
     private readonly IProviderRepository _repository;
-    private readonly IMapper _mapper;
     private readonly ILogger<ProviderStartedHandler> _logger;
     public ProviderStartedHandler(
         IProviderRepository repository,
-        IMapper mapper,
         ILogger<ProviderStartedHandler> logger)
     {
         _repository = repository;
-        _mapper = mapper;
         _logger = logger;
     }
 
     public async Task HandleAsync(ProviderStartedEvent evt)
     {
-        var providerEntity = _mapper.Map<ProviderEntity>(evt.Provider);
-        await _repository.AddAsync(providerEntity);
+        await _repository.AddAsync(evt.Provider);
         await _repository.SaveChangesAsync();
     }
 }

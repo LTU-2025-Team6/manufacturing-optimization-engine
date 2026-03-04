@@ -1,10 +1,10 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Enums;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Common.Contracts;
+using ManufacturingOptimization.Common.Enums;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
-using static ManufacturingOptimization.Common.Models.Extensions.ProviderScheduleSegmentExtensions;
-using static ManufacturingOptimization.Common.Models.Extensions.WorkingHoursExtensions;
+using static ManufacturingOptimization.Common.Extensions.ProviderScheduleSegmentExtensions;
+using static ManufacturingOptimization.Common.Extensions.WorkingHoursExtensions;
 
 namespace ManufacturingOptimization.ProviderSimulator.Handlers;
 

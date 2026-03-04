@@ -1,8 +1,8 @@
 using AutoMapper;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using ManufacturingOptimization.Common.Messaging;
-using ManufacturingOptimization.Common.Models.Data.Entities;
+using ManufacturingOptimization.Gateway.Data.Entities;
+using ManufacturingOptimization.Common.Settings;
 using ManufacturingOptimization.Gateway.Abstractions;
 using ManufacturingOptimization.Gateway.Settings;
 using Microsoft.Extensions.Options;

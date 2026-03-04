@@ -1,5 +1,5 @@
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Enums;
+using ManufacturingOptimization.Common.Contracts;
+using ManufacturingOptimization.Common.Enums;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
 using ManufacturingOptimization.ProviderSimulator.Settings;
 using Microsoft.Extensions.Options;

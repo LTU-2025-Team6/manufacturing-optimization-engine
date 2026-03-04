@@ -1,8 +1,8 @@
-﻿using ManufacturingOptimization.Common.Models.Data.Entities;
+﻿using ManufacturingOptimization.Common.Abstractions;
 using ManufacturingOptimization.ProviderSimulator.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace ManufacturingOptimization.Common.Models.Data.Abstractions;
+namespace ManufacturingOptimization.Common.Data.Abstractions;
 
 public interface IProviderSimulatorDbContext : IDbContext
 {

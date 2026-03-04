@@ -1,20 +1,19 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Entities;
-using ManufacturingOptimization.Common.Models.Enums;
-using ManufacturingOptimization.Common.Models.Exceptions;
-using ManufacturingOptimization.Gateway.Abstractions;
-using ManufacturingOptimization.Gateway.DTOs;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Enums;
+using ManufacturingOptimization.Common.Exceptions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
+using ManufacturingOptimization.Gateway.Abstractions.Services;
+using ManufacturingOptimization.Gateway.Data.Entities;
+using ManufacturingOptimization.Gateway.DTOs.Common;
+using ManufacturingOptimization.Gateway.DTOs.OptimizationPlan;
 using ManufacturingOptimization.Gateway.Exceptions;
 
-namespace ManufacturingOptimization.Gateway.Services
+namespace ManufacturingOptimization.Gateway.Services;
+
+public class OptimizationPlanService : IOptimizationPlanService
 {
-    public class OptimizationPlanService : IOptimizationPlanService
-    {
         private readonly IMapper _mapper;
         private readonly IAsyncAwaiter _asyncAwaiter;
         private readonly IOptimizationPlanRepository _optimizationPlanRepository;
@@ -38,18 +37,18 @@ namespace ManufacturingOptimization.Gateway.Services
             _notificationPublisher = notificationPublisher;
         }
 
-        public async Task<IEnumerable<OptimizationPlanPreviewDto>> GetAllAsync()
+        public async Task<PagedResult<OptimizationPlanPreviewDto>> GetAllAsync(PaginationRequest pagination)
         {
-            var plans = await _optimizationPlanRepository.GetAllAsync();
-
-            plans.OrderByDescending(p => p.CreatedAt);
-
-            return _mapper.Map<IEnumerable<OptimizationPlanPreviewDto>>(plans);
+            var skip = (pagination.PageNumber - 1) * pagination.PageSize;
+            var (plans, totalCount) = await _optimizationPlanRepository.GetPagedAsync(skip, pagination.PageSize);
+            return new PagedResult<OptimizationPlanPreviewDto>(
+                _mapper.Map<List<OptimizationPlanPreviewDto>>(plans),
+                pagination.PageNumber, pagination.PageSize, totalCount);
         }
 
         public async Task<OptimizationPlanDto> GetByIdAsync(Guid id)
         {
-            var plan = await _optimizationPlanRepository.GetByIdAsync(id);
+            var plan = await _optimizationPlanRepository.GetByIdWithFullDetailsAsync(id);
 
             if (plan == null)
                 throw new NotFoundException($"Optimization plan with Id {id} not found.");
@@ -57,12 +56,35 @@ namespace ManufacturingOptimization.Gateway.Services
             return _mapper.Map<OptimizationPlanDto>(plan);
         }
 
+        public async Task SelectStrategyAsync(Guid planId, Guid strategyId)
+        {
+            var plan = await _optimizationPlanRepository.GetByIdAsync(planId)
+                ?? throw new NotFoundException($"Optimization plan with Id {planId} not found.");
+
+            await _asyncAwaiter.AwaitAsync(new AwaitScenario<OptimizationPlanUpdatedEvent>
+            {
+                Exchange = Exchanges.Optimization,
+                RoutingKey = OptimizationRoutingKeys.PlanUpdated,
+                Timeout = TimeSpan.FromSeconds(30),
+                Match = evt =>
+                    evt.Plan.Id == planId &&
+                    evt.Plan.Status == OptimizationPlanStatus.StrategySelected,
+                BeforeAwait = () =>
+                    _messagePublisher.Publish(
+                        Exchanges.Optimization,
+                        OptimizationRoutingKeys.StrategySelected,
+                        new SelectStrategyCommand
+                        {
+                            RequestId = plan.RequestId,
+                            SelectedStrategyId = strategyId
+                        })
+            });
+        }
+
         public async Task<CancelPlanResponse> CancelPlanAsync(Guid planId)
         {
-            var plan = await _optimizationPlanRepository.GetByIdAsync(planId);
-            
-            if (plan == null)
-                throw new NotFoundException($"Optimization plan with Id {planId} not found.");
+            var plan = await _optimizationPlanRepository.GetByIdAsync(planId)
+                ?? throw new NotFoundException($"Optimization plan with Id {planId} not found.");
 
             if (plan.Status != OptimizationPlanStatus.Confirmed.ToString())
                 throw new BusinessLogicErrorException($"Only confirmed plans can be cancelled. Current status: {plan.Status}");
@@ -70,7 +92,7 @@ namespace ManufacturingOptimization.Gateway.Services
             if (plan.SelectedStrategyId == null)
                 throw new BusinessLogicErrorException("Cannot cancel plan without selected strategy.");
 
-            var strategy = await _optimizationStrategyRepository.GetByIdAsync(plan.SelectedStrategyId.Value);
+            var strategy = await _optimizationStrategyRepository.GetByIdWithStepsOnlyAsync(plan.SelectedStrategyId.Value);
             if (strategy == null)
                 throw new NotFoundException($"Selected strategy {plan.SelectedStrategyId} not found.");
 
@@ -131,10 +153,9 @@ namespace ManufacturingOptimization.Gateway.Services
 
         private async Task CancelWithProviderAsync(ProcessStepEntity step, List<string> errors)
         {
+            var stepModel = _mapper.Map<ProcessStepDto>(step);
             try
             {
-                var stepModel = _mapper.Map<ProcessStepDto>(step);
-
                 var response = await _asyncAwaiter.AwaitAsync(new AwaitScenario<ProcessCancelledEvent>
                 {
                     Exchange = Exchanges.Process,
@@ -160,9 +181,7 @@ namespace ManufacturingOptimization.Gateway.Services
             }
             catch (Exception ex)
             {
-                var stepModel = _mapper.Map<ProcessStepDto>(step);
                 errors.Add($"Provider {stepModel.SelectedProviderName} cancellation failed for {stepModel.Process}: {ex.Message}");
             }
         }
-    }
 }

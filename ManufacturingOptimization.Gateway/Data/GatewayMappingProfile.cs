@@ -1,227 +1,372 @@
-﻿using AutoMapper;
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Data.Entities;
-using ManufacturingOptimization.Common.Models.Enums;
-using ManufacturingOptimization.Gateway.DTOs;
+using AutoMapper;
+using ManufacturingOptimization.Common.Contracts;
+using ManufacturingOptimization.Common.Enums;
+using ManufacturingOptimization.Gateway.Data.Entities;
+using ManufacturingOptimization.Gateway.DTOs.Notification;
+using ManufacturingOptimization.Gateway.DTOs.OptimizationPlan;
+using ManufacturingOptimization.Gateway.DTOs.OptimizationRequest;
+using ManufacturingOptimization.Gateway.DTOs.Provider;
 using System.Text.Json;
 
-namespace ManufacturingOptimization.Gateway.Data
+namespace ManufacturingOptimization.Gateway.Data;
+
+/// <summary>
+/// Unified mapping profile for Gateway project.
+/// Contains only actively used mappings, organized by logical domain.
+/// </summary>
+public class GatewayMappingProfile : Profile
 {
-    public class GatewayMappingProfile : Profile
+    public GatewayMappingProfile()
     {
-        public GatewayMappingProfile()
-        {
-            ConfigureOptimizationMappings();
-            ConfigureProviderMappings();
-            ConfigureProcessMappings();
-            ConfigureEntityToDtoMappings();
-        }
+        ConfigureProviderMappings();
+        ConfigureOptimizationRequestMappings();
+        ConfigureOptimizationPlanMappings();
+        ConfigureOptimizationStrategyMappings();
+        ConfigureScheduleMappings();
+        ConfigureNotificationMappings();
+    }
 
-        private void ConfigureOptimizationMappings()
-        {
-            // Optimization Request
-            CreateMap<OptimizationRequestModel, OptimizationRequestDto>()
-                .ForMember(dest => dest.MotorSpecs, opt => opt.MapFrom(src => src.MotorSpecs))
-                .ForMember(dest => dest.Constraints, opt => opt.MapFrom(src => src.Constraints));
-            CreateMap<OptimizationRequestDto, OptimizationRequestModel>()
-                .ForMember(dest => dest.RequestId, opt => Guid.NewGuid())
-                .ForMember(dest => dest.MotorSpecs, opt => opt.MapFrom(src => src.MotorSpecs))
-                .ForMember(dest => dest.Constraints, opt => opt.MapFrom(src => src.Constraints));
+    /// <summary>
+    /// Provider entity/model/DTO mappings.
+    /// Used in: ProviderService, DatabaseManagementService, StartAllProvidersHandler
+    /// </summary>
+    private void ConfigureProviderMappings()
+    {
+        // ProviderModel -> ProviderEntity (for saving static providers to DB)
+        CreateMap<ProviderModel, ProviderEntity>()
+            .ForMember(dest => dest.ProcessCapabilities, opt => opt.MapFrom(src => src.ProcessCapabilities))
+            .ForMember(dest => dest.TechnicalCapabilities, opt => opt.MapFrom(src => src.TechnicalCapabilities))
+            .ForMember(dest => dest.WorkingHours, opt => opt.MapFrom(src => src.WorkingHours));
 
-            // Optimization Request Entity mappings
-            CreateMap<OptimizationRequestDto, OptimizationRequestEntity>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()));
-            CreateMap<OptimizationRequestModel, OptimizationRequestEntity>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.RequestId));
-            CreateMap<OptimizationRequestEntity, OptimizationRequestModel>()
-                .ForMember(dest => dest.RequestId, opt => opt.MapFrom(src => src.Id));
-            CreateMap<OptimizationRequestEntity, OptimizationRequestDto>();
+        // ProviderEntity -> ProviderModel (for messaging)
+        CreateMap<ProviderEntity, ProviderModel>();
 
-            CreateMap<OptimizationRequestConstraintsModel, OptimizationRequestConstraintsDto>().ReverseMap();
-            CreateMap<OptimizationRequestConstraintsModel, OptimizationRequestConstraintsEntity>().ReverseMap();
-            CreateMap<OptimizationRequestConstraintsDto, OptimizationRequestConstraintsEntity>().ReverseMap();
+        // CreateProviderRequest -> ProviderEntity (API create)
+        CreateMap<CreateProviderRequest, ProviderEntity>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
+            .ForMember(dest => dest.IsRunning, opt => opt.MapFrom(src => false))
+            .ForMember(dest => dest.EnvironmentSource, opt => opt.MapFrom(src => "manual"));
 
-            CreateMap<MotorSpecificationsModel, MotorSpecificationsDto>()
-                .ForMember(dest => dest.CurrentEfficiency, opt => opt.MapFrom(src => src.CurrentEfficiency.ToString()))
-                .ForMember(dest => dest.TargetEfficiency, opt => opt.MapFrom(src => src.TargetEfficiency.ToString()));
-            CreateMap<MotorSpecificationsDto, MotorSpecificationsModel>()
-                .ForMember(dest => dest.CurrentEfficiency, opt => opt.MapFrom(src => Enum.Parse<MotorEfficiencyClass>(src.CurrentEfficiency)))
-                .ForMember(dest => dest.TargetEfficiency, opt => opt.MapFrom(src => Enum.Parse<MotorEfficiencyClass>(src.TargetEfficiency)));
-            CreateMap<MotorSpecificationsModel, MotorSpecificationsEntity>()
-                .ForMember(dest => dest.CurrentEfficiency, opt => opt.MapFrom(src => src.CurrentEfficiency.ToString()))
-                .ForMember(dest => dest.TargetEfficiency, opt => opt.MapFrom(src => src.TargetEfficiency.ToString()));
-            CreateMap<MotorSpecificationsEntity, MotorSpecificationsModel>()
-                .ForMember(dest => dest.CurrentEfficiency, opt => opt.MapFrom(src => Enum.Parse<MotorEfficiencyClass>(src.CurrentEfficiency)))
-                .ForMember(dest => dest.TargetEfficiency, opt => opt.MapFrom(src => Enum.Parse<MotorEfficiencyClass>(src.TargetEfficiency)));
-            CreateMap<MotorSpecificationsDto, MotorSpecificationsEntity>().ReverseMap();
+        // ProviderEntity -> ProviderDto (API response full details)
+        CreateMap<ProviderEntity, ProviderDto>();
 
-            CreateMap<TimeWindowModel, TimeWindowDto>().ReverseMap();
-            CreateMap<TimeWindowModel, TimeWindowEntity>().ReverseMap();
-            CreateMap<TimeWindowDto, TimeWindowEntity>().ReverseMap();
+        // ProviderEntity -> ProviderPreviewDto (API response list)
+        CreateMap<ProviderEntity, ProviderPreviewDto>();
 
-            // Optimization Plan & Strategy
-            CreateMap<OptimizationPlanModel, OptimizationPlanDto>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
-            CreateMap<OptimizationPlanDto, OptimizationPlanModel>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => Enum.Parse<OptimizationPlanStatus>(src.Status)));
+        // ProcessCapability mappings
+        CreateMap<ProcessCapabilityModel, ProcessCapabilityEntity>()
+            .ForMember(dest => dest.Process, opt => opt.MapFrom(src => src.Process.ToString()))
+            .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
+            .ForMember(dest => dest.Provider, opt => opt.Ignore());
 
-            CreateMap<OptimizationPlanEntity, OptimizationPlanPreviewDto>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+        CreateMap<ProcessCapabilityEntity, ProcessCapabilityModel>()
+            .ForMember(dest => dest.Process, opt => opt.MapFrom(src => Enum.Parse<ProcessType>(src.Process)));
 
-            CreateMap<OptimizationStrategyModel, OptimizationStrategyDto>()
-                .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority.ToString()));
-            CreateMap<OptimizationStrategyDto, OptimizationStrategyModel>()
-                .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => Enum.Parse<OptimizationPriority>(src.Priority)));
+        CreateMap<CreateProcessCapabilityRequest, ProcessCapabilityEntity>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
+            .ForMember(dest => dest.Provider, opt => opt.Ignore());
 
-            CreateMap<OptimizationMetricsModel, OptimizationMetricsDto>().ReverseMap();
-        }
+        CreateMap<ProcessCapabilityEntity, ProcessCapabilityDto>();
 
-        private void ConfigureProviderMappings()
-        {
-            // Provider Creation
-            CreateMap<CreateProviderRequest, ProviderEntity>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
-                .ForMember(dest => dest.IsRunning, opt => opt.MapFrom(src => false))
-                .ForMember(dest => dest.EnvironmentSource, opt => opt.MapFrom(src => "manual"));
+        // TechnicalCapabilities mappings
+        CreateMap<TechnicalCapabilitiesModel, TechnicalCapabilitiesEntity>()
+            .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
+            .ForMember(dest => dest.Provider, opt => opt.Ignore());
 
-            CreateMap<CreateProcessCapabilityRequest, ProcessCapabilityEntity>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
-                .ForMember(dest => dest.Provider, opt => opt.Ignore());
+        CreateMap<TechnicalCapabilitiesEntity, TechnicalCapabilitiesModel>();
 
-            CreateMap<CreateTechnicalCapabilitiesRequest, TechnicalCapabilitiesEntity>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
-                .ForMember(dest => dest.Provider, opt => opt.Ignore());
+        CreateMap<CreateTechnicalCapabilitiesRequest, TechnicalCapabilitiesEntity>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
+            .ForMember(dest => dest.Provider, opt => opt.Ignore());
 
-            CreateMap<CreateWorkingHoursRequest, ProviderWorkingHoursEntity>()
-                .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
-                .ForMember(dest => dest.Provider, opt => opt.Ignore())
-                .ForMember(dest => dest.WorkingDaysJson, opt => opt.MapFrom(src => SerializeWorkingDays(src.WorkingDays)));
+        CreateMap<TechnicalCapabilitiesEntity, TechnicalCapabilitiesDto>();
 
-            CreateMap<CreateBreakPeriodRequest, ProviderBreakPeriodEntity>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
-                .ForMember(dest => dest.WorkingHours, opt => opt.Ignore());
+        // WorkingHours mappings
+        CreateMap<ProviderWorkingHoursModel, ProviderWorkingHoursEntity>()
+            .ForMember(dest => dest.WorkingDaysJson, opt => opt.MapFrom(src => SerializeWorkingDays(src.WorkingDays)))
+            .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
+            .ForMember(dest => dest.Provider, opt => opt.Ignore())
+            .ForMember(dest => dest.Breaks, opt => opt.MapFrom(src => src.Breaks));
 
-            // Provider Schedule
-            CreateMap<ProviderScheduleModel, ProviderScheduleDto>();
-            CreateMap<ProviderScheduleDto, ProviderScheduleModel>()
-                .ForMember(dest => dest.StartWorkingTime, opt => opt.Ignore())
-                .ForMember(dest => dest.EndWorkingTime, opt => opt.Ignore());
-            CreateMap<ProviderDayScheduleModel, ProviderDayScheduleDto>().ReverseMap();
-            CreateMap<ProviderScheduleSegmentModel, ProviderScheduleSegmentDto>()
-                .ForMember(dest => dest.SegmentType, opt => opt.MapFrom(src => src.SegmentType.ToString()))
-                .ForMember(dest => dest.ExecutionId, opt => opt.MapFrom(src => src.ExecutionId));
-            CreateMap<ProviderScheduleSegmentDto, ProviderScheduleSegmentModel>()
-                .ForMember(dest => dest.SegmentType, opt => opt.MapFrom(src => Enum.Parse<SegmentType>(src.SegmentType)))
-                .ForMember(dest => dest.ExecutionId, opt => opt.MapFrom(src => src.ExecutionId));
+        CreateMap<ProviderWorkingHoursEntity, ProviderWorkingHoursModel>()
+            .ForMember(dest => dest.WorkingDays, opt => opt.MapFrom(src => DeserializeWorkingDaysToModel(src.WorkingDaysJson)));
 
-            // Execution Details
-            CreateMap<ExecutionDetailsModel, ExecutionDetailsDto>()
-                .ForMember(dest => dest.Process, opt => opt.MapFrom(src => src.Process.ToString()))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
-            CreateMap<ExecutionTimeSlot, ExecutionScheduleSegmentDto>();
+        CreateMap<CreateWorkingHoursRequest, ProviderWorkingHoursEntity>()
+            .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
+            .ForMember(dest => dest.Provider, opt => opt.Ignore())
+            .ForMember(dest => dest.WorkingDaysJson, opt => opt.MapFrom(src => SerializeWorkingDaysFromDto(src.WorkingDays)));
 
-            // Provider & Capabilities
-            CreateMap<ProviderModel, ProviderDto>().ReverseMap();
-            CreateMap<TechnicalCapabilitiesModel, TechnicalCapabilitiesDto>().ReverseMap();
-            CreateMap<WarrantyTermsModel, WarrantyTermsDto>().ReverseMap();
-        }
+        CreateMap<ProviderWorkingHoursEntity, ProviderWorkingHoursDto>()
+            .ForMember(dest => dest.WorkingDays, opt => opt.MapFrom(src => DeserializeWorkingDaysToDto(src.WorkingDaysJson)));
 
-        private void ConfigureProcessMappings()
-        {
-            // Process Step & Estimate
-            CreateMap<ProcessStepModel, ProcessStepDto>()
-                .ForMember(dest => dest.Process, opt => opt.MapFrom(src => src.Process.ToString()));
-            CreateMap<ProcessStepDto, ProcessStepModel>()
-                .ForMember(dest => dest.Process, opt => opt.MapFrom(src => Enum.Parse<ProcessType>(src.Process)));
-            CreateMap<ProcessEstimateModel, ProcessEstimateDto>().ReverseMap();
+        // BreakPeriod mappings
+        CreateMap<ProviderBreakPeriodModel, ProviderBreakPeriodEntity>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
+            .ForMember(dest => dest.WorkingHours, opt => opt.Ignore());
 
-            // Process Capability
-            CreateMap<ProcessCapabilityModel, ProcessCapabilityDto>()
-                .ForMember(dest => dest.Process, opt => opt.MapFrom(src => src.Process.ToString()));
-            CreateMap<ProcessCapabilityDto, ProcessCapabilityModel>()
-                .ForMember(dest => dest.Process, opt => opt.MapFrom(src => Enum.Parse<ProcessType>(src.Process)));
-        }
+        CreateMap<ProviderBreakPeriodEntity, ProviderBreakPeriodModel>();
 
-        private void ConfigureEntityToDtoMappings()
-        {
-            // Provider Entity
-            CreateMap<ProviderEntity, ProviderDto>().ReverseMap();
-            CreateMap<ProviderEntity, ProviderPreviewDto>().ReverseMap();
+        CreateMap<CreateBreakPeriodRequest, ProviderBreakPeriodEntity>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
+            .ForMember(dest => dest.WorkingHours, opt => opt.Ignore());
 
-            // Process Capability Entity
-            CreateMap<ProcessCapabilityEntity, ProcessCapabilityDto>().ReverseMap();
+        CreateMap<ProviderBreakPeriodEntity, ProviderBreakPeriodDto>();
+    }
 
-            // Technical Capabilities Entity
-            CreateMap<TechnicalCapabilitiesEntity, TechnicalCapabilitiesDto>().ReverseMap();
+    /// <summary>
+    /// Optimization request mappings.
+    /// Used in: OptimizationRequestService
+    /// </summary>
+    private void ConfigureOptimizationRequestMappings()
+    {
+        // OptimizationRequestDto -> OptimizationRequestEntity (API request -> DB)
+        CreateMap<OptimizationRequestDto, OptimizationRequestEntity>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()));
 
-            // OptimizationStrategy
-            CreateMap<OptimizationStrategyEntity, OptimizationStrategyDto>()
-                .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority.ToString()))
-                .ReverseMap();
+        // OptimizationRequestEntity -> OptimizationRequestModel (DB -> messaging)
+        CreateMap<OptimizationRequestEntity, OptimizationRequestModel>()
+            .ForMember(dest => dest.RequestId, opt => opt.MapFrom(src => src.Id));
 
-            // OptimizationPlan
-            CreateMap<OptimizationPlanEntity, OptimizationPlanDto>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
+        // OptimizationRequestEntity -> OptimizationRequestDto (DB -> API response)
+        CreateMap<OptimizationRequestEntity, OptimizationRequestDto>();
 
-            // ProcessStep
-            CreateMap<ProcessStepEntity, ProcessStepDto>()
-                .ForMember(dest => dest.Process, opt => opt.MapFrom(src => src.Process))
-                .ForMember(dest => dest.AllocatedSchedule, opt => opt.MapFrom(src => src.ProviderSchedule))
-                .ForMember(dest => dest.ExecutionStatus, opt => opt.MapFrom(src => src.ExecutionStatus.ToString()));
+        // MotorSpecifications (DTO <-> Model for API and messaging)
+        CreateMap<MotorSpecificationsDto, MotorSpecificationsModel>()
+            .ForMember(dest => dest.CurrentEfficiency, opt => opt.MapFrom(src => Enum.Parse<MotorEfficiencyClass>(src.CurrentEfficiency)))
+            .ForMember(dest => dest.TargetEfficiency, opt => opt.MapFrom(src => Enum.Parse<MotorEfficiencyClass>(src.TargetEfficiency)));
 
-            // ProcessEstimate
-            CreateMap<ProcessEstimateEntity, ProcessEstimateDto>();
+        CreateMap<MotorSpecificationsModel, MotorSpecificationsDto>()
+            .ForMember(dest => dest.CurrentEfficiency, opt => opt.MapFrom(src => src.CurrentEfficiency.ToString()))
+            .ForMember(dest => dest.TargetEfficiency, opt => opt.MapFrom(src => src.TargetEfficiency.ToString()));
 
-            // OptimizationMetrics
-            CreateMap<OptimizationMetricsEntity, OptimizationMetricsDto>()
-                .ForMember(dest => dest.TotalDuration, opt => opt.MapFrom(src => TimeSpan.FromTicks(src.TotalTime)));
+        // MotorSpecifications (DTO <-> Entity for API and DB)
+        CreateMap<MotorSpecificationsDto, MotorSpecificationsEntity>();
+        CreateMap<MotorSpecificationsEntity, MotorSpecificationsDto>();
+        // MotorSpecifications (Entity -> Model for DB to messaging)
+        CreateMap<MotorSpecificationsEntity, MotorSpecificationsModel>()
+            .ForMember(dest => dest.CurrentEfficiency, opt => opt.MapFrom(src => Enum.Parse<MotorEfficiencyClass>(src.CurrentEfficiency)))
+            .ForMember(dest => dest.TargetEfficiency, opt => opt.MapFrom(src => Enum.Parse<MotorEfficiencyClass>(src.TargetEfficiency)));
+        // Constraints mappings
+        CreateMap<OptimizationRequestConstraintsDto, OptimizationRequestConstraintsEntity>();
+        CreateMap<OptimizationRequestConstraintsEntity, OptimizationRequestConstraintsModel>();
+        CreateMap<OptimizationRequestConstraintsEntity, OptimizationRequestConstraintsDto>();
 
-            // WarrantyTerms
-            CreateMap<WarrantyTermsEntity, WarrantyTermsDto>();
+        // TimeWindow mappings
+        CreateMap<TimeWindowDto, TimeWindowEntity>();
+        CreateMap<TimeWindowEntity, TimeWindowModel>();
+        CreateMap<TimeWindowEntity, TimeWindowDto>();
+    }
 
-            // ProviderSchedule
-            CreateMap<ProviderScheduleEntity, ProviderScheduleDto>();
-            CreateMap<ProviderScheduleSegmentEntity, ProviderScheduleSegmentDto>();
+    /// <summary>
+    /// Optimization plan mappings.
+    /// Used in: OptimizationRequestService, OptimizationPlanService
+    /// </summary>
+    private void ConfigureOptimizationPlanMappings()
+    {
+        // OptimizationPlanModel -> OptimizationPlanEntity (for creating new plan)
+        CreateMap<OptimizationPlanModel, OptimizationPlanEntity>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.SelectedStrategy, opt => opt.Ignore());
 
-            // Working Hours Entity with custom WorkingDays conversion
-            CreateMap<ProviderWorkingHoursEntity, ProviderWorkingHoursDto>()
-                .ForMember(dest => dest.WorkingDays, opt => opt.MapFrom(src => DeserializeWorkingDays(src.WorkingDaysJson)));
-            CreateMap<ProviderWorkingHoursDto, ProviderWorkingHoursEntity>()
-                .ForMember(dest => dest.WorkingDaysJson, opt => opt.MapFrom(src => SerializeWorkingDays(src.WorkingDays)))
-                .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
-                .ForMember(dest => dest.Provider, opt => opt.Ignore());
+        // OptimizationPlanEntity -> OptimizationPlanModel (DB -> service layer)
+        CreateMap<OptimizationPlanEntity, OptimizationPlanModel>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => Enum.Parse<OptimizationPlanStatus>(src.Status)));
 
-            // Break Period Entity
-            CreateMap<ProviderBreakPeriodEntity, ProviderBreakPeriodDto>();
-            CreateMap<ProviderBreakPeriodDto, ProviderBreakPeriodEntity>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.ProviderId, opt => opt.Ignore())
-                .ForMember(dest => dest.WorkingHours, opt => opt.Ignore());
+        // OptimizationPlanModel -> OptimizationPlanDto (service -> API response)
+        CreateMap<OptimizationPlanModel, OptimizationPlanDto>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
-            // Notification
-            CreateMap<NotificationEntity, NotificationDto>();
-            CreateMap<NotificationEntity, NotificationPreviewDto>();
-        }
+        // OptimizationPlanEntity -> OptimizationPlanDto (DB -> API response direct)
+        CreateMap<OptimizationPlanEntity, OptimizationPlanDto>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
 
-        private static List<string> DeserializeWorkingDays(string json)
-        {
-            if (string.IsNullOrWhiteSpace(json))
-                return new List<string>();
+        // OptimizationPlanEntity -> OptimizationPlanPreviewDto (DB -> API list)
+        CreateMap<OptimizationPlanEntity, OptimizationPlanPreviewDto>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+    }
 
-            var workingDays = JsonSerializer.Deserialize<HashSet<DayOfWeek>>(json) ?? new HashSet<DayOfWeek>();
-            return workingDays.Select(d => d.ToString()).ToList();
-        }
+    /// <summary>
+    /// Optimization strategy, steps, estimates, metrics, warranty mappings.
+    /// Used in: OptimizationPlanUpdatedHandler, OptimizationStrategyService, OptimizationPlanService
+    /// </summary>
+    private void ConfigureOptimizationStrategyMappings()
+    {
+        // OptimizationStrategyModel -> OptimizationStrategyEntity (message -> DB)
+        CreateMap<OptimizationStrategyModel, OptimizationStrategyEntity>()
+            .ForMember(dest => dest.Steps, opt => opt.MapFrom(src => src.Steps))
+            .ForMember(dest => dest.Metrics, opt => opt.MapFrom(src => src.Metrics))
+            .ForMember(dest => dest.Warranty, opt => opt.MapFrom(src => src.Warranty))
+            .ForMember(dest => dest.Plan, opt => opt.Ignore());
 
-        private static string SerializeWorkingDays(List<string> workingDays)
-        {
-            if (workingDays == null || workingDays.Count == 0)
-                return string.Empty;
+        // OptimizationStrategyEntity -> OptimizationStrategyModel (DB -> service)
+        CreateMap<OptimizationStrategyEntity, OptimizationStrategyModel>();
 
-            var daysOfWeek = workingDays.Select(d => Enum.Parse<DayOfWeek>(d)).ToHashSet();
-            return JsonSerializer.Serialize(daysOfWeek);
-        }
+        // OptimizationStrategyEntity -> OptimizationStrategyDto (DB -> API response)
+        CreateMap<OptimizationStrategyEntity, OptimizationStrategyDto>()
+            .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority.ToString()));
+
+        // ProcessStepModel -> ProcessStepEntity (message -> DB)
+        CreateMap<ProcessStepModel, ProcessStepEntity>()
+            .ForMember(dest => dest.Process, opt => opt.MapFrom(src => src.Process.ToString()))
+            .ForMember(dest => dest.Estimate, opt => opt.MapFrom(src => src.Estimate))
+            .ForMember(dest => dest.ProviderSchedule, opt => opt.MapFrom(src => src.AllocatedSchedule))
+            .ForMember(dest => dest.ProviderScheduleId, opt => opt.Ignore())
+            .ForMember(dest => dest.StrategyId, opt => opt.Ignore())
+            .ForMember(dest => dest.Strategy, opt => opt.Ignore());
+
+        // ProcessStepEntity -> ProcessStepModel (DB -> service)
+        CreateMap<ProcessStepEntity, ProcessStepModel>()
+            .ForMember(dest => dest.Process, opt => opt.MapFrom(src => Enum.Parse<ProcessType>(src.Process)))
+            .ForMember(dest => dest.AllocatedSchedule, opt => opt.MapFrom(src => src.ProviderSchedule));
+
+        // ProcessStepEntity -> ProcessStepDto (DB -> API response)
+        CreateMap<ProcessStepEntity, ProcessStepDto>()
+            .ForMember(dest => dest.Process, opt => opt.MapFrom(src => src.Process))
+            .ForMember(dest => dest.AllocatedSchedule, opt => opt.MapFrom(src => src.ProviderSchedule))
+            .ForMember(dest => dest.ExecutionStatus, opt => opt.MapFrom(src => src.ExecutionStatus.ToString()));
+
+        // ProcessEstimateModel -> ProcessEstimateEntity (message -> DB)
+        CreateMap<ProcessEstimateModel, ProcessEstimateEntity>()
+            .ForMember(dest => dest.ProcessStepId, opt => opt.Ignore())
+            .ForMember(dest => dest.ProcessStep, opt => opt.Ignore());
+
+        // ProcessEstimateEntity -> ProcessEstimateModel (DB -> service)
+        CreateMap<ProcessEstimateEntity, ProcessEstimateModel>();
+
+        // ProcessEstimateModel -> ProcessEstimateDto (service -> API)
+        CreateMap<ProcessEstimateModel, ProcessEstimateDto>();
+
+        // ProcessEstimateEntity -> ProcessEstimateDto (DB -> API)
+        CreateMap<ProcessEstimateEntity, ProcessEstimateDto>();
+
+        // OptimizationMetricsModel -> OptimizationMetricsEntity (message -> DB)
+        CreateMap<OptimizationMetricsModel, OptimizationMetricsEntity>()
+            .ForMember(dest => dest.TotalTime, opt => opt.MapFrom(src => src.TotalDuration.Ticks))
+            .ForMember(dest => dest.TotalEmissionsKgCO2, opt => opt.MapFrom(src => src.TotalEmissionsKgCO2))
+            .ForMember(dest => dest.StrategyId, opt => opt.Ignore())
+            .ForMember(dest => dest.Strategy, opt => opt.Ignore());
+
+        // OptimizationMetricsEntity -> OptimizationMetricsModel (DB -> service)
+        CreateMap<OptimizationMetricsEntity, OptimizationMetricsModel>()
+            .ForMember(dest => dest.TotalDuration, opt => opt.MapFrom(src => TimeSpan.FromTicks(src.TotalTime)))
+            .ForMember(dest => dest.TotalEmissionsKgCO2, opt => opt.MapFrom(src => src.TotalEmissionsKgCO2));
+
+        // OptimizationMetricsEntity -> OptimizationMetricsDto (DB -> API)
+        CreateMap<OptimizationMetricsEntity, OptimizationMetricsDto>()
+            .ForMember(dest => dest.TotalDuration, opt => opt.MapFrom(src => TimeSpan.FromTicks(src.TotalTime)));
+
+        // WarrantyTermsModel -> WarrantyTermsEntity (message -> DB)
+        CreateMap<WarrantyTermsModel, WarrantyTermsEntity>()
+            .ForMember(dest => dest.StrategyId, opt => opt.Ignore())
+            .ForMember(dest => dest.Strategy, opt => opt.Ignore());
+
+        // WarrantyTermsEntity -> WarrantyTermsModel (DB -> service)
+        CreateMap<WarrantyTermsEntity, WarrantyTermsModel>();
+
+        // WarrantyTermsEntity -> WarrantyTermsDto (DB -> API)
+        CreateMap<WarrantyTermsEntity, WarrantyTermsDto>();
+    }
+
+    /// <summary>
+    /// Schedule and execution mappings.
+    /// Used in: ProviderService, OptimizationStrategyService
+    /// </summary>
+    private void ConfigureScheduleMappings()
+    {
+        // ProviderScheduleModel -> ProviderScheduleEntity (message/service -> DB)
+        CreateMap<ProviderScheduleModel, ProviderScheduleEntity>()
+            .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.StartWorkingTime))
+            .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.EndWorkingTime))
+            .ForMember(dest => dest.Segments, opt => opt.MapFrom(src => src.Segments));
+
+        // ProviderScheduleEntity -> ProviderScheduleModel (DB -> service)
+        CreateMap<ProviderScheduleEntity, ProviderScheduleModel>()
+            .ForMember(dest => dest.Segments, opt => opt.MapFrom(src => src.Segments));
+
+        // ProviderScheduleModel -> ProviderScheduleDto (service -> API)
+        CreateMap<ProviderScheduleModel, ProviderScheduleDto>();
+
+        // ProviderScheduleEntity -> ProviderScheduleDto (DB -> API)
+        CreateMap<ProviderScheduleEntity, ProviderScheduleDto>()
+            .ForMember(dest => dest.StartWorkingTime, opt => opt.MapFrom(src => src.StartTime))
+            .ForMember(dest => dest.EndWorkingTime,   opt => opt.MapFrom(src => src.EndTime));
+
+        // ProviderDayScheduleModel -> ProviderDayScheduleDto (service -> API)
+        CreateMap<ProviderDayScheduleModel, ProviderDayScheduleDto>();
+
+        // ProviderScheduleSegmentModel -> ProviderScheduleSegmentEntity (message -> DB)
+        CreateMap<ProviderScheduleSegmentModel, ProviderScheduleSegmentEntity>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.ProviderScheduleId, opt => opt.Ignore())
+            .ForMember(dest => dest.ProviderSchedule, opt => opt.Ignore())
+            .ForMember(dest => dest.SegmentType, opt => opt.MapFrom(src => src.SegmentType.ToString()));
+
+        // ProviderScheduleSegmentEntity -> ProviderScheduleSegmentModel (DB -> service)
+        CreateMap<ProviderScheduleSegmentEntity, ProviderScheduleSegmentModel>()
+            .ForMember(dest => dest.SegmentType, opt => opt.MapFrom(src => Enum.Parse<SegmentType>(src.SegmentType)));
+
+        // ProviderScheduleSegmentModel -> ProviderScheduleSegmentDto (service -> API)
+        CreateMap<ProviderScheduleSegmentModel, ProviderScheduleSegmentDto>()
+            .ForMember(dest => dest.SegmentType, opt => opt.MapFrom(src => src.SegmentType.ToString()));
+
+        // ProviderScheduleSegmentEntity -> ProviderScheduleSegmentDto (DB -> API)
+        CreateMap<ProviderScheduleSegmentEntity, ProviderScheduleSegmentDto>();
+
+        // ExecutionDetailsModel -> ExecutionDetailsDto (message -> API)
+        CreateMap<ExecutionDetailsModel, ExecutionDetailsDto>()
+            .ForMember(dest => dest.Process, opt => opt.MapFrom(src => src.Process.ToString()))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+
+        // ExecutionTimeSlot -> ExecutionScheduleSegmentDto (message -> API)
+        CreateMap<ExecutionTimeSlot, ExecutionScheduleSegmentDto>();
+    }
+
+    /// <summary>
+    /// Notification mappings.
+    /// Used in: NotificationService
+    /// </summary>
+    private void ConfigureNotificationMappings()
+    {
+        // NotificationEntity -> NotificationDto (DB -> API full details)
+        CreateMap<NotificationEntity, NotificationDto>();
+        
+        // NotificationEntity -> NotificationPreviewDto (DB -> API list view)
+        CreateMap<NotificationEntity, NotificationPreviewDto>();
+    }
+
+    // Helper methods for WorkingDays serialization
+    private static string SerializeWorkingDays(HashSet<DayOfWeek> workingDays)
+    {
+        return JsonSerializer.Serialize(workingDays);
+    }
+
+    private static string SerializeWorkingDaysFromDto(List<string> workingDays)
+    {
+        if (workingDays == null || workingDays.Count == 0)
+            return string.Empty;
+
+        var daysOfWeek = workingDays.Select(d => Enum.Parse<DayOfWeek>(d)).ToHashSet();
+        return JsonSerializer.Serialize(daysOfWeek);
+    }
+
+    private static HashSet<DayOfWeek> DeserializeWorkingDaysToModel(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return new HashSet<DayOfWeek>();
+
+        return JsonSerializer.Deserialize<HashSet<DayOfWeek>>(json) ?? new HashSet<DayOfWeek>();
+    }
+
+    private static List<string> DeserializeWorkingDaysToDto(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return new List<string>();
+
+        var workingDays = JsonSerializer.Deserialize<HashSet<DayOfWeek>>(json) ?? new HashSet<DayOfWeek>();
+        return workingDays.Select(d => d.ToString()).ToList();
     }
 }

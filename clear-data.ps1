@@ -19,7 +19,7 @@ docker ps -a --filter "name=provider-" --format "{{.Names}}" | ForEach-Object {
 # Delete local database files from bin folders
 Write-Host "Deleting local database files..."
 Get-ChildItem -Path . -Filter "*.db*" -Recurse -ErrorAction SilentlyContinue | Where-Object { 
-    $_.FullName -match "\\bin\\" -and ($_.Name -match "^(engine|gateway)\.db") 
+    $_.FullName -match "\\bin\\" -and ($_.Name -match "^(gateway)\.db") 
 } | ForEach-Object {
     Write-Host "  Removing file: $($_.FullName)"
     Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue
@@ -28,10 +28,8 @@ Get-ChildItem -Path . -Filter "*.db*" -Recurse -ErrorAction SilentlyContinue | W
 # Delete all Docker database volumes - find by name pattern
 Write-Host "Deleting Docker volumes..."
 docker volume ls --format "{{.Name}}" | Where-Object { 
-    $_ -match "engine_data$" -or 
     $_ -match "gateway_data$" -or 
     $_ -match "rabbitmq_data$" -or
-    $_ -match "provider_registry_data$" -or
     $_ -eq "provider_simulator_data"
 } | ForEach-Object {
     Write-Host "  Removing volume: $_"

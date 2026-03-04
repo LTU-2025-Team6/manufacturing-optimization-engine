@@ -1,7 +1,7 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Models.Contracts;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Common.Contracts;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
 
 namespace ManufacturingOptimization.ProviderSimulator.Handlers;

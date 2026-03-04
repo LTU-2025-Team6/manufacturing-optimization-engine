@@ -1,33 +1,31 @@
 using AutoMapper;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
-using ManufacturingOptimization.Common.Models.Contracts;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Entities;
-using ManufacturingOptimization.Common.Models.Enums;
-using ManufacturingOptimization.Common.Models.Exceptions;
-using ManufacturingOptimization.Common.Models.Extensions;
-using ManufacturingOptimization.Gateway.Abstractions;
-using ManufacturingOptimization.Gateway.DTOs;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Contracts;
+using ManufacturingOptimization.Common.Enums;
+using ManufacturingOptimization.Common.Exceptions;
+using ManufacturingOptimization.Common.Extensions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Gateway.Abstractions.Repositories;
+using ManufacturingOptimization.Gateway.Abstractions.Services;
+using ManufacturingOptimization.Gateway.Data.Entities;
+using ManufacturingOptimization.Gateway.DTOs.OptimizationPlan;
+using ManufacturingOptimization.Gateway.DTOs.Provider;
+using ManufacturingOptimization.Gateway.DTOs.Strategy;
 using ManufacturingOptimization.Gateway.Exceptions;
 
-namespace ManufacturingOptimization.Gateway.Services
+namespace ManufacturingOptimization.Gateway.Services;
+
+public class OptimizationStrategyService : IOptimizationStrategyService
 {
-    public class OptimizationStrategyService : IOptimizationStrategyService
-    {
         private readonly IMapper _mapper;
         private readonly IAsyncAwaiter _asyncAwaiter;
         private readonly IOptimizationRequestRepository _optimizationRequestRepository;
         private readonly IOptimizationPlanRepository _optimizationPlanRepository;
         private readonly IProviderRepository _providerRepository;
         private readonly IOptimizationStrategyRepository _optimizationStrategyRepository;
-        private readonly IProviderScheduleRepository _providerScheduleRepository;
-        private readonly IProcessEstimateRepository _processEstimateRepository;
         private readonly IAlternativeProvidersRepository _alternativeProvidersRepository;
         private readonly IMessagePublisher _messagePublisher;
         private readonly INotificationPublisher _notificationPublisher;
-        private readonly IOptimizationDbContext _dbContext;
 
         public OptimizationStrategyService(
             IMapper mapper,
@@ -36,12 +34,9 @@ namespace ManufacturingOptimization.Gateway.Services
             IOptimizationPlanRepository optimizationPlanRepository,
             IProviderRepository providerRepository,
             IOptimizationStrategyRepository optimizationStrategyRepository,
-            IProviderScheduleRepository providerScheduleRepository,
-            IProcessEstimateRepository processEstimateRepository,
             IAlternativeProvidersRepository alternativeProvidersRepository,
             IMessagePublisher messagePublisher,
-            INotificationPublisher notificationPublisher,
-            IOptimizationDbContext dbContext)
+            INotificationPublisher notificationPublisher)
         {
             _mapper = mapper;
             _asyncAwaiter = asyncAwaiter;
@@ -49,43 +44,40 @@ namespace ManufacturingOptimization.Gateway.Services
             _optimizationPlanRepository = optimizationPlanRepository;
             _providerRepository = providerRepository;
             _optimizationStrategyRepository = optimizationStrategyRepository;
-            _providerScheduleRepository = providerScheduleRepository;
-            _processEstimateRepository = processEstimateRepository;
             _alternativeProvidersRepository = alternativeProvidersRepository;
             _messagePublisher = messagePublisher;
             _notificationPublisher = notificationPublisher;
-            _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<AlternativeProviderDto>> GetAlternativeProviders(Guid strategyId, Guid stepId, DateTime requestedStartTime, DateTime requestedEndTime)
+        public async Task<IEnumerable<AlternativeProviderDto>> GetAlternativeProvidersAsync(Guid planId, Guid stepId, DateTime windowStart, DateTime windowEnd)
         {
-            var strategy = await _optimizationStrategyRepository.GetByIdAsync(strategyId)
-                ?? throw new NotFoundException($"Optimization strategy with ID {strategyId} not found.");
+            var plan = await _optimizationPlanRepository.GetByIdAsync(planId)
+                ?? throw new NotFoundException($"Optimization plan with ID {planId} not found.");
+
+            if (plan.SelectedStrategyId == null)
+                throw new NotFoundException($"Plan {planId} has no selected strategy.");
+
+            var strategy = await _optimizationStrategyRepository.GetByIdWithStepsOnlyAsync(plan.SelectedStrategyId.Value)
+                ?? throw new NotFoundException($"Selected strategy {plan.SelectedStrategyId} not found.");
 
             var step = strategy.Steps.FirstOrDefault(s => s.Id == stepId)
-                ?? throw new NotFoundException($"Process step with ID {stepId} not found in strategy {strategyId}.");
-
-            if (strategy.PlanId == null)
-                throw new NotFoundException($"Optimization plan for strategy {strategyId} not found.");
-
-            var plan = await _optimizationPlanRepository.GetByIdAsync((Guid)strategy.PlanId)
-                ?? throw new NotFoundException($"Optimization plan with ID {strategy.PlanId} not found.");
+                ?? throw new NotFoundException($"Process step with ID {stepId} not found in strategy {strategy.Id}.");
 
             var request = await _optimizationRequestRepository.GetByIdAsync(plan.RequestId)
                 ?? throw new NotFoundException($"Optimization request with ID {plan.RequestId} not found.");
 
             var capableProviders = await _providerRepository.GetProvidersWithCapabilityAsync(Enum.Parse<ProcessType>(step.Process));
             var estimationTasks = capableProviders.Select(provider => TriggerAndAwaitEstimationAsync(
-                    provider.Id,
-                    plan.Id,
-                    Enum.Parse<ProcessType>(step.Process),
-                    _mapper.Map<MotorSpecificationsModel>(request.MotorSpecs),
-                    requestedStartTime,
-                    requestedEndTime));
+                provider.Id,
+                plan.Id,
+                Enum.Parse<ProcessType>(step.Process),
+                _mapper.Map<MotorSpecificationsModel>(request.MotorSpecs),
+                windowStart,
+                windowEnd));
 
-            // Trigger estimation for each capable provider and await results
             var acceptedEstimations = (await Task.WhenAll(estimationTasks))
-                .Where(e => e.Accepted);
+                .Where(e => e.Accepted)
+                .ToList();
 
             await _alternativeProvidersRepository.AddAlternativesForStepAsync(
                 stepId,
@@ -107,89 +99,75 @@ namespace ManufacturingOptimization.Gateway.Services
             });
         }
 
-        public async Task<ValidateProcessTimeResponse> ValidateAlternativeProcessTime(Guid strategyId, Guid stepId, ValidateProcessTimeRequest request)
+        public async Task<ValidateSlotResponse> ValidateSlotAsync(Guid planId, Guid stepId, ValidateSlotRequest request)
         {
             var alternatives = await _alternativeProvidersRepository.GetAlternativesForStepAsync(stepId)
-                ?? throw new NotFoundException($"No alternative providers found for step {stepId}.");
+                ?? throw new NotFoundException($"No cached alternatives found for step {stepId}. Load alternatives first.");
 
             var alternative = alternatives.FirstOrDefault(a => a.ProviderId == request.ProviderId)
-                ?? throw new NotFoundException($"Alternative provider with ID {request.ProviderId} not found for step {stepId}.");
-            
-            try
-            {
-                var slot = alternative.Schedule.Segments.TryBuildWorkSlot(request.RequestedStartTime, alternative.Estimate.Duration);
+                ?? throw new NotFoundException($"Alternative provider {request.ProviderId} not found for step {stepId}.");
 
-                if (slot == null)
-                    throw new Exception("Unable to build work slot with the requested time window.");
+            var slot = alternative.Schedule.Segments.TryBuildWorkSlot(request.RequestedStart, request.DurationHours);
 
-                return new ValidateProcessTimeResponse(
-                    true,
-                    _mapper.Map<ProviderScheduleDto>(new ProviderScheduleModel
-                    {
-                        Segments = slot
-                    })
-                );
-            }
-            catch (Exception)
+            if (slot == null)
+                return new ValidateSlotResponse(false, null, ["Unable to fit the requested start time within the provider's available schedule."]);
+
+            var workSegments = slot.Where(s => s.SegmentType == SegmentType.WorkingTime).ToList();
+            var allocatedSchedule = new ProviderScheduleDto
             {
-                return new ValidateProcessTimeResponse(
-                    false,
-                    _mapper.Map<ProviderScheduleDto>(alternative.Schedule),
-                    new[] { "The requested time window conflicts with the provider's schedule." }
-                );
-            }
+                StartWorkingTime = workSegments.Count > 0 ? workSegments.Min(s => s.StartTime) : slot[0].StartTime,
+                EndWorkingTime   = workSegments.Count > 0 ? workSegments.Max(s => s.EndTime)   : slot[^1].EndTime,
+                Segments = _mapper.Map<List<ProviderScheduleSegmentDto>>(slot.ToList())
+            };
+
+            return new ValidateSlotResponse(true, allocatedSchedule, null);
         }
 
-        public async Task<UpdateStrategyResponse> UpdateStrategy(Guid strategyId, UpdateStrategyRequest request)
+        public async Task<UpdateStrategyResponse> UpdateStrategyAsync(Guid planId, UpdateStrategyRequest request)
         {
-            var strategy = await _optimizationStrategyRepository.GetByIdAsync(strategyId)
-                ?? throw new NotFoundException($"Optimization strategy with ID {strategyId} not found.");
+            var plan = await _optimizationPlanRepository.GetByIdAsync(planId)
+                ?? throw new NotFoundException($"Optimization plan with ID {planId} not found.");
 
-            if (strategy.PlanId == null)
-                throw new NotFoundException($"Optimization plan for strategy {strategyId} not found.");
-
-            var plan = await _optimizationPlanRepository.GetByIdAsync((Guid)strategy.PlanId)
-                ?? throw new NotFoundException($"Optimization plan with ID {strategy.PlanId} not found.");
+            if (plan.SelectedStrategyId == null)
+                throw new NotFoundException($"Plan {planId} has no selected strategy.");
 
             if (plan.Status == OptimizationPlanStatus.Confirmed.ToString())
                 throw new BusinessLogicErrorException("Cannot update a confirmed strategy. The strategy has been finalized and locked.");
 
-            foreach (var update in request.Updates)
+            var strategy = await _optimizationStrategyRepository.GetByIdAsync(plan.SelectedStrategyId.Value)
+                ?? throw new NotFoundException($"Selected strategy {plan.SelectedStrategyId} not found.");
+
+            foreach (var update in request.StepUpdates)
             {
                 var step = strategy.Steps.FirstOrDefault(s => s.Id == update.StepId)
                     ?? throw new NotFoundException($"Optimization step with ID {update.StepId} not found.");
 
-                var providerChanged = update.NewProviderId != null && update.NewProviderId != step.SelectedProviderId;
-                var timeChanged = update.NewStartTime != null && update.NewEndTime != null;
+                var providerChanged = update.ProviderId.HasValue && update.ProviderId.Value != step.SelectedProviderId;
+                var timeChanged = update.ScheduledStart != DateTime.MinValue && update.ScheduledEnd != DateTime.MinValue;
 
                 if (providerChanged)
-                    step.SelectedProviderId = (Guid)update.NewProviderId!;
+                    step.SelectedProviderId = update.ProviderId!.Value;
 
-                if (timeChanged)
-                {
-                    var alternativeProvider = await _alternativeProvidersRepository.GetOneForStepAsync(step.Id, step.SelectedProviderId)
-                        ?? throw new NotFoundException($"Alternative schedule for step {step.Id} and provider {step.SelectedProviderId} not found");
-
-                    var duration = ((DateTime)update.NewEndTime! - (DateTime)update.NewStartTime!).TotalHours;
-                    var schedule = alternativeProvider.Schedule.Segments.TryBuildWorkSlot((DateTime)update.NewStartTime!, duration);
-
-                    if (schedule == null)
-                        throw new BusinessLogicErrorException("Can not build new schedule");
-
-                    step.ProviderScheduleId = null;
-                    step.ProviderSchedule = null;
-
-                    step.ProviderSchedule = _mapper.Map<ProviderScheduleEntity>(new ProviderScheduleModel
-                    {
-                        Segments = schedule
-                    });
-                }
-
-                // Update estimate if provider or time changed - use existing estimate from alternative provider
                 if (providerChanged || timeChanged)
                 {
                     var alternativeProvider = await _alternativeProvidersRepository.GetOneForStepAsync(step.Id, step.SelectedProviderId)
-                        ?? throw new NotFoundException($"Alternative schedule for step {step.Id} and provider {step.SelectedProviderId} not found");
+                        ?? throw new NotFoundException($"Alternative schedule for step {step.Id} and provider {step.SelectedProviderId} not found.");
+
+                    if (timeChanged)
+                    {
+                        // Use the provider's actual working-hours duration, not the wall-clock span
+                        // (wall-clock span > working hours whenever the slot spans a break)
+                        var schedule = alternativeProvider.Schedule.Segments.TryBuildWorkSlot(update.ScheduledStart, alternativeProvider.Estimate.Duration);
+
+                        if (schedule == null)
+                            throw new BusinessLogicErrorException("Unable to build a valid schedule for the requested time window.");
+
+                        step.ProviderScheduleId = null;
+                        step.ProviderSchedule = _mapper.Map<ProviderScheduleEntity>(new ProviderScheduleModel
+                        {
+                            Segments = schedule
+                        });
+                    }
 
                     if (step.Estimate == null)
                     {
@@ -211,8 +189,8 @@ namespace ManufacturingOptimization.Gateway.Services
             await _optimizationStrategyRepository.UpdateAsync(strategy);
             await _optimizationStrategyRepository.SaveChangesAsync();
 
-            var strategyDto = _mapper.Map<OptimizationStrategyDto>(strategy);
-            return new UpdateStrategyResponse(strategyDto);
+            var updatedStrategyDto = _mapper.Map<OptimizationStrategyDto>(strategy);
+            return new UpdateStrategyResponse(updatedStrategyDto, null);
         }
 
         public async Task<ConfirmStrategyResponse> ConfirmStrategy(Guid strategyId)
@@ -239,8 +217,8 @@ namespace ManufacturingOptimization.Gateway.Services
             if (errors.Any())
             {
                 return new ConfirmStrategyResponse(
-                    _mapper.Map<OptimizationPlanDto>(plan),
-                    errors
+                    false,
+                    string.Join(";  ", errors)
                 );
             }
 
@@ -252,7 +230,7 @@ namespace ManufacturingOptimization.Gateway.Services
             await _optimizationPlanRepository.UpdateAsync(plan);
             await _optimizationPlanRepository.SaveChangesAsync();
 
-            return new ConfirmStrategyResponse(_mapper.Map<OptimizationPlanDto>(plan));
+            return new ConfirmStrategyResponse(true, null);
         }
 
         private async Task<ProcessProposalEstimatedEvent> TriggerAndAwaitEstimationAsync(
@@ -287,17 +265,16 @@ namespace ManufacturingOptimization.Gateway.Services
 
         private async Task ConfirmWithProviderAsync(ProcessStepEntity step, List<string> errors)
         {
+            var stepModel = _mapper.Map<ProcessStepModel>(step);
             try
             {
-                var stepModel = _mapper.Map<ProcessStepModel>(step);
-                
                 if (stepModel.AllocatedSchedule == null)
                     throw new OptimizationException($"No allocated slot found for step {stepModel.Process} with provider {stepModel.SelectedProviderName}.");
 
-                var response = await _asyncAwaiter.AwaitAsync(new AwaitScenario<ProcessProposalReviewedEvent>
+                var response = await _asyncAwaiter.AwaitAsync(new AwaitScenario<ProcessProposalConfirmedEvent>
                 {
                     Exchange = Exchanges.Process,
-                    RoutingKey = $"{ProcessRoutingKeys.Reviewed}.{stepModel.SelectedProviderId}",
+                    RoutingKey = $"{ProcessRoutingKeys.Confirmed}.{stepModel.SelectedProviderId}",
                     Timeout = TimeSpan.FromSeconds(10),
                     Match = evt => evt.ProposalId == stepModel.ProposalId,
                     BeforeAwait = () =>
@@ -320,7 +297,6 @@ namespace ManufacturingOptimization.Gateway.Services
             }
             catch (Exception ex)
             {
-                var stepModel = _mapper.Map<ProcessStepModel>(step);
                 errors.Add($"Provider {stepModel.SelectedProviderName} confirmation failed for {stepModel.Process}: {ex.Message}");
             }
         }
@@ -351,24 +327,4 @@ namespace ManufacturingOptimization.Gateway.Services
             strategy.Metrics.AverageQuality = averageQuality;
             strategy.Metrics.TotalEmissionsKgCO2 = totalEmissions;
         }
-
-        private async Task<OptimizationStrategyModel> EnsureStrategyExists(Guid strategyId)
-        {
-            var strategyEntity = await _optimizationStrategyRepository.GetByIdAsync(strategyId)
-                ?? throw new NotFoundException($"Optimization strategy with ID {strategyId} not found.");
-
-            return _mapper.Map<OptimizationStrategyModel>(strategyEntity);
-        }
-
-        private async Task<OptimizationPlanEntity> EnsurePlanExists(OptimizationStrategyModel strategy)
-        {
-            if (strategy.PlanId == null)
-                throw new NotFoundException($"Optimization plan for strategy {strategy.Id} not found.");
-
-            var plan = await _optimizationPlanRepository.GetByIdAsync((Guid)strategy.PlanId)
-                ?? throw new NotFoundException($"Optimization plan with ID {strategy.PlanId} not found.");
-
-            return plan;
-        }
-    }
 }

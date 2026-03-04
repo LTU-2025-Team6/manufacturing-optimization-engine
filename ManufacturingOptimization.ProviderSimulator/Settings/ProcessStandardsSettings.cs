@@ -1,4 +1,4 @@
-using ManufacturingOptimization.Common.Models.Enums;
+using ManufacturingOptimization.Common.Enums;
 using System.Text.Json.Serialization;
 
 namespace ManufacturingOptimization.ProviderSimulator.Settings;

@@ -1,9 +1,6 @@
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.ProcessManagement;
-using ManufacturingOptimization.Common.Messaging.Messages.SystemManagement;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
-using System.Threading.Tasks;
 
 namespace ManufacturingOptimization.ProviderSimulator;
 
@@ -90,12 +87,6 @@ public class ProviderSimulatorWorker : BackgroundService
         _messagingInfrastructure.BindQueue(requestExecutionDetailsQueue, Exchanges.Provider, ProviderRoutingKeys.RequestExecutionDetails);
         _messagingInfrastructure.PurgeQueue(requestExecutionDetailsQueue);
         _messageSubscriber.Subscribe<RequestExecutionDetailsCommand>(requestExecutionDetailsQueue, e => _dispatcher.DispatchAsync(e));
-
-        var executionQueueName = $"simulator.process.execute.{_providerContext.Provider.Id}";
-        _messagingInfrastructure.DeclareQueue(executionQueueName);
-        _messagingInfrastructure.BindQueue(executionQueueName, Exchanges.Process, $"process.execute.{_providerContext.Provider.Id}");
-        _messagingInfrastructure.PurgeQueue(executionQueueName);
-        _messageSubscriber.Subscribe<ExecuteProcessCommand>(executionQueueName, e => _dispatcher.DispatchAsync(e));
 
         // Subscribe to simulation time changes from Gateway
         var timeChangedQueue = $"simulator.system.time-changed.{_providerContext.Provider.Id}";

@@ -1,36 +1,18 @@
-using ManufacturingOptimization.Common.Messaging;
-using ManufacturingOptimization.Common.Messaging.Abstractions;
-using ManufacturingOptimization.Common.Messaging.Messages;
-using ManufacturingOptimization.Common.Messaging.Messages.PlanManagement;
-using ManufacturingOptimization.Common.Messaging.Messages.SystemManagement;
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Mappings;
-using ManufacturingOptimization.Common.Models.Data.Repositories;
+using ManufacturingOptimization.Common.Abstractions;
+using ManufacturingOptimization.Common.Messages;
+using ManufacturingOptimization.Common.Services;
+using ManufacturingOptimization.Common.Settings;
 using ManufacturingOptimization.Engine;
 using ManufacturingOptimization.Engine.Abstractions;
-using ManufacturingOptimization.Engine.Data;
 using ManufacturingOptimization.Engine.Handlers;
-using ManufacturingOptimization.Engine.Services;
-using ManufacturingOptimization.Engine.Services.Pipeline;
+using ManufacturingOptimization.Engine.OptimizationPipeline;
+using ManufacturingOptimization.Engine.Repositories;
 using ManufacturingOptimization.Engine.Settings;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// Configure SQLite database
-builder.Services.AddDatabase();
-
 // Register repositories
-builder.Services.AddScoped<IProviderRepository, ProviderRepository>();
-
-// Database lifecycle management
-builder.Services.AddHostedService<DatabaseManagementService>();
-
-// Add AutoMapper
-builder.Services.AddAutoMapper(c =>
-{
-    c.AddProfile<ProviderMappingProfile>();
-    c.AddProfile<OptimizationMappingProfile>();
-});
+builder.Services.AddSingleton<IProviderRepository, InMemoryProviderRepository>();
 
 // Configure RabbitMQ
 builder.Services.Configure<RabbitMqSettings>(builder.Configuration.GetSection(RabbitMqSettings.SectionName));
@@ -51,8 +33,18 @@ builder.Services.AddSingleton<ISimulationClock, SimulationClock>();
 builder.Services.AddSingleton<IAsyncAwaiter, AsyncAwaiter>();
 
 // System readiness coordination
-builder.Services.Configure<SystemReadinessSettings>(o => o.ServiceName = "Engine");
 builder.Services.AddSingleton<ISystemReadinessService, SystemReadinessService>();
+
+// Register optimization pipeline steps (Transient - each pipeline gets fresh instances)
+builder.Services.AddTransient<WorkflowMatchingStep>();
+builder.Services.AddTransient<ProviderMatchingStep>();
+builder.Services.AddTransient<EstimationStep>();
+builder.Services.AddTransient<OptimizationStep>();
+builder.Services.AddTransient<StrategySelectionStep>();
+builder.Services.AddTransient<FinalizationStep>();
+
+// Pipeline factory (Singleton - can create pipelines on demand)
+builder.Services.AddSingleton<IWorkflowPipelineFactory, PipelineFactory>();
 
 // Message dispatching
 builder.Services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
@@ -64,11 +56,7 @@ builder.Services.AddScoped<IMessageHandler<ProviderStoppedEvent>, ProviderStoppe
 builder.Services.AddScoped<IMessageHandler<ProviderUpdatedEvent>, ProviderUpdatedHandler>();
 builder.Services.AddScoped<IMessageHandler<RequestOptimizationPlanCommand>, OptimizationRequestHandler>();
 
-// Pipeline factory
-builder.Services.AddSingleton<IWorkflowPipelineFactory, PipelineFactory>();
-
 builder.Services.AddHostedService<EngineWorker>();
-builder.Services.AddHostedService<PlanExecutionCoordinator>();
 
 var host = builder.Build();
 host.Run();

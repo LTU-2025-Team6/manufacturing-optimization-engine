@@ -7,7 +7,5 @@ namespace ManufacturingOptimization.Engine.Abstractions;
 /// </summary>
 public interface IWorkflowStep
 {
-    string Name { get; }
-    
     Task ExecuteAsync(WorkflowContext context, CancellationToken cancellationToken = default);
 }

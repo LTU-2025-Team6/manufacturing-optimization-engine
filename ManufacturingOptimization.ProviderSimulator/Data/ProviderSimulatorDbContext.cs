@@ -1,6 +1,4 @@
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Configurations;
-using ManufacturingOptimization.Common.Models.Data.Entities;
+using ManufacturingOptimization.Common.Data.Abstractions;
 using ManufacturingOptimization.ProviderSimulator.Data.Configurations;
 using ManufacturingOptimization.ProviderSimulator.Data.Entities;
 using Microsoft.EntityFrameworkCore;

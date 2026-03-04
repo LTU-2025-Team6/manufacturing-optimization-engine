@@ -1,5 +1,5 @@
-using ManufacturingOptimization.Common.Models.Data.Abstractions;
-using ManufacturingOptimization.Common.Models.Data.Repositories;
+using ManufacturingOptimization.Common.Data.Abstractions;
+using ManufacturingOptimization.Common.Services;
 using ManufacturingOptimization.ProviderSimulator.Abstractions;
 using ManufacturingOptimization.ProviderSimulator.Data.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +12,7 @@ public class ProposalRepository : Repository<ProposalEntity>, IProposalRepositor
     {
     }
 
-    public override async Task<ProposalEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ProposalEntity?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .Include(p => p.Estimate)

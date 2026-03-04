@@ -28,7 +28,17 @@ public class ProviderSimulatorMappingProfile : Profile
     {
         // ProposalEntity <-> ProposalModel (full bidirectional)
         CreateMap<ProposalEntity, ProposalModel>();
-        CreateMap<ProposalModel, ProposalEntity>();
+        CreateMap<ProposalModel, ProposalEntity>()
+            .ForMember(dest => dest.Execution, opt => opt.Ignore());
+
+        // ExecutionModel -> ExecutionEntity (used when mapping ProposalModel that has an Execution)
+        CreateMap<ExecutionModel, ExecutionEntity>()
+            .ForMember(dest => dest.Proposal, opt => opt.Ignore())
+            .ForMember(dest => dest.ScheduleSegments, opt => opt.Ignore());
+
+        // ExecutionEntity -> ExecutionModel
+        CreateMap<ExecutionEntity, ExecutionModel>()
+            .ForMember(dest => dest.ScheduleSegments, opt => opt.Ignore());
     }
 
     /// <summary>
@@ -37,6 +47,14 @@ public class ProviderSimulatorMappingProfile : Profile
     /// </summary>
     private void ConfigureEstimateMappings()
     {
+        // EstimateEntity <-> EstimateModel (bidirectional, used when mapping ProposalEntity <-> ProposalModel)
+        CreateMap<EstimateEntity, EstimateModel>()
+            .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => src.Duration));
+        CreateMap<EstimateModel, EstimateEntity>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.ProposalId, opt => opt.Ignore())
+            .ForMember(dest => dest.Proposal, opt => opt.Ignore());
+
         // EstimateEntity -> ProcessEstimateModel (for responses to Gateway)
         CreateMap<EstimateEntity, ProcessEstimateModel>();
 
@@ -64,7 +82,8 @@ public class ProviderSimulatorMappingProfile : Profile
     /// </summary>
     private void ConfigureMotorSpecificationsMappings()
     {
-        // MotorSpecificationsEntity -> MotorSpecificationsModel (for execution details response)
+        // Bidirectional mapping between entity and model
         CreateMap<MotorSpecificationsEntity, MotorSpecificationsModel>();
+        CreateMap<MotorSpecificationsModel, MotorSpecificationsEntity>();
     }
 }

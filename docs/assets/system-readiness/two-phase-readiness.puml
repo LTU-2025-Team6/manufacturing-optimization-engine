@@ -1,97 +1,70 @@
 @startuml
 !theme plain
 skinparam backgroundColor #FEFEFE
-skinparam handwritten false
 
 title Two-Phase Readiness: Same Mechanism, Different Events
 
-participant "Gateway" as GW
-participant "Engine" as ENG
-participant "ProviderRegistry" as PR
-participant "StartupCoordinator\n(in Engine)" as SC
-participant "Provider Simulator" as PROV
+participant "Gateway\n(GatewayWorker)" as GW
+participant "Engine\n(EngineWorker)" as ENG
+participant "Provider\nSimulators" as PROV
+queue "RabbitMQ" as MQ
 
 == Phase 1: System Readiness ==
 
-note over GW,SC
-  **Mechanism:** TaskCompletionSource blocks 
-  until SystemReadyEvent received
+note over GW, ENG
+  Both workers SetupRabbitMq(), then each publish ServiceReadyEvent
 end note
 
-GW -> GW: SetupRabbitMq()
-GW -> SC: ServiceReadyEvent\n("Gateway")
+GW -> MQ: ServiceReadyEvent("Gateway")
+ENG -> MQ: ServiceReadyEvent("Engine")
 
-PR -> PR: SetupRabbitMq()
-PR -> SC: ServiceReadyEvent\n("ProviderRegistry")
+note over ENG
+  Engine's ServiceReadyHandler collects events in static HashSet. Required: {"Gateway", "Engine"}
+end note
 
-ENG -> ENG: SetupRabbitMq()
-ENG -> SC: ServiceReadyEvent\n("Engine")
+MQ -> ENG: Deliver both events
+ENG -> MQ: Publish SystemReadyEvent (all required services ready)
 
-SC -> SC: All 3 services ready!
+MQ -> GW: SystemReadyEvent
+MQ -> ENG: SystemReadyEvent
 
-SC -> GW: SystemReadyEvent
-SC -> PR: SystemReadyEvent
-SC -> ENG: SystemReadyEvent
+GW -> GW: MarkSystemReady()
+ENG -> ENG: MarkSystemReady()
 
-GW -> GW: MarkSystemReady()\n✅ IsSystemReady = true
-PR -> PR: MarkSystemReady()\n✅ IsSystemReady = true
-ENG -> ENG: MarkSystemReady()\n✅ IsSystemReady = true
-
-note over GW,ENG
-  **Phase 1 Complete**
-  WaitForSystemReadyAsync() unblocks
+note over GW, ENG
+  Phase 1 complete. WaitForSystemReadyAsync() unblocked.
 end note
 
 == Phase 2: Provider Readiness ==
 
-note over PR,PROV
-  **Same Mechanism:** TaskCompletionSource blocks
-  until AllProvidersRegisteredEvent received
+note over GW, ENG
+  Same TaskCompletionSource mechanism — different event triggers unblock
 end note
 
-PR -> PR: WaitForSystemReadyAsync()\n✅ Already complete
-PR -> PROV: RequestProvidersRegistrationCommand
+GW -> GW: (unblocked) PublishStartProviders() \n → StartAllProvidersCommand
 
-activate PROV
-PROV -> PR: ProviderRegisteredEvent
-PROV -> GW: ProviderRegisteredEvent
-PROV -> ENG: ProviderRegisteredEvent
-deactivate PROV
+GW -> GW: Orchestrate Docker containers
+GW -> MQ: RequestAllProviderStartedCommand\n(broadcast ping — via AsyncAwaiter)
 
-PR -> PR: All providers registered!
+MQ -> PROV: Deliver to all provider instances
+PROV -> MQ: ProviderStartedEvent (each)
+MQ -> GW: Collect responses (AsyncAwaiter AwaitMultipleAsync)
 
-PR -> GW: AllProvidersRegisteredEvent
-PR -> ENG: AllProvidersRegisteredEvent
+GW -> GW: CompletionCondition: all expected\nprovider IDs responded
+GW -> MQ: Publish AllProvidersStartedEvent
 
-GW -> GW: MarkProvidersReady()\n✅ IsProvidersReady = true
-ENG -> ENG: MarkProvidersReady()\n✅ IsProvidersReady = true
+MQ -> GW: AllProvidersStartedEvent
+MQ -> ENG: AllProvidersStartedEvent
 
-note over GW,ENG
-  **Phase 2 Complete**
-  WaitForProvidersReadyAsync() unblocks
-  
-  **Note:** ProviderRegistry does NOT 
-  wait for providers (it starts them!)
+GW -> GW: MarkProvidersReady()
+ENG -> ENG: MarkProvidersReady()
+
+note over GW, ENG
+  Phase 2 complete. WaitForProvidersReadyAsync() unblocked.
 end note
 
-== Optimization Request Processing ==
+== HTTP Request Processing ==
 
-note over GW,ENG
-  Both phases complete → optimization ready
-end note
-
-GW -> GW: Middleware checks:\n✅ IsSystemReady\n✅ IsProvidersReady
-
-GW -> ENG: RequestOptimizationPlanCommand
-
-ENG -> ENG: WaitForSystemReadyAsync()\n✅ Already complete
-ENG -> ENG: WaitForProvidersReadyAsync()\n✅ Already complete
-ENG -> ENG: Execute Optimization Pipeline
-
-note bottom
-  **Key Insight:** Both phases use identical 
-  TaskCompletionSource pattern.
-  Only event type differs!
-end note
+GW -> GW: Middleware:IsSystemReady & IsProvidersReady\n → allow request through
 
 @enduml

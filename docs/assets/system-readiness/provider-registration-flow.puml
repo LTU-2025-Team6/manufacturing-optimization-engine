@@ -2,51 +2,47 @@
 !theme plain
 autonumber
 
-participant "ProviderRegistry\n(Orchestrator)" as REG
-participant "Engine\n(Validation Service)" as ENG
+participant "Gateway\n(StartAllProvidersHandler)" as GW
 queue "RabbitMQ" as MQ
 participant "Provider A\nSimulator" as PA
 participant "Provider B\nSimulator" as PB
 
-== After System Ready ==
+== After Phase 1 (SystemReady) ==
 
-REG -> REG: StartAllAsync()
+GW -> GW: PublishStartProviders()\n→ StartAllProvidersCommand
 
-loop For each provider in providers.json
-  REG -> MQ: Publish ValidateProviderCapabilityCommand\n(routing: provider.validation-requested)
-  MQ -> ENG: Deliver validation request
-  ENG -> ENG: Validate capabilities\n& technical requirements
-  ENG -> MQ: Publish ProviderCapabilityValidatedEvent
-  MQ -> REG: Deliver validation result
-  
-  alt Validation successful
-    REG -> REG: Docker API: Create & Start container
-  else Validation failed
-    REG -> REG: Log error, skip provider
-  end
+alt Production mode
+  GW -> GW: Load AutoStart providers from DB
+  GW -> GW: Docker API: start containers\n(for each provider)
+  GW -> GW: Task.Delay(3000) — wait for\ncontainer RabbitMQ setup
+else Development mode
+  note over GW
+    Containers already running via\ndocker-compose — no orchestration
+  end note
 end
 
-== Provider Registration ==
+== Await Provider Responses (AsyncAwaiter) ==
 
-REG -> MQ: Publish RequestRegistrationAll
-MQ -> PA: Deliver RequestRegistrationAll
-MQ -> PB: Deliver RequestRegistrationAll
+note over GW
+  AsyncAwaiter creates temp queue,\nbinds to ProviderRoutingKeys.ProviderStarted,\nthen publishes broadcast ping
+end note
 
-PA -> PA: Prepare metadata,\ncapabilities, technical specs
-PA -> MQ: Publish ProviderRegisteredEvent\n(ID, Name, Type, Capabilities)
-MQ -> REG: Deliver registration
-MQ -> ENG: Deliver registration
-MQ -> ENG: Store provider data
+GW -> MQ: Publish RequestAllProviderStartedCommand\n(broadcast to all providers)
+MQ -> PA: Deliver RequestAllProviderStarted
+MQ -> PB: Deliver RequestAllProviderStarted
 
-PB -> PB: Prepare metadata,\ncapabilities, technical specs
-PB -> MQ: Publish ProviderRegisteredEvent\n(ID, Name, Type, Capabilities)
-MQ -> REG: Deliver registration
-MQ -> ENG: Deliver registration
-MQ -> ENG: Store provider data
+PA -> PA: Initialize, load capabilities
+PA -> MQ: Publish ProviderStartedEvent\n(Provider data)
+PB -> PB: Initialize, load capabilities
+PB -> MQ: Publish ProviderStartedEvent\n(Provider data)
 
-== Registration Complete ==
+MQ -> GW: Deliver ProviderStartedEvent (A)
+GW -> GW: Match — collect response
+MQ -> GW: Deliver ProviderStartedEvent (B)
+GW -> GW: Match — collect response\nCompletionCondition: all IDs received ✓
 
-REG -> REG: All providers registered?
-REG -> MQ: Publish AllProvidersRegisteredEvent
+== Announce Complete ==
+
+GW -> MQ: Publish AllProvidersStartedEvent
 
 @enduml

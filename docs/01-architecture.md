@@ -1,81 +1,62 @@
-# System Architecture
+﻿# System Architecture
 
-## Component Diagram Overview
+## Projects
 
-## Solution Project Structure
+The solution consists of three services and one shared library.
 
-The solution consists of the following projects:
+### ManufacturingOptimization.Gateway
 
-### Microservices
+The main backend service. It is the only entry point for the frontend: all HTTP requests go through it. The Gateway is responsible for:
 
-- **ManufacturingOptimization.Gateway** — API Gateway, the entry point for client requests. Accepts HTTP requests, publishes events to RabbitMQ.
-- **ManufacturingOptimization.Engine** — Engine, the main optimization module. Processes client requests, selects strategy (Upgrade/Refurbish), generates production plan.
-- **ManufacturingOptimization.ProviderRegistry** — provider registry. Manages provider lifecycle, registers their capabilities, controls container orchestration.
-- **ManufacturingOptimization.ProviderSimulator** — technology provider simulator. Emulates manufacturing company behavior.
+- Managing providers — storing their data in a SQLite database and starting/stopping their Docker containers.
+- Receiving and storing optimization requests, plans, and strategies.
+- Coordinating the full optimization workflow: it publishes commands to RabbitMQ, waits for responses from the Engine and providers, and updates state accordingly.
 
-### Common Libraries
+The Gateway uses [`GatewayWorker`](../ManufacturingOptimization.Gateway/GatewayWorker.cs) as a background service to set up RabbitMQ subscriptions and handle incoming events. Message handling is done through a dispatcher pattern — each event type has a dedicated `IMessageHandler<T>` registered in DI (e.g. `ProcessExecutionStartedEventHandler`, `OptimizationPlanUpdatedHandler`).
 
-- **ManufacturingOptimization.Common.Messaging** — common library for working with RabbitMQ: interfaces, services, events.
-- **ManufacturingOptimization.Common.Models** — common data models: motor specifications, optimization requests, plans, strategies, providers, capabilities.
+### ManufacturingOptimization.Engine
 
-### Utilities
+The optimization engine. It runs as a background worker, listens for optimization requests from the Gateway, selects the appropriate strategy (Upgrade or Refurbish) based on the motor specifications, generates an optimization plan with assigned process steps and providers, and publishes the result back.
 
-- **ManufacturingOptimization.Console** — console application for testing and debugging.
+### ManufacturingOptimization.ProviderSimulator
+
+A simulator of a single technology provider (a manufacturing company). The project is designed to run as multiple independent Docker containers — one container per provider. The number of providers is not fixed.
+
+Each container receives its entire configuration through environment variables at startup: provider ID, name, process capabilities (with cost, speed, quality, and energy parameters), technical capabilities, working hours, break schedules, and RabbitMQ connection settings. There is no configuration file — the container is fully parameterized at launch.
+
+Once started, the simulator connects to RabbitMQ, registers itself as ready, and begins responding to proposals from the Gateway. It also runs an [`ExecutionSchedulerService`](../ManufacturingOptimization.ProviderSimulator/Services/ExecutionSchedulerService.cs) background worker that monitors the simulation clock and starts or completes executions at the scheduled times.
+
+All provider data — proposals, estimates, confirmed executions and their schedule segments — is stored in a shared SQLite database mounted via a Docker volume (`provider_simulator_data`).
+
+### ManufacturingOptimization.Common
+
+A shared library used by all three services. It contains:
+
+- **RabbitMQ infrastructure** — [`RabbitMqService`](../ManufacturingOptimization.Common.Messaging/RabbitMqService.cs) (implements `IMessagePublisher`, `IMessageSubscriber`, `IMessagingInfrastructure`), [`AsyncAwaiter`](../ManufacturingOptimization.Common.Messaging/AsyncAwaiter.cs) for request-reply patterns, [`MessageDispatcher`](../ManufacturingOptimization.Common.Messaging/MessageDispatcher.cs) for routing incoming messages to handlers.
+- **Abstractions** — interfaces like `IMessage`, `IMessageHandler<T>`, `ISimulationClock`, `ISystemReadinessService`, `IRepository<T>`, etc.
+- **Messages** — all RabbitMQ message types and routing key constants (process proposals, confirmations, execution events, system time, etc.).
+- **Contracts** — shared data models used across service boundaries (`MotorSpecificationsModel`, `ProviderScheduleModel`, `ProcessEstimateModel`, etc.).
+- **Services** — `SimulationClock`, [`SystemReadinessService`](../ManufacturingOptimization.Common.Messaging/SystemReadinessService.cs), `NotificationPublisher`, base `Repository<T>`.
+- **Extensions** — schedule segment manipulation logic (`TryBuildWorkSlot`, `Overlay`, `Subtract`, etc.), working hours helpers.
+
+---
 
 ## Docker Container Orchestration
 
-The system supports two provider orchestration modes _(User Stories: [US-20](project-overview.md#epic-5-platform-features--extensibility) — Platform extensibility, [US-26](project-overview.md#epic-7-infrastructure--deployment) — Containerization)_:
+### How providers are started
 
-### Development Mode
+When the Gateway starts a provider, [`DockerProviderOrchestrator`](../ManufacturingOptimization.Gateway/Services/DockerProviderOrchestrator.cs).`StartAsync` creates a new container from the pre-built `provider-simulator` image. The container name is `provider-{id}`. Its entire configuration is passed as environment variables built from the `ProviderEntity` stored in the Gateway's database — including all process capabilities, technical specs, working hours, and RabbitMQ settings. The container is set to auto-remove on stop.
 
-**Purpose:** development of provider simulators with debugger support and hot reload.
+All provider containers share a single Docker volume (`provider_simulator_data`) that contains their SQLite database, so data persists across container restarts.
 
-**Configuration file:** [docker-compose.dev.yml](../docker-compose.dev.yml)
+The network the container joins is detected automatically: if the Gateway itself is running inside Docker, the orchestrator inspects its own container to find the current network name and attaches new providers to the same network. On a local dev machine (no container context), it falls back to `bridge`.
 
-**Orchestrator:** `ComposeManagedOrchestrator` — a stub that only logs actions but does not manage containers.
+On startup, the orchestrator also cleans up any leftover containers from a previous session — it identifies them by the `orchestration-mode=production` Docker label.
 
-**Features:**
-- All providers are defined as static services in docker-compose
-- Full Visual Studio debugger support
-- Dynamic addition/removal/pause of providers is **not available**
+### Two startup modes
 
-### Production Mode
+The active mode is controlled by the `Orchestration__Mode` environment variable on the Gateway service, which populates [`OrchestrationSettings`](../ManufacturingOptimization.Gateway/Settings/OrchestrationSettings.cs). The value is either `Production` or `Development`.
 
-**Purpose:** all scenarios except development of the provider simulators themselves.
+**Production mode** — the Gateway's [`DockerProviderOrchestrator`](../ManufacturingOptimization.Gateway/Services/DockerProviderOrchestrator.cs) creates and manages provider containers dynamically at runtime via the Docker API. Before starting the system, the provider image must be built using the `build-provider-image.ps1` script.
 
-**Configuration file:** [docker-compose.yml](../docker-compose.yml) for the main stack, provider list from [providers.json](../ManufacturingOptimization.ProviderRegistry/providers.json)
-
-**Orchestrator:** `DockerProviderOrchestrator` — manages the full lifecycle of provider containers through Docker API.
-
-**Features:**
-- Providers are created dynamically at system startup
-- Supports programmatic addition/removal/pause of providers
-- Debugging provider code is **not available** (runs from pre-built images)
-
-### Mode Selection and DI Container Registration
-
-The orchestration mode is set via the `Orchestration__Mode` environment variable in the ProviderRegistry service.
-
-Depending on the mode, the corresponding implementation of the `IProviderOrchestrator` interface is registered in the DI container:
-- **Development** → `ComposeManagedOrchestrator`
-- **Production** → `DockerProviderOrchestrator`
-
-Orchestrator implementations:
-- [IProviderOrchestrator.cs](../ManufacturingOptimization.ProviderRegistry/Abstractions/IProviderOrchestrator.cs) — interface
-- [ComposeManagedOrchestrator.cs](../ManufacturingOptimization.ProviderRegistry/Services/ComposeManagedOrchestrator.cs) — Development mode
-- [DockerProviderOrchestrator.cs](../ManufacturingOptimization.ProviderRegistry/Services/DockerProviderOrchestrator.cs) — Production mode
-- [OrchestrationSettings.cs](../ManufacturingOptimization.ProviderRegistry/Settings/OrchestrationSettings.cs) — settings
-
-### Startup Instructions
-
-**Production Mode:**
-1. Build provider image: run script [build-provider-image.ps1](../build-provider-image.ps1)
-2. Set `docker-compose` project as startup project in Visual Studio
-3. Start (F5)
-4. `DockerProviderOrchestrator` creates containers for each provider from the list via Docker API
-
-**Development Mode:**
-1. Rename `docker-compose.dev.yml` to `docker-compose.override.yml`
-2. Set `docker-compose` project as startup project in Visual Studio
-3. Start (F5)
-4. Docker Compose starts all services from the static file [docker-compose.override.yml](../docker-compose.dev.yml)
+**Development mode** — instead of dynamic orchestration, a Docker Compose override file (`docker-compose.dev.yml`, renamed to `docker-compose.override.yml`) statically defines three provider containers with all their environment variables hardcoded. The Gateway is set to `Orchestration__Mode=Development`, which disables dynamic orchestration. This mode is used when debugging the provider code directly.

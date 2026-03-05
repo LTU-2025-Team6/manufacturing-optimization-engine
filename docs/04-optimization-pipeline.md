@@ -1,249 +1,162 @@
-# Manufacturing Optimization Process (Optimization Pipeline)
+﻿# Optimization Engine
 
-_(User Stories: [US-06](project-overview.md#epic-2-customer-request-management) — Customer requests, [US-07](project-overview.md#epic-2-customer-request-management) — Strategy recommendations, [US-12](project-overview.md#epic-3-optimization--matchmaking) — Workflow matching, [US-13](project-overview.md#epic-3-optimization--matchmaking) — Optimization)_
+## Role
 
-Optimization Pipeline is the main mechanism for processing customer requests for manufacturing process optimization. The system analyzes requirements, selects providers, generates optimization strategies, and awaits customer selection.
+Engine is the core optimization service. Its sole job is to receive optimization requests and execute the full workflow pipeline that produces an optimization plan.
 
-## System Architecture Diagram
-
-![High-level architecture](assets/optimization-pipeline/05-high-level.png)
-
-**Key Components:**
-
-1. **UI** — client application for submitting requests and selecting strategies
-2. **Gateway** — REST API with strategy and plan storage, polling support
-3. **Engine** — optimization service with Workflow Pipeline and OR-Tools solver
-4. **Provider Simulators** — manufacturing providers (can be simulators or real systems)
-5. **Provider Registry** — provider registration service, publishes events about new capabilities
-6. **Message Broker (RabbitMQ)** — asynchronous communication between services (implicitly shown via dashed lines)
-
-## Pipeline Pattern
-
-### WorkflowContext
-
-[WorkflowContext](../ManufacturingOptimization.Engine/Models/WorkflowContext.cs) — context object that flows through all pipeline steps.
-
-**Critical Note:** WorkflowContext is the **key interaction point of the entire system**. Most data used during the optimization process flows through it. WorkflowContext contains the majority of shared models from the [ManufacturingOptimization.Common.Models](../ManufacturingOptimization.Common.Models/) project.
-
-**Models Used in WorkflowContext:**
-- [OptimizationRequest](../ManufacturingOptimization.Common.Models/OptimizationRequest.cs)
-- [OptimizationRequestConstraints](../ManufacturingOptimization.Common.Models/OptimizationRequestConstraints.cs)
-- [MotorSpecifications](../ManufacturingOptimization.Common.Models/MotorSpecifications.cs)
-- [MotorEfficiencyClass](../ManufacturingOptimization.Common.Models/MotorEfficiencyClass.cs)
-- [OptimizationProcessStep](../ManufacturingOptimization.Common.Models/OptimizationProcessStep.cs)
-- [ProcessType](../ManufacturingOptimization.Common.Models/ProcessType.cs)
-- [ProcessEstimate](../ManufacturingOptimization.Common.Models/ProcessEstimate.cs)
-- [Provider](../ManufacturingOptimization.Common.Models/Provider.cs)
-- [ProviderProcessCapability](../ManufacturingOptimization.Common.Models/ProviderProcessCapability.cs)
-- [ProviderTechnicalCapabilities](../ManufacturingOptimization.Common.Models/ProviderTechnicalCapabilities.cs)
-- [OptimizationStrategy](../ManufacturingOptimization.Common.Models/OptimizationStrategy.cs)
-- [OptimizationPriority](../ManufacturingOptimization.Common.Models/OptimizationPriority.cs)
-- [OptimizationMetrics](../ManufacturingOptimization.Common.Models/OptimizationMetrics.cs)
-- [OptimizationPlan](../ManufacturingOptimization.Common.Models/OptimizationPlan.cs)
-- [OptimizationPlanStatus](../ManufacturingOptimization.Common.Models/OptimizationPlanStatus.cs)
-
-### IWorkflowStep
-
-[IWorkflowStep](../ManufacturingOptimization.Engine/Abstractions/IWorkflowStep.cs) — interface for a pipeline step.
+When an optimization request arrives (via `RequestOptimizationPlanCommand` on the `optimization` exchange), Engine's [`OptimizationRequestHandler`](../ManufacturingOptimization.Engine/Handlers/OptimizationRequestHandler.cs) wakes up, waits until both readiness phases are complete, then builds and runs the pipeline:
 
 ```csharp
-public interface IWorkflowStep
+public async Task HandleAsync(RequestOptimizationPlanCommand command)
 {
-    string Name { get; }
-    Task ExecuteAsync(WorkflowContext context, CancellationToken cancellationToken = default);
+    await _readinessService.WaitForSystemReadyAsync();
+    await _readinessService.WaitForProvidersReadyAsync();
+
+    var context = new WorkflowContext { Request = command.Request, Plan = command.Plan };
+    var pipeline = _pipelineFactory.CreateOptimizationPipeline();
+    await pipeline.ExecuteAsync(context);
 }
 ```
 
-Each step:
-- Reads data from `WorkflowContext`
-- Executes its logic (calculations, sending messages, awaiting responses)
-- Writes results back to `WorkflowContext`
-
-### WorkflowPipeline
-
-[WorkflowPipeline](../ManufacturingOptimization.Engine/Services/Pipeline/WorkflowPipeline.cs) — pipeline executor, sequentially invokes steps.
-
-```csharp
-public async Task ExecuteAsync(WorkflowContext context, CancellationToken cancellationToken = default)
-{
-    foreach (var step in _steps)
-    {
-        await step.ExecuteAsync(context, cancellationToken);
-    }
-}
-```
-
-### PipelineFactory
-
-[PipelineFactory](../ManufacturingOptimization.Engine/Services/Pipeline/PipelineFactory.cs) — factory for creating pipeline with specified steps.
-
-## Optimization Pipeline Steps
-
-### Pipeline Steps Overview
-
-![Pipeline Steps Overview](assets/optimization-pipeline/pipeline-steps-overview.png)
-
-### 1. Workflow Matching Step
-
-[WorkflowMatchingStep](../ManufacturingOptimization.Engine/Services/Pipeline/WorkflowMatchingStep.cs) — determines workflow type _(User Story: [US-12](project-overview.md#epic-3-optimization--matchmaking) — Workflow matching)_.
-
-**Logic:**
-- Compares `CurrentEfficiency` and `TargetEfficiency` from the request
-- If `TargetEfficiency > CurrentEfficiency` → **Upgrade** (8 steps)
-- Otherwise → **Refurbish** (5 steps)
-
-**Upgrade Steps:**
-1. Cleaning
-2. Disassembly
-3. Redesign
-4. Turning
-5. Grinding
-6. Part Substitution
-7. Reassembly
-8. Certification
-
-**Refurbish Steps:**
-1. Cleaning
-2. Disassembly
-3. Part Substitution
-4. Reassembly
-5. Certification
-
-**Result:** fills `context.WorkflowType` and `context.ProcessSteps`
-
-### 2. Provider Matching Step
-
-[ProviderMatchingStep](../ManufacturingOptimization.Engine/Services/Pipeline/ProviderMatchingStep.cs) — selects providers for each step.
-
-**Logic:**
-- For each `ProcessStep`, finds providers with required capability from repository
-- Filters by technical requirements:
-  - `Power` ≥ required motor power
-  - `AxisHeight` ≥ required axis height
-- Saves `MatchedProviders` list for each step
-
-**Data source:** providers previously registered via `ProviderRegisteredEvent` and stored in repository
-
-**Result:** fills `processStep.MatchedProviders` for each step
-
-### 3. Estimation Step
-
-[EstimationStep](../ManufacturingOptimization.Engine/Services/Pipeline/EstimationStep.cs) — obtains preliminary estimates from providers _(User Stories: [US-05](project-overview.md#epic-1-technology-provider-management) — Provider proposals, [US-15](project-overview.md#epic-4-process-coordination--workflow) — Provider receive proposals)_.
-
-**Logic:**
-- For each provider in `MatchedProviders`, sends `ProposeProcessToProviderCommand` via RPC
-- Routing key: `process.proposal.{providerId}`
-- Awaits `ProcessProposalEstimatedEvent` response (10-second timeout)
-- Provider can:
-  - **Accept** — return `IsAccepted = true` with estimate (`Estimate`)
-  - **Decline** — return `IsAccepted = false` with reason (`DeclineReason`)
-
-**Providers:** [ProviderSimulator](../ManufacturingOptimization.ProviderSimulator/ProviderSimulatorWorker.cs) processes proposals and returns estimates
-
-**Result:** fills `provider.Estimate` for each provider
-
-### 4. Optimization Step
-
-[OptimizationStep](../ManufacturingOptimization.Engine/Services/Pipeline/OptimizationStep.cs) — generates optimization strategies via Google OR-Tools _(User Story: [US-13](project-overview.md#epic-3-optimization--matchmaking) — Step assignment optimization)_.
-
-**Logic:**
-- Generates 4 strategies with different priorities:
-  - `LowestCost` — lowest cost
-  - `FastestDelivery` — shortest time
-  - `HighestQuality` — highest quality
-  - `LowestEmissions` — lowest CO₂ emissions
-- Solves linear programming problem for each strategy
-- Assigns optimal provider for each process step
-
-**Technology:** Google OR-Tools Linear Solver
-
-**Result:** fills `context.Strategies` with strategy list
-
-**Detailed description:** see [Optimization Step — Strategy Generation with Google OR-Tools](05-optimization-step.md)
-
-### 5. Strategy Selection Step
-
-[StrategySelectionStep](../ManufacturingOptimization.Engine/Services/Pipeline/StrategySelectionStep.cs) — awaits customer strategy selection _(User Story: [US-07](project-overview.md#epic-2-customer-request-management) — Strategy recommendations)_.
-
-**Logic:**
-
-1. **Strategy publication:**
-   - Sends `MultipleStrategiesReadyEvent` to system
-   - Gateway receives event and saves strategies in repository
-
-2. **Temporary queue creation:**
-   - Creates queue `engine.strategy.selection.{requestId}`
-   - Binds to routing key `optimization.strategy.selected.{requestId}`
-
-3. **Blocking via TaskCompletionSource:**
-   - Pipeline stops and waits for customer selection
-   - Timeout: 10 minutes
-
-4. **Polling from client side:**
-   - UI periodically polls `GET /api/optimization/strategies/{requestId}`
-   - Gateway returns saved strategies
-   - Client displays strategies and awaits user selection
-
-5. **Strategy selection:**
-   - Client sends `POST /api/optimization/select` with selected strategy
-   - Gateway publishes `SelectStrategyCommand` with routing key for specific request
-   - Engine receives command, `TaskCompletionSource` completes, pipeline continues
-
-**Timeout:** if client doesn't respond within 10 minutes, exception is thrown, pipeline terminates
-
-**Result:** fills `context.SelectedStrategy` and `context.PlanId`
-
-### 6. Confirmation Step
-
-[ConfirmationStep](../ManufacturingOptimization.Engine/Services/Pipeline/ConfirmationStep.cs) — confirmation from providers.
-
-**Logic:**
-- For each process in selected strategy, sends `ConfirmProcessProposalCommand` via RPC
-- Routing key: `process.confirm.{providerId}`
-- Includes `PlanId` for plan identification
-- Awaits `ProcessProposalConfirmedEvent` response (10-second timeout)
-- Providers confirm participation in manufacturing
-
-**Result:** all providers confirmed readiness to execute processes
-
-### 7. Plan Persistence Step
-
-[PlanPersistenceStep](../ManufacturingOptimization.Engine/Services/Pipeline/PlanPersistenceStep.cs) — plan persistence and notification.
-
-**Logic:**
-- Creates `OptimizationPlan` with selected strategy
-- Saves plan to repository
-- Publishes `OptimizationPlanReadyEvent` event
-- Gateway receives event and saves plan locally
-
-**Result:**
-- Plan available via `GET /api/optimization/plan/{planId}`
-- UI can display final plan to customer
-
-## Sequence Diagrams: Optimization Process
-
-### 1. Optimization Request
-
-![Optimization Request Flow](assets/optimization-pipeline/01-optimization-request-flow.png)
-
-Customer enters motor parameters via UI, Gateway publishes command to RabbitMQ, Engine initializes Workflow Pipeline.
-
-### 2. Matching and Estimation
-
-![Pipeline Matching and Estimation](assets/optimization-pipeline/02-pipeline-matching-and-estimation.png)
-
-Pipeline determines workflow type (Upgrade/Refurbish), selects providers, and requests estimates via RPC pattern.
-
-### 3. Optimization and Strategy Selection
-
-![Optimization and Strategy Selection](assets/optimization-pipeline/03-optimization-and-strategy-selection.png)
-
-OR-Tools generates 4 strategies, Gateway saves them, UI polls Gateway (polling), customer selects strategy.
-
-### 4. Confirmation and Plan Delivery
-
-![Confirmation and Plan Delivery](assets/optimization-pipeline/04-confirmation-and-plan-delivery.png)
-
-Pipeline requests confirmations from providers, creates final plan, Gateway saves plan, customer receives result.
+If any step throws, the plan is immediately transitioned to `Failed` status and `OptimizationPlanUpdatedEvent` is published so Gateway can persist the failure.
 
 ---
+
+## Provider Awareness
+
+Engine does not query providers from the database at request time. Instead it starts with an in-memory provider pool built from events: `EngineWorker` subscribes to `ProviderStartedEvent`, `ProviderStoppedEvent`, and `ProviderUpdatedEvent` at startup. By the time a request arrives, Provider repository already reflects the active provider set populated during Phase 2 of system startup.
+
+---
+
+## WorkflowContext
+
+Every pipeline execution creates one `WorkflowContext` that flows through all steps:
+
+```csharp
+public class WorkflowContext
+{
+    public required OptimizationRequestModel Request { get; init; }
+    public required OptimizationPlanModel Plan { get; init; }
+    public string? WorkflowType { get; set; }           // "Upgrade" or "Refurbish"
+    public List<WorkflowProcessStep> ProcessSteps { get; set; } = [];
+}
+```
+
+Each step reads from and writes to this context. Intermediate results — matched providers, proposal IDs, estimates, provider schedules, computed time slots, generated strategies — all accumulate here as the pipeline progresses.
+
+---
+
+## Pipeline Steps
+
+The pipeline is assembled by [`PipelineFactory`](../ManufacturingOptimization.Engine/OptimizationPipeline/PipelineFactory.cs)`.CreateOptimizationPipeline()` and always runs the same six steps in order:
+
+```csharp
+WorkflowMatchingStep → ProviderMatchingStep → EstimationStep →
+OptimizationStep → StrategySelectionStep → FinalizationStep
+```
+
+Each step calls `NotifyOptimizationStepStarted(stepName, planId)` at its entry point and publishes `OptimizationPlanUpdatedEvent` with the updated plan status so Gateway persists progress in real time.
+
+---
+
+### Step 1 — WorkflowMatchingStep
+
+Determines the workflow type by comparing `CurrentEfficiency` vs `TargetEfficiency` from the motor specs:
+
+- **Upgrade** (`targetEfficiency > currentEfficiency`) — 7 process steps: Cleaning → Disassembly → Redesign → Turning → PartSubstitution → Reassembly → Certification
+- **Refurbish** — 5 process steps: Cleaning → Disassembly → PartSubstitution → Reassembly → Certification
+
+The list of `WorkflowProcessStep` objects is stored in `context.ProcessSteps`. Each one holds the process type and will accumulate matched providers in the next step.
+
+Plan status transitions to `MatchingWorkflow`.
+
+---
+
+### Step 2 — ProviderMatchingStep
+
+For each process step, queries the provider repository for all providers that have the required capability (`FindByProcess(processStep.Process)`), then filters them by technical requirements. Providers that don't meet the requirements are excluded.
+
+The filtered list is stored as `processStep.MatchedProviders`. If no provider can cover any single process step, the step throws `OptimizationException` and the entire pipeline fails immediately.
+
+Plan status transitions to `MatchingProviders`.
+
+---
+
+### Step 3 — EstimationStep
+
+Sends process proposals to all matched providers and collects their estimates in parallel. For each `(processStep, provider)` pair, the step uses `AsyncAwaiter.AwaitAsync` to publish `ProposeProcessToProviderCommand` and wait for `ProcessProposalEstimatedEvent`:
+
+```csharp
+var response = await _asyncAwaiter.AwaitAsync(new AwaitScenario<ProcessProposalEstimatedEvent>
+{
+    Exchange = Exchanges.Process,
+    RoutingKey = $"{ProcessRoutingKeys.Estimated}.{provider.ProviderId}",  // provider-specific
+    Timeout = TimeSpan.FromSeconds(10),
+    BeforeAwait = () => _messagePublisher.Publish(
+        Exchanges.Process,
+        $"{ProcessRoutingKeys.Propose}.{provider.ProviderId}",
+        new ProposeProcessToProviderCommand { ... })
+});
+```
+
+All proposals for a single process step are sent concurrently via `Task.WhenAll`. Providers that decline or time out are removed from that step's `MatchedProviders` list. If a provider accepts, its `ProposalId`, `Estimate` (cost, duration, quality score, emissions), and `Schedule` are stored in `MatchedProvider`.
+
+If all providers for any step fail, the step throws and the plan fails.
+
+Plan status transitions to `EstimatingCosts`.
+
+---
+
+### Step 4 — OptimizationStep
+
+Uses **Google OR-Tools** (Mixed Integer Programming) to generate optimization strategies. The step runs the solver four times — once for each `OptimizationPriority`:
+
+| Priority | Objective |
+|---|---|
+| `LowestCost` | minimize total cost |
+| `FastestDelivery` | minimize total duration |
+| `HighestQuality` | maximize quality score |
+| `LowestEmissions` | minimize total emissions |
+
+Before solving, each provider's schedule is broken into fixed-granularity time slots, indexed relative to the request's time window start. The MIP problem assigns exactly one provider to each process step, respecting time-ordering constraints (step N can only start after step N-1 finishes).
+
+Each successful solve produces a `StrategyModel` stored in `context.Plan.Strategies`. After generation, schedules are clamped to stay within working hours. If no feasible solution is found for any priority, the step throws.
+
+Plan status transitions to `GeneratingStrategies`.
+
+---
+
+### Step 5 — StrategySelectionStep
+
+Publishes the current plan (now containing all strategies) with status `AwaitingStrategySelection`, then uses `AsyncAwaiter.AwaitAsync` to block and wait for `SelectStrategyCommand` on the `optimization` exchange — with a **10-minute timeout**:
+
+```csharp
+selectionCommand = await _asyncAwaiter.AwaitAsync(new AwaitScenario<SelectStrategyCommand>
+{
+    Exchange = Exchanges.Optimization,
+    RoutingKey = OptimizationRoutingKeys.StrategySelected,
+    Timeout = TimeSpan.FromMinutes(10),
+    Match = cmd => cmd.RequestId == requestId,
+    BeforeAwait = () => { /* publish PlanUpdated with AwaitingStrategySelection */ }
+});
+```
+
+The `Match` predicate selects only the command for this specific request. While the pipeline is blocked here, other optimization requests are processed normally on separate handler invocations (each runs in its own DI scope). 
+
+When the user selects a strategy in the UI, Gateway publishes `SelectStrategyCommand`, and the pipeline resumes. The selected strategy is set on the plan along with `SelectedAt` timestamp.
+
+Plan status transitions to `StrategySelected`.
+
+---
+
+### Step 6 — FinalizationStep
+
+Validates that a strategy was selected, sets the plan status to `Ready`, and publishes the final `OptimizationPlanUpdatedEvent`. At this point the plan is fully complete and persisted by Gateway's handler.
+
+---
+
+## Diagrams
+
+![Pipeline steps overview](assets/optimization-pipeline/pipeline-steps-overview.png)
+
+![High-level flow](assets/optimization-pipeline/05-high-level.png)

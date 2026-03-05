@@ -1,285 +1,139 @@
-# Optimization Step — Strategy Generation with Google OR-Tools
+﻿# OptimizationStep — Preparing the Solution Space
 
-_(User Story: [US-13](project-overview.md#epic-3-optimization--matchmaking) — Step assignment optimization)_
+[`OptimizationStep`](../ManufacturingOptimization.Engine/OptimizationPipeline/OptimizationStep.cs) implements `IWorkflowStep` and is the most computationally intensive step in the pipeline. Its job is not simply to "pick the best providers" but to build a complete, structured model of all feasible execution possibilities and then find the optimal assignment across all of them simultaneously.
 
-[OptimizationStep](../ManufacturingOptimization.Engine/Services/Pipeline/OptimizationStep.cs) — key pipeline step that generates multiple manufacturing process optimization strategies using the Google OR-Tools library to solve a linear programming problem.
+---
 
-## Problem Statement
+## What this step receives
 
-For each manufacturing step (e.g., Cleaning, Disassembly, Redesign), several suitable providers with their estimates (cost, time, quality, CO₂ emissions) were selected in previous stages.
+By the time `OptimizationStep` runs, the `WorkflowContext` already contains:
 
-**Task:** select **one** provider for each step to minimize the objective function considering customer priority.
+- `ProcessSteps` — the ordered sequence of manufacturing processes (e.g. Cleaning → Disassembly → … → Certification)
+- For each process step: a list of `MatchedProviders` — providers that have the required capability and meet technical requirements
+- For each matched provider: an `Estimate` (cost, duration, quality score, emissions) and a `Schedule` — the provider's working calendar for the requested time window
 
-## Four Strategy Generation
+---
 
-The step generates **4 strategies** with different priorities:
+## Phase 1 — Building the solution space
 
-1. **LowestCost** (Budget Strategy) — minimum cost
-2. **FastestDelivery** (Express Strategy) — minimum time
-3. **HighestQuality** (Premium Strategy) — maximum quality
-4. **LowestEmissions** (Eco Strategy) — minimum CO₂ emissions
+Before the solver is invoked, `PreprocessTimeSlots` converts each provider's schedule into a list of **concrete time slot options**.
 
-For each priority:
-1. A copy of process and provider data is created
-2. Optimization runs with corresponding weights
-3. Strategy is formed with selected providers
+A provider's schedule is a sequence of segments (working time, breaks, unavailability). Given the process `Duration` from the estimate and a fixed granularity of **60 minutes**, `BuildPossibleWorkSlots` generates every possible start time within the requested time window that results in a valid, contiguous working-time segment of the required length. Each such candidate is an `IndexedTimeSlot`:
 
-## Priority Weights
-
-Different weights are used for objective function components for each priority:
-
-| Priority | Cost Weight | Time Weight | Quality Weight | Emissions Weight |
-|-----------|-------------|-------------|----------------|------------------|
-| **LowestCost** | 0.8 | 0.1 | 0.05 | 0.05 |
-| **FastestDelivery** | 0.1 | 0.8 | 0.05 | 0.05 |
-| **HighestQuality** | 0.2 | 0.2 | 0.5 | 0.1 |
-| **LowestEmissions** | 0.1 | 0.1 | 0.2 | 0.6 |
-
-## Linear Programming Problem Formulation
-
-### Decision Variables
-
-A binary variable is created for each (process step, provider) pair:
-
-```
-x[i,j] = 1, if provider j is assigned to step i
-x[i,j] = 0, otherwise
+```csharp
+new IndexedTimeSlot
+{
+    SlotIndex = index,
+    Slot = new ProviderScheduleModel { Segments = segments },
+    StartTimeHours = (startTime - referenceTime).TotalHours,
+    EndTimeHours   = (endTime   - referenceTime).TotalHours
+}
 ```
 
-For example, for Upgrade process (8 steps) with 2-3 providers per step, ~20 variables are created.
+All times are stored as **hours relative to the start of the requested time window** (the reference point). This normalisation makes the MIP formulation independent of clock values.
+
+The result for each `(process step, provider)` pair is `provider.IndexedSlots` — a list of feasible execution windows. A provider with a busy schedule and a long process may have only a handful of slots; a provider with open availability over a multi-day window may have hundreds.
+
+**This is the solution space**: for every process step there are multiple providers, and for every provider there are multiple time slots. The solver must choose exactly one slot (implying one provider) per step.
+
+---
+
+## Phase 2 — MIP formulation
+
+The step builds a **Mixed Integer Programming (MIP)** problem using **Google OR-Tools SCIP solver**.
+
+### Decision variables
+
+Three-dimensional binary variable for each feasible `(step, provider, slot)` triple:
+
+```
+x[i, j, k] = 1  if provider j is assigned to step i in time slot k
+x[i, j, k] = 0  otherwise
+```
+
+Continuous variables for temporal reasoning:
+
+```
+start[i]  — start time of step i (hours from reference)
+end[i]    — end time of step i (hours from reference)
+```
+
+The total number of binary variables is `Σ (providers_per_step[i] × slots_per_provider[i][j])` across all steps. In a typical scenario this can be several thousand variables.
 
 ### Constraints
 
-**Each step must have exactly one provider:**
+**One slot per step** — exactly one `(provider, slot)` combination must be selected for each process step:
 
 ```
-Σ x[i,j] = 1  for each step i
-j
+Σ_j Σ_k x[i,j,k] = 1   for each step i
 ```
 
-This ensures that each process is executed by exactly one provider.
-
-**Budget constraint (if specified):**
+**Sequential execution** — a process cannot start before the previous one finishes:
 
 ```
-Σ Σ (cost[i,j] × x[i,j]) ≤ MaxBudget
-i j
+start[i+1] >= end[i]   for i = 0 .. n-2
 ```
 
-Ensures total cost does not exceed customer's maximum budget.
-
-**Deadline constraint (if specified):**
+**Time slot binding** — when a slot is selected, the step's start/end variables are pinned to that slot's times. This is expressed via Big-M constraints:
 
 ```
-Σ Σ (time[i,j] × x[i,j]) ≤ (RequiredDeadline - Now).TotalHours
-i j
+If x[i,j,k] = 1 → start[i] ≤ slot.StartTimeHours
+If x[i,j,k] = 1 → end[i]   ≥ slot.EndTimeHours
 ```
 
-Ensures total duration does not exceed time until customer's required deadline.
-
-These constraints are enforced **during optimization**, not after. The solver will only find solutions that satisfy all constraints, or report INFEASIBLE if no valid solution exists.
-
-### Objective Function
-
-Minimize weighted sum:
+**Deadline** — the last step must finish within the requested time window:
 
 ```
-minimize: Σ Σ x[i,j] × (
-          i j
-              w_cost × normalized_cost[i,j] +
-              w_time × normalized_time[i,j] +
-              w_emissions × normalized_emissions[i,j] -
-              w_quality × normalized_quality[i,j]
-          )
+end[last] ≤ windowDurationHours
 ```
 
-**Normalization:** values are dynamically scaled to 0-1 range based on actual min/max values from all provider estimates:
+**Budget** (optional) — if `MaxBudget` is set in the request constraints:
 
-For each metric, we calculate ranges:
-- Cost range: `(min: allEstimates.Min(e => e.Cost), max: allEstimates.Max(e => e.Cost))`
-- Time range: `(min: allEstimates.Min(e => e.Duration.TotalHours), max: allEstimates.Max(e => e.Duration.TotalHours))`
-- Emissions range: `(min: allEstimates.Min(e => e.EmissionsKgCO2), max: allEstimates.Max(e => e.EmissionsKgCO2))`
-
-Then normalize each value:
-```csharp
-double Normalize(double value, double min, double max)
-{
-    if (max <= min) return 0;
-    return (value - min) / (max - min);
-}
+```
+Σ_i Σ_j Σ_k (cost[i,j] × x[i,j,k]) ≤ MaxBudget
 ```
 
-Applied normalization:
-- Cost: `Normalize(estimate.Cost, costRange.min, costRange.max)`
-- Time: `Normalize(estimate.Duration.TotalHours, timeRange.min, timeRange.max)`
-- Quality: already in 0-1 range
-- Emissions: `Normalize(estimate.EmissionsKgCO2, emissionsRange.min, emissionsRange.max)`
+### Objective function
 
-This approach ensures fair comparison regardless of the actual value ranges in the current optimization request, making the optimization scale-independent and more robust.
+The solver minimises a weighted sum of normalised metrics. Each metric is first scaled to the `[0, 1]` range based on the actual min/max values across all provider estimates in this request:
 
-**Quality:** used with minus sign to **maximize** quality while minimizing overall function.
-
-## Solution with Google OR-Tools
-
-### 1. Solver Creation
-
-```csharp
-Solver solver = Solver.CreateSolver("SCIP");
+```
+minimise:
+  Σ_i Σ_j Σ_k x[i,j,k] × (
+      w_cost      × Normalize(cost[i,j])      +
+      w_emissions × Normalize(emissions[i,j]) -
+      w_quality   × quality[i,j]              // minus: higher quality is better
+  )
+  + w_time × Normalize(end[last])             // makespan: total timeline length
 ```
 
-**SCIP** (Solving Constraint Integer Programs) solver is used — a powerful open-source solver for mixed-integer programming problems.
+The step generates **four strategies** by running the solver four times with different weight vectors:
 
-### 2. Variable Creation
+| Priority | `w_cost` | `w_time` | `w_quality` | `w_emissions` |
+|---|---|---|---|---|
+| `LowestCost` | 0.8 | 0.1 | 0.05 | 0.05 |
+| `FastestDelivery` | 0.1 | 0.8 | 0.05 | 0.05 |
+| `HighestQuality` | 0.2 | 0.2 | 0.5 | 0.1 |
+| `LowestEmissions` | 0.1 | 0.1 | 0.2 | 0.6 |
 
-```csharp
-var assignments = new Dictionary<(int stepIdx, int providerIdx), Variable>();
+Each run is independent — same variables and constraints, different objective weights. If a solve returns `OPTIMAL` or `FEASIBLE`, the result is converted into a `StrategyModel` and added to `context.Plan.Strategies`. An `INFEASIBLE` or `NOT_SOLVED` result for a particular priority is silently skipped (that strategy is not generated). If no priority yields a feasible solution, the step throws `OptimizationException`.
 
-for (int i = 0; i < processSteps.Count; i++)
-    for (int j = 0; j < step.MatchedProviders.Count; j++)
-        assignments[(i, j)] = solver.MakeBoolVar($"x_{i}_{j}");
-```
+---
 
-### 3. Adding "One Provider Per Step" Constraints
+## Phase 3 — Extracting the result
 
-```csharp
-for (int i = 0; i < processSteps.Count; i++)
-{
-    var constraint = solver.MakeConstraint(1, 1, $"one_provider_step_{i}");
-    for (int j = 0; j < step.MatchedProviders.Count; j++)
-        constraint.SetCoefficient(assignments[(i, j)], 1);
-}
-```
+After solving, `ExtractMipResult` reads the solution values. For each step `i`, exactly one `x[i,j,k]` variable will have `SolutionValue() > 0.5`. This identifies the selected provider and the concrete time slot (with its actual schedule segments). The extracted data forms a `ScheduleTimeline` — an ordered list of `ScheduledProcess` records, each with the chosen provider and the `AllocatedSchedule` (the actual segment sequence from the selected slot).
 
-### 4. Building Total Cost and Time Expressions
+After all strategies are assembled, `ClampSchedulesToWorkingTimeline()` trims any allocated schedule segments to stay strictly within the working portions of the provider's calendar.
 
-```csharp
-LinearExpr totalCostExpr = 0;
-LinearExpr totalTimeExpr = 0;
+---
 
-for (int i = 0; i < processSteps.Count; i++)
-{
-    for (int j = 0; j < step.MatchedProviders.Count; j++)
-    {
-        var estimate = step.MatchedProviders[j].Estimate;
-        totalCostExpr += estimate.Cost * assignments[(i, j)];
-        totalTimeExpr += estimate.Duration.TotalHours * assignments[(i, j)];
-    }
-}
-```
+## Summary
 
-### 5. Adding Budget and Deadline Constraints
+`OptimizationStep` does three things in sequence:
 
-```csharp
-if (constraints.MaxBudget.HasValue)
-{
-    solver.Add(totalCostExpr <= (double)constraints.MaxBudget.Value);
-}
+1. **Enumerate the solution space** — convert provider schedules and estimates into indexed time slots indexed by `(step, provider, slot)`.
+2. **Formulate and solve MIP** — four times, once per priority, with sequential and timing constraints that ensure the resulting plan is physically executable.
+3. **Extract strategies** — translate solver output back into domain objects containing selected providers, concrete schedules, and aggregate metrics.
 
-if (constraints.RequiredDeadline.HasValue)
-{
-    var maxHours = (constraints.RequiredDeadline.Value - DateTime.Now).TotalHours;
-    solver.Add(totalTimeExpr <= maxHours);
-}
-```
-
-**Important:** Deadline is converted to relative duration (hours from now), not absolute DateTime.
-
-### 6. Objective Function Setup
-
-```csharp
-var objective = solver.Objective();
-
-for each (step, provider):
-    coefficient = 
-        weights.CostWeight × normalizedCost +
-        weights.TimeWeight × normalizedTime +
-        weights.EmissionsWeight × normalizedEmissions -
-        weights.QualityWeight × normalizedQuality;
-    
-    objective.SetCoefficient(assignments[(i, j)], coefficient);
-
-objective.SetMinimization();
-```
-
-### 7. Solving
-
-```csharp
-var status = solver.Solve();
-
-if (status == OPTIMAL || status == FEASIBLE)
-{
-    // Extract solution
-    for each variable x[i,j]:
-        if (assignments[(i, j)].SolutionValue() > 0.5)
-            // Provider j selected for step i
-}
-```
-
-**Possible statuses:**
-- `OPTIMAL` — optimal solution found
-- `FEASIBLE` — feasible solution found (may not be optimal)
-- `INFEASIBLE` — no solution exists that satisfies all constraints (e.g., budget too low or deadline too tight)
-- `UNBOUNDED` — problem is unbounded (should not happen with our formulation)
-
-## Extracting Results
-
-After solving:
-
-1. **Identify selected providers:** check value of each variable x[i,j]
-2. **Calculate strategy metrics:**
-   - `TotalCost` — sum of selected provider costs
-   - `TotalDuration` — sum of execution times
-   - `AverageQuality` — average quality score
-   - `TotalEmissionsKgCO2` — sum of emissions
-3. **Create OptimizationStrategy** with selected providers for each step
-
-## Additional Strategy Parameters
-
-For each strategy the following are also defined:
-
-### Warranty and Insurance
-
-Depending on priority and workflow type (Upgrade/Refurbish):
-
-| Priority | Upgrade Warranty | Upgrade Insurance | Refurbish Warranty | Refurbish Insurance |
-|-----------|------------------|-------------------|--------------------|--------------------|
-| **HighestQuality** | Platinum 3 Years | ✓ | Gold 18 Months | ✓ |
-| **FastestDelivery** | Gold 12 Months | ✓ | Silver 6 Months | ✗ |
-| **LowestEmissions** | Gold 12 Months | ✓ | Silver 9 Months | ✓ |
-| **LowestCost** | Basic 3 Months | ✗ | Basic 3 Months | ✗ |
-
-### Strategy Description
-
-Each strategy is assigned:
-- **Name:** Budget Strategy, Express Strategy, Premium Strategy, Eco Strategy
-- **Description:** brief explanation for customer
-
-## Example Workflow
-
-**Input:**
-- 8 Upgrade process steps
-- For each step, 2-3 suitable providers
-- Each provider has estimates (cost, time, quality, emissions)
-
-**For LowestCost priority:**
-1. Variables created: x[0,0], x[0,1], ..., x[7,2] (~20 variables)
-2. Constraints added: each step = 1 provider
-3. Objective function minimizes cost (weight 0.8)
-4. Solver selects cheapest providers for each step
-5. "Budget Strategy" formed with total cost ~€3500, time ~120 hours
-
-**For FastestDelivery priority:**
-1. Same variables and constraints
-2. Objective function minimizes time (weight 0.8)
-3. Solver selects fastest providers
-4. "Express Strategy" formed with time ~80 hours, cost ~€5200
-
-**Result:** 4 strategies with different trade-offs between cost, time, quality, and emissions.
-
-## Approach Benefits
-
-1. **Optimality** — OR-Tools guarantees finding optimal solution
-2. **Flexibility** — easy to add new priorities or change weights
-3. **Scalability** — algorithm efficiently handles dozens of providers
-4. **Transparency** — customer sees multiple options and can choose suitable one
-5. **Constraint handling** — automatic filtering by budget and deadlines
+The result of this step is `context.Plan.Strategies` — a list of up to four ready-to-present optimization strategies. The next step (`StrategySelectionStep`) publishes them and waits for the user to pick one.

@@ -2,43 +2,45 @@
 !theme plain
 autonumber
 
-participant "ProviderRegistry" as PR
-participant "Gateway" as GW
-participant "Engine\n(StartupCoordinator)" as ENG
+participant "Gateway\n(GatewayWorker)" as GW
+participant "Engine\n(EngineWorker)" as ENG
 queue "RabbitMQ" as MQ
 
 == Service Initialization ==
 
-PR -> PR: SetupRabbitMq()
 GW -> GW: SetupRabbitMq()
 ENG -> ENG: SetupRabbitMq()
 
 == Service Ready Events ==
 
-PR -> MQ: Publish ServiceReadyEvent\n("ProviderRegistry")
 GW -> MQ: Publish ServiceReadyEvent\n("Gateway")
 ENG -> MQ: Publish ServiceReadyEvent\n("Engine")
 
-MQ -> ENG: Deliver all ServiceReadyEvents
-ENG -> ENG: Track ready services\n(Gateway, ProviderRegistry, Engine)
+note over ENG
+  ServiceReadyHandler (Engine)\n  holds a static HashSet — persists\n  across DI scope invocations
+end note
+
+MQ -> ENG: Deliver ServiceReadyEvent("Gateway")
+ENG -> ENG: _readyServices.Add("Gateway")
+MQ -> ENG: Deliver ServiceReadyEvent("Engine")
+ENG -> ENG: _readyServices.Add("Engine")
 
 == All Services Ready ==
 
-ENG -> ENG: All required services ready?\n✓ Gateway\n✓ ProviderRegistry\n✓ Engine
+ENG -> ENG: All required services ready?\n✓ Gateway\n✓ Engine
 ENG -> MQ: Publish SystemReadyEvent
 
-MQ -> PR: Deliver SystemReadyEvent
 MQ -> GW: Deliver SystemReadyEvent
 MQ -> ENG: Deliver SystemReadyEvent
 
 == Unblock Execution ==
 
-PR -> PR: TaskCompletionSource.SetResult(true)
-GW -> GW: TaskCompletionSource.SetResult(true)
-ENG -> ENG: TaskCompletionSource.SetResult(true)
+GW -> GW: MarkSystemReady()\nTaskCompletionSource.SetResult(true)
+GW -> GW: NotifySystemReady()
+ENG -> ENG: MarkSystemReady()\nTaskCompletionSource.SetResult(true)
 
-PR -> PR: Continue execution
-GW -> GW: Continue execution
-ENG -> ENG: Continue execution
+note over GW, ENG
+  WaitForSystemReadyAsync() unblocked\n  Phase 1 complete
+end note
 
 @enduml

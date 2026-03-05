@@ -60,7 +60,10 @@ public class GatewayDbContext : DbContext, IGatewayDbContext
                 {
                     property.SetValueConverter(
                         new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
-                            v => v.ToUniversalTime(),
+                            // SpecifyKind instead of ToUniversalTime: ToUniversalTime treats
+                            // Kind=Unspecified as Local and subtracts the host timezone offset,
+                            // silently corrupting datetime values on non-UTC servers.
+                            v => DateTime.SpecifyKind(v, DateTimeKind.Utc),
                             v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
                         )
                     );

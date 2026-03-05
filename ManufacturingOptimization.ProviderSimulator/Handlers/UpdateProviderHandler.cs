@@ -28,9 +28,6 @@ public sealed class UpdateProviderHandler : IMessageHandler<UpdateProviderComman
         if (command.Provider.Id != _providerContext.Provider.Id)
             return Task.CompletedTask;
 
-        // Notify requested update
-        _notificationPublisher.NotifyProviderUpdateRequested(_providerContext.Provider.Name);
-
         _providerContext.Provider = command.Provider;
         _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.ProviderUpdated, new ProviderUpdatedEvent
         {

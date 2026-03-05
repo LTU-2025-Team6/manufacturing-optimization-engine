@@ -31,8 +31,6 @@ public class StopProviderHandler : IMessageHandler<StopProviderCommand>
 
     public async Task HandleAsync(StopProviderCommand evt)
     {
-        _notificationPublisher.NotifyStoppingProvider(evt.ProviderId);
-
         var provider = await _providerRepository.GetByIdAsync(evt.ProviderId);
 
         if (provider == null)

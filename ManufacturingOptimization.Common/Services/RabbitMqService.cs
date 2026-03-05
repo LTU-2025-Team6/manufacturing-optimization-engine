@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
@@ -81,9 +82,15 @@ public class RabbitMqService : IMessagePublisher, IMessageSubscriber, IMessaging
         }
     }
 
+    // Shared serializer options: write DateTime with Z suffix (UTC), read back as UTC kind.
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        Converters = { new UtcDateTimeJsonConverter() }
+    };
+
     public void Publish<T>(string exchangeName, string routingKey, T message) where T : IMessage
     {
-        var json = JsonSerializer.Serialize(message);
+        var json = JsonSerializer.Serialize(message, _jsonOptions);
         var body = Encoding.UTF8.GetBytes(json);
 
         var properties = _channel.CreateBasicProperties();
@@ -143,7 +150,7 @@ public class RabbitMqService : IMessagePublisher, IMessageSubscriber, IMessaging
                     {
                         try
                         {
-                            var message = JsonSerializer.Deserialize(json, handlerInfo.MessageType);
+                            var message = JsonSerializer.Deserialize(json, handlerInfo.MessageType, _jsonOptions);
                             if (message != null)
                             {
                                 handlerInfo.Handler.DynamicInvoke(message);

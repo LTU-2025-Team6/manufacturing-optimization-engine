@@ -39,9 +39,6 @@ public sealed class ProcessConfirmationHandler : IMessageHandler<ConfirmProcessP
 
     public async Task HandleAsync(ConfirmProcessProposalCommand command)
     {
-        // Notify request received
-        _notificationPublisher.NotifyProviderReceivedConfirmationRequest(_providerContext.Provider.Name, command.ProposalId, _providerContext.Provider.Id);
-
         var response = new ProcessProposalConfirmedEvent
         {
             ProposalId = command.ProposalId

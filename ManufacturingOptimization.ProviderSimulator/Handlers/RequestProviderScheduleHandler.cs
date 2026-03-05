@@ -35,9 +35,6 @@ public sealed class RequestProviderScheduleHandler : IMessageHandler<RequestProv
         if (command.ProviderId != _providerContext.Provider.Id)
             return;
 
-        // Notify request received
-        _notificationPublisher.NotifyProviderReceivedScheduleRequest(_providerContext.Provider.Name, command.Start, command.End);
-
         var schedule = await BuildSchedule(command);
         _messagePublisher.Publish(Exchanges.Provider, ProviderRoutingKeys.ProviderScheduleCreated, new ProviderScheduleCreatedEvent
         {

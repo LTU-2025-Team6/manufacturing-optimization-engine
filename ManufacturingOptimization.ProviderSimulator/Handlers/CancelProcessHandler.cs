@@ -31,8 +31,6 @@ public sealed class CancelProcessHandler : IMessageHandler<CancelProcessCommand>
 
     public async Task HandleAsync(CancelProcessCommand command)
     {
-        _notificationPublisher.NotifyProviderReceivedCancellationRequest(_providerContext.Provider.Name, command.ProposalId);
-
         var response = new ProcessCancelledEvent
         {
             ProposalId = command.ProposalId

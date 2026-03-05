@@ -31,8 +31,6 @@ public class StartProviderHandler : IMessageHandler<StartProviderCommand>
 
     public async Task HandleAsync(StartProviderCommand evt)
     {
-        _notificationPublisher.NotifyStartingProvider(evt.ProviderId);
-
         var provider = await _providerRepository.GetByIdWithFullDetailsAsync(evt.ProviderId);
 
         if (provider == null)

@@ -53,9 +53,6 @@ public sealed class ProcessProposalHandler : IMessageHandler<ProposeProcessToPro
         if (command.ProviderId != _context.Provider.Id)
             return;
 
-        // Notify request received
-        _notificationPublisher.NotifyProviderReceivedProposal(_context.Provider.Name, command.PlanId, command.Process);
-
         var proposal = CreateBaseProposal(command);
         var response = new ProcessProposalEstimatedEvent
         {

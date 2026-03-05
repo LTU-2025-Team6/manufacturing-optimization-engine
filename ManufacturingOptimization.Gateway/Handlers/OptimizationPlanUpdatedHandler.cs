@@ -82,6 +82,6 @@ public class OptimizationPlanUpdatedHandler : IMessageHandler<OptimizationPlanUp
 
         await _planRepository.UpdateAsync(existingPlan);
         await _planRepository.SaveChangesAsync();
-        _notificationPublisher.NotifyOptimizationPlanUpdated(existingPlan.Id);
+        _notificationPublisher.NotifyOptimizationPlanUpdated(existingPlan.Id, existingPlan.Status);
     }
 }

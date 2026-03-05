@@ -33,17 +33,9 @@ public sealed class RequestExecutionDetailsHandler : IMessageHandler<RequestExec
 
     public async Task HandleAsync(RequestExecutionDetailsCommand command)
     {
-        // Проверяем что запрос для этого провайдера
         if (command.ProviderId != _providerContext.Provider.Id)
             return;
 
-        _logger.LogInformation("Provider {ProviderId} received execution details request for {ExecutionId}", 
-            _providerContext.Provider.Id, command.ExecutionId);
-
-        // Notify request received
-        _notificationPublisher.NotifyProviderReceivedExecutionDetailsRequest(_providerContext.Provider.Name, command.ExecutionId);
-
-        // Получаем execution с полными данными
         var execution = await _executionRepository.GetByIdWithDetailsAsync(command.ExecutionId);
 
         if (execution == null)
@@ -52,7 +44,6 @@ public sealed class RequestExecutionDetailsHandler : IMessageHandler<RequestExec
             return;
         }
 
-        // Создаем детали execution
         var details = new ExecutionDetailsModel
         {
             ExecutionId = execution.Id,
@@ -77,7 +68,6 @@ public sealed class RequestExecutionDetailsHandler : IMessageHandler<RequestExec
                 .ToList()
         };
 
-        // Отправляем событие с деталями
         _messagePublisher.Publish(
             Exchanges.Provider, 
             ProviderRoutingKeys.ExecutionDetailsProvided, 
@@ -86,9 +76,6 @@ public sealed class RequestExecutionDetailsHandler : IMessageHandler<RequestExec
                 ExecutionId = command.ExecutionId,
                 Details = details
             });
-
-        _logger.LogInformation("Provider {ProviderId} sent execution details for {ExecutionId}", 
-            _providerContext.Provider.Id, command.ExecutionId);
 
         // Notify request completed
         _notificationPublisher.NotifyProviderCompletedExecutionDetailsRequest(_providerContext.Provider.Name, command.ExecutionId);

@@ -40,7 +40,10 @@ public class ProviderSimulatorDbContext : DbContext, IProviderSimulatorDbContext
                 {
                     property.SetValueConverter(
                         new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
-                            v => v.ToUniversalTime(),
+                            // Never call ToUniversalTime() — it treats Kind=Unspecified as Local
+                            // and would silently subtract the host timezone offset.
+                            // SpecifyKind on write guarantees the raw numeric value is preserved as-is.
+                            v => DateTime.SpecifyKind(v, DateTimeKind.Utc),
                             v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
                         )
                     );

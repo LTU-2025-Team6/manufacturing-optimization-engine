@@ -11,6 +11,7 @@ public class ProviderSimulatorWorker : BackgroundService
     private readonly IMessageSubscriber _messageSubscriber;
     private readonly IMessagePublisher _messagePublisher;
     private readonly IMessageDispatcher _dispatcher;
+    private readonly INotificationPublisher _notificationPublisher;
     private readonly IProviderSimulationContext _providerContext;
     private readonly ISimulationClock _clock;
 
@@ -20,6 +21,7 @@ public class ProviderSimulatorWorker : BackgroundService
         IMessageSubscriber messageSubscriber,
         IMessagePublisher messagePublisher,
         IMessageDispatcher dispatcher,
+        INotificationPublisher notificationPublisher,
         IProviderSimulationContext providerLogic,
         ISimulationClock clock)
     {
@@ -28,6 +30,7 @@ public class ProviderSimulatorWorker : BackgroundService
         _messageSubscriber = messageSubscriber;
         _messagePublisher = messagePublisher;
         _dispatcher = dispatcher;
+        _notificationPublisher = notificationPublisher;
         _providerContext = providerLogic;
         _clock = clock;
     }
@@ -96,6 +99,7 @@ public class ProviderSimulatorWorker : BackgroundService
         _messageSubscriber.Subscribe<SimulationTimeChangedEvent>(timeChangedQueue, e =>
         {
             _clock.SetTime(e.SimulatedUtcNow, e.SpeedMultiplier);
+            _notificationPublisher.NotifyProviderSimulationTimeChanged(_providerContext.Provider.Name, e.SimulatedUtcNow, e.SpeedMultiplier);
         });
 
         await Task.Delay(300, cancellationToken);

@@ -41,16 +41,6 @@ public class NotificationPublisher : INotificationPublisher
         );
     }
 
-    public void NotifyStartingProvider(Guid providerId)
-    {
-        Publish(
-            "Starting Provider",
-            $"Starting provider {providerId}",
-            NotificationType.Info,
-            "Gateway"
-        );
-    }
-
     public void NotifyProviderStarted(string providerName)
     {
         Publish(
@@ -76,16 +66,6 @@ public class NotificationPublisher : INotificationPublisher
         Publish(
             "Stopping All Providers",
             "Initiating shutdown sequence for all provider services",
-            NotificationType.Info,
-            "Gateway"
-        );
-    }
-
-    public void NotifyStoppingProvider(Guid providerId)
-    {
-        Publish(
-            "Stopping Provider",
-            $"Stopping provider {providerId}",
             NotificationType.Info,
             "Gateway"
         );
@@ -177,10 +157,10 @@ public class NotificationPublisher : INotificationPublisher
         );
     }
 
-    public void NotifyOptimizationPlanUpdated(Guid planId)
+    public void NotifyOptimizationPlanUpdated(Guid planId, string status)
     {
         Publish(
-            "Plan Updated",
+            $"Plan Updated: {status}",
             $"Plan {planId} has been updated",
             NotificationType.Info,
             "Gateway"
@@ -199,16 +179,6 @@ public class NotificationPublisher : INotificationPublisher
 
     // === Provider Operations ===
 
-    public void NotifyProviderReceivedProposal(string name, Guid planId, ProcessType process)
-    {
-        Publish(
-            "Provider Received Proposal",
-            $"Provider {name} received a proposal for plan {planId}, process: {process}",
-            NotificationType.Info,
-            name
-        );
-    }
-
     public void NotifyProviderEstimatedProposal(string name, Guid planId, ProcessType process, bool accepted, string? declineReason)
     {
         var status = accepted ? "accepted" : "declined";
@@ -217,16 +187,6 @@ public class NotificationPublisher : INotificationPublisher
             "Provider Estimated Proposal",
             $"Provider {name} {status} proposal for plan {planId}, process: {process}{reason}",
             accepted ? NotificationType.Success : NotificationType.Warning,
-            name
-        );
-    }
-
-    public void NotifyProviderReceivedConfirmationRequest(string name, Guid proposalId, Guid id)
-    {
-        Publish(
-            "Provider Received Confirmation Request",
-            $"Provider {name} received confirmation request {id} for proposal {proposalId}",
-            NotificationType.Info,
             name
         );
     }
@@ -243,32 +203,12 @@ public class NotificationPublisher : INotificationPublisher
         );
     }
 
-    public void NotifyProviderReceivedScheduleRequest(string name, DateTime start, DateTime end)
-    {
-        Publish(
-            "Provider Received Schedule Request",
-            $"Provider {name} received schedule request for period {start:yyyy-MM-dd} to {end:yyyy-MM-dd}",
-            NotificationType.Info,
-            name
-        );
-    }
-
     public void NotifyProviderCompletedScheduleRequest(string name, DateTime start, DateTime end)
     {
         Publish(
             "Provider Completed Schedule Request",
             $"Provider {name} completed schedule request for period {start:yyyy-MM-dd} to {end:yyyy-MM-dd}",
             NotificationType.Success,
-            name
-        );
-    }
-
-    public void NotifyProviderReceivedExecutionDetailsRequest(string name, Guid executionId)
-    {
-        Publish(
-            "Provider Received Execution Details Request",
-            $"Provider {name} received execution details request for execution {executionId}",
-            NotificationType.Info,
             name
         );
     }
@@ -302,16 +242,6 @@ public class NotificationPublisher : INotificationPublisher
                 : $"{providerName} failed {process} execution {executionId}",
             success ? NotificationType.Success : NotificationType.Error,
             providerName
-        );
-    }
-
-    public void NotifyProviderUpdateRequested(string name)
-    {
-        Publish(
-            "Provider Update Requested",
-            $"Update requested for provider {name}",
-            NotificationType.Info,
-            name
         );
     }
 
@@ -357,16 +287,6 @@ public class NotificationPublisher : INotificationPublisher
         );
     }
     // === Process Cancellation ===
-
-    public void NotifyProviderReceivedCancellationRequest(string name, Guid proposalId)
-    {
-        Publish(
-            "Provider Received Cancellation Request",
-            $"Provider {name} received cancellation request for proposal {proposalId}",
-            NotificationType.Info,
-            name
-        );
-    }
 
     public void NotifyProviderCompletedCancellationRequest(string name, Guid proposalId, bool success, string? errorMessage)
     {
@@ -443,5 +363,16 @@ public class NotificationPublisher : INotificationPublisher
         };
 
         _messagePublisher.Publish(Exchanges.Notification, NotificationRoutingKeys.CreateNotification, command);
+    }
+
+    public void NotifyProviderSimulationTimeChanged(string name, DateTime simulatedUtcNow, double speedMultiplier)
+    {
+        var formattedTime = simulatedUtcNow.ToString("HH:mm dd-MM-yy");
+        Publish(
+            $"Simulation Time Changed: {formattedTime}, ×{speedMultiplier}",
+            $"Provider {name} updated simulation time to {simulatedUtcNow:O} with speed multiplier ×{speedMultiplier}",
+            NotificationType.Info,
+            name
+        );
     }
 }

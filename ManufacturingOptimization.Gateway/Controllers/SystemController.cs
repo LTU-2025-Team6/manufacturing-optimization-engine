@@ -50,7 +50,7 @@ public class SystemController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public IActionResult SetTime([FromBody] SetSimulationTimeRequest request)
     {
-        _timeService.SetTime(request.SimulatedUtcNow, request.SpeedMultiplier);
+        _timeService.SetTime(request.SimulatedUtcNow?.UtcDateTime, request.SpeedMultiplier);
         return Ok(_timeService.GetCurrentTime());
     }
 }

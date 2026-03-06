@@ -182,6 +182,10 @@ public class OptimizationStrategyService : IOptimizationStrategyService
                     }
 
                     step.ProposalId = alternativeProvider.ProposalId;
+
+                    if (providerChanged)
+                        step.SelectedProviderName = alternativeProvider.ProviderName;
+
                     RecalculateStrategyMetrics(strategy);
                 }
             }

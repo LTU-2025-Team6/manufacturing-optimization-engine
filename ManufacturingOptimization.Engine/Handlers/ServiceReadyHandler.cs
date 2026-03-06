@@ -1,6 +1,5 @@
 using ManufacturingOptimization.Common.Abstractions;
 using ManufacturingOptimization.Common.Messages;
-using ManufacturingOptimization.Common.Messages;
 
 namespace ManufacturingOptimization.Engine.Handlers;
 

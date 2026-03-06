@@ -6,21 +6,27 @@ namespace ManufacturingOptimization.Common.Services;
 /// <summary>
 /// Ensures every DateTime round-tripped through RabbitMQ messages has DateTimeKind.Utc.
 ///
-/// Problem without this converter:
-///   - JsonSerializer serializes Kind=Utc as "...Z" and Kind=Unspecified as "..." (no Z).
-///   - On the receiving side, "..." (no Z) is deserialized as Kind=Unspecified.
-///   - SimulationClock.UtcNow inherits that Kind, while DB-read segment times have Kind=Utc.
-///   - C# DateTime comparison IGNORES Kind, so "07:27 Unspecified" vs "05:27 Utc" looks like
-///     a 120-minute gap, causing false "execution overdue" failures.
+/// Read strategy (priority order):
+///   1. TryGetDateTimeOffset — handles any offset string correctly:
+///        "13:44Z"       → UtcDateTime = 13:44Z  ✓
+///        "15:44+02:00"  → UtcDateTime = 13:44Z  ✓  (NOT just a re-label)
+///   2. Fallback GetDateTime + SpecifyKind — for bare strings emitted by older message
+///      publishers that omit the Z suffix.
 ///
-/// Fix: always write with Z suffix (forces Kind=Utc), always read back as Kind=Utc.
+/// Write strategy:
+///   Always serialize with Z suffix so every consumer receives an unambiguous UTC string.
+///   Without this, Kind=Unspecified would be written without Z, and the receiver's
+///   GetDateTime() would return Kind=Unspecified, making SimulationClock comparisons
+///   against Kind=Utc segment times appear to differ by the host UTC offset.
 /// </summary>
 internal sealed class UtcDateTimeJsonConverter : JsonConverter<DateTime>
 {
     public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        // GetDateTime converts offset strings to UTC per .NET docs.
-        // For bare strings (no offset/Z), returns Unspecified — SpecifyKind normalizes to Utc.
+        if (reader.TryGetDateTimeOffset(out var dto))
+            return DateTime.SpecifyKind(dto.UtcDateTime, DateTimeKind.Utc);
+
+        // Fallback for bare strings: treat as UTC (matches write behaviour).
         return DateTime.SpecifyKind(reader.GetDateTime(), DateTimeKind.Utc);
     }
 

@@ -136,6 +136,12 @@ public class DockerProviderOrchestrator : IProviderOrchestrator
 
     private List<string> BuildEnvironmentForProvider(ProviderEntity provider)
     {
+        if (provider.ProcessCapabilities == null)
+            throw new InvalidDataException($"Provider {provider.Id} has null ProcessCapabilities.");
+
+        if (provider.TechnicalCapabilities == null)
+            throw new InvalidDataException($"Provider {provider.Id} has null TechnicalCapabilities.");
+
         var envVars = new List<string>
         {
             $"PROVIDER_TYPE={provider.Type}",
@@ -144,7 +150,7 @@ public class DockerProviderOrchestrator : IProviderOrchestrator
             $"RabbitMQ__Host={_rabbitMqSettings.Host}",
             $"RabbitMQ__Port={_rabbitMqSettings.Port}",
             $"RabbitMQ__Username={_rabbitMqSettings.Username}",
-            $"RabbitMQ__Password={_rabbitMqSettings.Password}"
+            $"RabbitMQ__Password={_rabbitMqSettings.Password}",
         };
 
         // Add process capabilities

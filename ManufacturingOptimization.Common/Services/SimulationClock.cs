@@ -56,12 +56,12 @@ public sealed class SimulationClock : ISimulationClock
         lock (_lock)
         {
             _realBaseTime = DateTime.UtcNow;
-            // Always normalize to UTC kind so UtcNow comparisons with DB-read datetimes
-            // (which always have Kind=Utc via the ValueConverter) are consistent.
-            // Without this, a bare "07:27" deserialized as Unspecified would produce
-            // UtcNow with Kind=Unspecified, causing false "overdue" failures when
-            // compared to segment StartTime values that have Kind=Utc.
-            _simulatedBaseTime = DateTime.SpecifyKind(simulatedUtcNow, DateTimeKind.Utc);
+            // Normalise to UTC: if the caller somehow passes Kind=Local (e.g. from a poorly
+            // deserialised message), convert it first; otherwise just stamp Kind=Utc so that
+            // comparisons against DB-read datetimes (also Kind=Utc) are always consistent.
+            _simulatedBaseTime = simulatedUtcNow.Kind == DateTimeKind.Local
+                ? simulatedUtcNow.ToUniversalTime()
+                : DateTime.SpecifyKind(simulatedUtcNow, DateTimeKind.Utc);
             _speedMultiplier = speedMultiplier;
         }
     }

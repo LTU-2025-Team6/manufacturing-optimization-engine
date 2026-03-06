@@ -47,8 +47,9 @@ public class ExecutionSchedulerService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Wait for system initialization
-        await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+
+        if (stoppingToken.IsCancellationRequested)
+            return;
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -104,12 +105,16 @@ public class ExecutionSchedulerService : BackgroundService
             if (firstStart > now)
                 continue;
 
-            // Check if severely overdue (missed start by more than tolerance)
-            var overdueThreshold = firstStart.AddMinutes(dynamicTolerance);
+            // The execution window is completely over (past the last segment end + tolerance).
+            // This covers both normal overdue AND large clock jumps that skip past the whole window.
+            // We deliberately do NOT fail just because (now > firstStart + tolerance) — a user might
+            // jump the simulation clock forward several hours, landing inside the execution window.
+            // In that case we still want to start the execution rather than immediately failing it.
+            var windowClosedThreshold = lastEnd.AddMinutes(dynamicTolerance);
 
-            if (now > overdueThreshold)
+            if (now > windowClosedThreshold)
             {
-                // Missed the execution window - mark as failed
+                // Entire execution window has passed — truly missed
                 execution.Status = StepExecutionStatus.Failed;
                 execution.CompletedAt = now;
                 await executionRepo.UpdateAsync(execution);
@@ -128,13 +133,14 @@ public class ExecutionSchedulerService : BackgroundService
                         ProviderId = _providerContext.Provider.Id,
                         ProcessName = execution.Proposal.Process.ToString(),
                         Success = false,
-                        FailureReason = $"Execution overdue — scheduled start {firstStart:O} was missed by {(now - firstStart).TotalMinutes:F0} minutes",
+                        FailureReason = $"Execution window closed — scheduled {firstStart:O}–{lastEnd:O}, current time {now:O}",
                         CompletedAt = now
                     });
             }
             else
             {
-                // Start execution - time window is within tolerance
+                // Start execution — either on time or late due to a simulation clock jump,
+                // but the execution window (up to lastEnd + tolerance) is still open.
                 execution.Status = StepExecutionStatus.InProgress;
                 execution.StartedAt = now;
                 await executionRepo.UpdateAsync(execution);

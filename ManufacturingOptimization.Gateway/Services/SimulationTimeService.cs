@@ -12,7 +12,7 @@ public class SimulationTimeService : ISimulationTimeService
     private readonly ILogger<SimulationTimeService> _logger;
 
     public SimulationTimeService(
-        ISimulationClock clock, 
+        ISimulationClock clock,
         IMessagePublisher publisher,
         ILogger<SimulationTimeService> logger)
     {
@@ -32,26 +32,19 @@ public class SimulationTimeService : ISimulationTimeService
 
     public void SetTime(DateTime? simulatedUtcNow, double? speedMultiplier)
     {
-        var currentTime = _clock.UtcNow;
-        var currentSpeed = _clock.SpeedMultiplier;
-
-        var newTime = simulatedUtcNow ?? currentTime;
-        var newSpeed = speedMultiplier ?? currentSpeed;
+        var newTime  = simulatedUtcNow ?? _clock.UtcNow;
+        var newSpeed = speedMultiplier ?? _clock.SpeedMultiplier;
 
         if (newSpeed <= 0)
             throw new ArgumentException("Speed multiplier must be positive", nameof(speedMultiplier));
 
-        // Update local clock
         _clock.SetTime(newTime, newSpeed);
 
-        // Broadcast to all services (Engine, ProviderSimulators)
-        _publisher.Publish(Exchanges.System, SystemRoutingKeys.TimeChanged, 
+        _publisher.Publish(Exchanges.System, SystemRoutingKeys.TimeChanged,
             new SimulationTimeChangedEvent
             {
                 SimulatedUtcNow = newTime,
                 SpeedMultiplier = newSpeed
             });
-
-        _logger.LogInformation("🌐 Simulation time broadcast: {Time:O}, ×{Speed}", newTime, newSpeed);
     }
 }

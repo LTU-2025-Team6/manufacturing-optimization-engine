@@ -21,7 +21,7 @@ public class OptimizationPlanRepository : Repository<OptimizationPlanEntity>, IO
     {
         return await _dbSet
             .Include(p => p.SelectedStrategy)
-                .ThenInclude(s => s.Steps)
+                .ThenInclude(s => s!.Steps)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
@@ -44,20 +44,20 @@ public class OptimizationPlanRepository : Repository<OptimizationPlanEntity>, IO
                     .ThenInclude(st => st.ProviderSchedule)
                         .ThenInclude(slot => slot!.Segments)
             .Include(p => p.Strategies)
-                .ThenInclude(s => s.Metrics)
+                .ThenInclude(s => s!.Metrics)
             .Include(p => p.Strategies)
-                .ThenInclude(s => s.Warranty)
+                .ThenInclude(s => s!.Warranty)
             .Include(p => p.SelectedStrategy)
-                .ThenInclude(s => s.Steps)
+                .ThenInclude(s => s!.Steps)
                     .ThenInclude(st => st.Estimate)
             .Include(p => p.SelectedStrategy)
-                .ThenInclude(s => s.Steps)
+                .ThenInclude(s => s!.Steps)
                     .ThenInclude(st => st.ProviderSchedule)
                         .ThenInclude(slot => slot!.Segments)
             .Include(p => p.SelectedStrategy)
-                .ThenInclude(s => s.Metrics)
+                .ThenInclude(s => s!.Metrics)
             .Include(p => p.SelectedStrategy)
-                .ThenInclude(s => s.Warranty)
+                .ThenInclude(s => s!.Warranty)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
@@ -65,11 +65,11 @@ public class OptimizationPlanRepository : Repository<OptimizationPlanEntity>, IO
     {
         return await _dbSet
             .Include(p => p.SelectedStrategy)
-                .ThenInclude(s => s.Steps)
+                .ThenInclude(s => s!.Steps)
                     .ThenInclude(st => st.ProviderSchedule)
                         .ThenInclude(slot => slot!.Segments)
             .Include(p => p.SelectedStrategy)
-                .ThenInclude(s => s.Steps)
+                .ThenInclude(s => s!.Steps)
                     .ThenInclude(st => st.Estimate)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
@@ -78,7 +78,7 @@ public class OptimizationPlanRepository : Repository<OptimizationPlanEntity>, IO
     {
         return await _dbSet
             .Include(p => p.SelectedStrategy)
-                .ThenInclude(s => s.Steps)
+                .ThenInclude(s => s!.Steps)
             .ToListAsync(cancellationToken);
     }
 
@@ -99,7 +99,7 @@ public class OptimizationPlanRepository : Repository<OptimizationPlanEntity>, IO
         var totalCount = await baseQuery.CountAsync(cancellationToken);
         var items = await baseQuery
             .Include(p => p.SelectedStrategy)
-                .ThenInclude(s => s.Steps)
+                .ThenInclude(s => s!.Steps)
             .OrderByDescending(p => p.CreatedAt)
             .Skip(skip)
             .Take(take)
@@ -115,7 +115,7 @@ public class OptimizationPlanRepository : Repository<OptimizationPlanEntity>, IO
         var totalCount = await baseQuery.CountAsync(cancellationToken);
         var items = await baseQuery
             .Include(p => p.SelectedStrategy)
-                .ThenInclude(s => s.Steps)
+                .ThenInclude(s => s!.Steps)
             .OrderBy(p => p.ConfirmedAt)
             .Skip(skip)
             .Take(take)

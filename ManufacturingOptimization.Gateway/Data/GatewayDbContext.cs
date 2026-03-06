@@ -60,10 +60,14 @@ public class GatewayDbContext : DbContext, IGatewayDbContext
                 {
                     property.SetValueConverter(
                         new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
-                            // SpecifyKind instead of ToUniversalTime: ToUniversalTime treats
-                            // Kind=Unspecified as Local and subtracts the host timezone offset,
-                            // silently corrupting datetime values on non-UTC servers.
-                            v => DateTime.SpecifyKind(v, DateTimeKind.Utc),
+                            // Write: values should already be Kind=Utc after passing through
+                            // converters, but defensively convert Kind=Local (e.g. an accidental
+                            // DateTime.Now call) rather than silently mislabelling it.
+                            // Kind=Unspecified is treated as UTC (consistent with read converters).
+                            v => v.Kind == DateTimeKind.Local
+                                ? v.ToUniversalTime()
+                                : DateTime.SpecifyKind(v, DateTimeKind.Utc),
+                            // Read: SQLite stores ticks without kind; stamp as Utc on read.
                             v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
                         )
                     );

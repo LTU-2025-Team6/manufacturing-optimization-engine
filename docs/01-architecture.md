@@ -60,3 +60,63 @@ The active mode is controlled by the `Orchestration__Mode` environment variable 
 **Production mode** — the Gateway's [`DockerProviderOrchestrator`](../ManufacturingOptimization.Gateway/Services/DockerProviderOrchestrator.cs) creates and manages provider containers dynamically at runtime via the Docker API. Before starting the system, the provider image must be built using the `build-provider-image.ps1` script.
 
 **Development mode** — instead of dynamic orchestration, a Docker Compose override file (`docker-compose.dev.yml`, renamed to `docker-compose.override.yml`) statically defines three provider containers with all their environment variables hardcoded. The Gateway is set to `Orchestration__Mode=Development`, which disables dynamic orchestration. This mode is used when debugging the provider code directly.
+
+---
+
+## Running the Project
+
+### Frontend (UI)
+
+The frontend lives in a separate repository: **https://github.com/LTU-2025-Team6/manufacturing-optimization-UI**
+
+Clone and start it independently:
+
+```bash
+npm install   # first time only
+npm run dev
+```
+
+The UI runs on `http://localhost:5173` by default and talks to the Gateway API.
+
+### Backend — Production mode
+
+This is the normal way to run the full system.
+
+1. **Build the provider image** (required before first run and after any changes to the ProviderSimulator code or its Dockerfile):
+
+   ```powershell
+   .\build-provider-image.ps1
+   ```
+
+2. **Start all backend services** — set `docker-compose.dcproj` as the startup project in Visual Studio and press F5.
+
+   Alternatively, from the command line:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+   This starts RabbitMQ, the Gateway, and the Engine. Providers are created dynamically by the Gateway at runtime using the pre-built image.
+
+### Backend — Development mode
+
+Use this when you want to debug the ProviderSimulator code directly from the IDE (no Docker image needed for providers).
+
+1. Rename `docker-compose.dev.yml` to `docker-compose.override.yml`. Docker Compose picks up the override file automatically and replaces the dynamic provider orchestration with three statically-defined provider containers.
+
+2. Start the services:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+3. Run the Gateway, Engine, and ProviderSimulator projects from Visual Studio or Rider as usual.
+
+### Helper scripts
+
+| Script | Purpose |
+|---|---|
+| `build-provider-image.ps1` | Builds the `provider-simulator:latest` Docker image from the ProviderSimulator Dockerfile. Run before the first production-mode startup and after any code or Dockerfile changes. |
+| `clear-data.ps1` | Full reset — stops all containers, removes all Docker volumes (`gateway_data`, `rabbitmq_data`, `provider_simulator_data`), and deletes local `.db` files from `bin/` folders. |
+| `clear-provider-data.ps1` | Removes only the `provider_simulator_data` volume and restarts the Gateway so it regenerates provider seed data. Useful when you want to reset providers without touching the rest of the system. |
+| `reset-all-migrations.ps1` | Drops databases, deletes all `Migrations/` folders for Gateway and ProviderSimulator, and recreates a fresh `Initial` migration for each. |
